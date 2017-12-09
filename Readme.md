@@ -15,14 +15,14 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
  - private fork this repo to your organization and clone it
  - `git grep yourcompany` and change all of them
- - uncomment `.travis.yml` section for automated planing and updating
+ - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
  - setup travis build for the repo
  - remove this "Install" section from the Readme.md
  - add a basic project/team so others can copy-paste to get started
   
 ## Keeping your fork updated
- - make PRs agains the parent repo
- - merge parent repo once the PR is merged 
+ - make PRs against the upstream repo
+ - merge upstream repo once the PR is merged 
 
 ## Structure
 
