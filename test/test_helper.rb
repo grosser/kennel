@@ -1,0 +1,71 @@
+# frozen_string_literal: true
+require "bundler/setup"
+
+require "single_cov"
+SingleCov.setup :minitest
+
+require "maxitest/autorun"
+require "webmock/minitest"
+require "mocha/mini_test"
+
+$LOAD_PATH.unshift "lib"
+
+require "kennel"
+
+class TestProject < Kennel::Models::Project
+  defaults(
+    team: -> { TestTeam.new },
+    parts: -> { [] }
+  )
+end
+
+class SubTestProject < TestProject
+end
+
+class TestTeam < Kennel::Models::Team
+  defaults(slack: -> { "foo" })
+end
+
+module Teams
+  class MyTeam < Kennel::Models::Team
+    defaults(slack: -> { "my" })
+  end
+end
+
+Minitest::Test.class_eval do
+  def with_env(hash)
+    old = ENV.to_h
+    hash.each { |k, v| ENV[k.to_s] = v }
+    yield
+  ensure
+    ENV.replace(old)
+  end
+
+  def self.with_env(hash)
+    around { |t| with_env(hash, &t) }
+  end
+
+  def self.capture_stdout
+    let(:stdout) { StringIO.new }
+
+    around do |t|
+      begin
+        $stdout = stdout
+        t.call
+      ensure
+        $stdout = STDOUT
+      end
+    end
+  end
+
+  def self.in_temp_dir
+    around do |t|
+      Dir.mktmpdir do |dir|
+        Dir.chdir(dir) do
+          yield if block_given?
+          t.call
+        end
+      end
+    end
+  end
+end
