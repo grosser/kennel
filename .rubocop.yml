@@ -82,3 +82,6 @@ Style/SymbolArray:
 
 Style/WordArray:
   Enabled: false
+
+Style/MultilineBlockChain:
+  Enabled: false

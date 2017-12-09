@@ -10,10 +10,16 @@ require "kennel/api"
 require "kennel/github_reporter"
 require "kennel/subclass_tracking"
 require "kennel/file_cache"
+require "kennel/template_variables"
 
 require "kennel/models/base"
+
+# parts
 require "kennel/models/monitor"
 require "kennel/models/dash"
+require "kennel/models/screen"
+
+# settings
 require "kennel/models/project"
 require "kennel/models/team"
 

@@ -2,7 +2,10 @@
 module Kennel
   module Models
     class Dash < Base
-      settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions, :template_variables
+      include TemplateVariables
+
+      API_LIST_INCOMPLETE = true
+      settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
       defaults(
         id: -> { nil },

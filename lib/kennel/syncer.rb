@@ -62,7 +62,7 @@ module Kennel
             id = a.fetch(:id)
 
             if e = delete_matching_expected(a)
-              fill_details(a, cache) if a[:api_resource] == "dash"
+              fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
               if diff = e.diff(a)
                 @update << [id, e, a, diff]
               end
@@ -81,7 +81,8 @@ module Kennel
     def fill_details(a, cache)
       args = [a.fetch(:api_resource), a.fetch(:id)]
       full = cache.fetch(args, a.fetch(:modified)) do
-        @api.show(*args).fetch(a.fetch(:api_resource).to_sym)
+        result = @api.show(*args)
+        result[a.fetch(:api_resource).to_sym] || result # dashes are nested, others are not
       end
       a.merge!(full)
     end
@@ -101,8 +102,8 @@ module Kennel
       api_resources.compact.uniq.flat_map do |api_resource|
         # lookup monitors without adding unnecessary downtime information
         results = @api.list(api_resource, with_downtimes: false)
-        if results.is_a?(Hash) # dashes
-          results = results.fetch("#{api_resource}es".to_sym) # dash reply is returned under dashes
+        if results.is_a?(Hash)
+          results = results[results.keys.first]
           results.each { |r| r[:id] = Integer(r.fetch(:id)) }
         end
         results.each { |c| c[:api_resource] = api_resource }

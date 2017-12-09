@@ -5,6 +5,12 @@ require "stringio"
 SingleCov.covered!
 
 describe Kennel::Syncer do
+  def project(pid)
+    project = TestProject.new
+    project.define_singleton_method(:kennel_id) { pid }
+    project
+  end
+
   def component(pid, cid, extra = {})
     {
       tags: extra.delete(:tags) || ["service:a"],
@@ -14,10 +20,8 @@ describe Kennel::Syncer do
   end
 
   def monitor(pid, cid, extra = {})
-    project = TestProject.new
-    project.define_singleton_method(:kennel_id) { pid }
     monitor = Kennel::Models::Monitor.new(
-      project,
+      project(pid),
       query: -> { "avg(last_5m) > #{critical}" },
       kennel_id: -> { cid },
       critical: -> { 1.0 },
@@ -36,10 +40,8 @@ describe Kennel::Syncer do
   end
 
   def dash(pid, cid, extra)
-    project = TestProject.new
-    project.define_singleton_method(:kennel_id) { pid }
     dash = Kennel::Models::Dash.new(
-      TestProject.new({}),
+      project(pid),
       title: -> { "x" },
       description: -> { "x" },
       kennel_id: -> { cid },
@@ -50,9 +52,23 @@ describe Kennel::Syncer do
     dash
   end
 
+  def screen(pid, cid, extra)
+    screen = Kennel::Models::Screen.new(
+      project(pid),
+      board_title: -> { "x" },
+      description: -> { "x" },
+      kennel_id: -> { cid },
+      id: -> { extra[:id].to_s }
+    )
+    screen.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
+    screen.as_json.merge!(extra)
+    screen
+  end
+
   let(:api) { stub("Api") }
   let(:monitors) { [] }
   let(:dashes) { [] }
+  let(:screens) { [] }
   let(:expected) { [] }
   let(:syncer) { Kennel::Syncer.new(api, expected) }
 
@@ -60,6 +76,7 @@ describe Kennel::Syncer do
     Kennel::Progress.stubs(:print).yields
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("dash", anything).returns(dashes: dashes)
+    api.stubs(:list).with("screen", anything).returns(screenboards: screens)
   end
 
   capture_stdout
@@ -164,11 +181,27 @@ describe Kennel::Syncer do
         expected << dash("a", "b", id: 123)
         dashes << {
           id: 123,
-          description: "x\n-- Managed by kennel test_project:b in test/test_helper.rb, do not modify manually",
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
           modified: "2015-12-17T23:12:26.726234+00:00",
           graphs: []
         }
         api.expects(:show).with("dash", 123).returns(dash: {})
+        output.must_equal "Plan:\nNothing to do.\n"
+      end
+    end
+
+    describe "screens" do
+      in_temp_dir # uses file-cache
+
+      it "can plan for screens" do
+        expected << screen("a", "b", id: 123)
+        screens << {
+          id: 123,
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified: "2015-12-17T23:12:26.726234+00:00",
+          widgets: []
+        }
+        api.expects(:show).with("screen", 123).returns({})
         output.must_equal "Plan:\nNothing to do.\n"
       end
     end
@@ -300,7 +333,24 @@ describe Kennel::Syncer do
         }
         api.expects(:show).with("dash", 123).returns(dash: {})
         api.expects(:update).with("dash", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-        output.must_equal "Updated dash test_project:b /dash/123\n"
+        output.must_equal "Updated dash a:b /dash/123\n"
+      end
+    end
+
+    describe "screens" do
+      in_temp_dir # uses file-cache
+
+      it "can update screens" do
+        expected << screen("a", "b", id: 123)
+        screens << {
+          id: 123,
+          description: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified: "2015-12-17T23:12:26.726234+00:00",
+          widgets: []
+        }
+        api.expects(:show).with("screen", 123).returns(dash: {})
+        api.expects(:update).with("screen", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+        output.must_equal "Updated screen a:b /screen/123\n"
       end
     end
   end

@@ -51,7 +51,7 @@ describe Kennel do
 
   describe ".plan" do
     it "plans" do
-      Kennel::Api.any_instance.expects(:list).times(2).returns([])
+      Kennel::Api.any_instance.expects(:list).times(3).returns([])
       Kennel.plan
       stdout.string.must_include "Plan:\n\e[32mCreate temp_project:foo\e[0m\n"
     end
@@ -59,7 +59,7 @@ describe Kennel do
 
   describe ".update" do
     it "update" do
-      Kennel::Api.any_instance.expects(:list).times(2).returns([])
+      Kennel::Api.any_instance.expects(:list).times(3).returns([])
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(id: 123)
 
