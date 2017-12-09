@@ -1,25 +1,7 @@
 language: ruby
 cache: bundler
-if: type = push # only build pushes, not theoretical merge commits so commenting works
 env:
   # in order of most likely failure so `rake` fails fast
   - TASK=test
-  - TASK=no_diff
   - TASK=rubocop
 script: bundle exec rake $TASK
-cache:
-  bundler: true
-  directories:
-    - tmp/cache
-
-# Separate to never run tests with real secrets
-# automated planing and updating for PRs
-# fill this out with a datadog  credentials and a github token of a user that ideally only has access your private repo
-#matrix:
-#  include:
-#    - script: bundle exec rake travis --trace
-#      env:
-#        - DATADOG_SUBDOMAIN=yourcompany
-#        - secure: "FILL-IN" # travis encrypt DATADOG_API_KEY=?
-#        - secure: "FILL-IN" # travis encrypt DATADOG_APP_KEY=?
-#        - secure: "FILL-IN" # travis encrypt GITHUB_TOKEN=?

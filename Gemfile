@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 source "https://rubygems.org"
 
+gemspec
+
 ruby File.read(".ruby-version").strip
 
-gem "dotenv"
-gem "faraday"
-gem "hashdiff"
-
-# Testing
+gem "bump"
 gem "rake"
 gem "maxitest"
 gem "single_cov"

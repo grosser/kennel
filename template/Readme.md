@@ -1,6 +1,6 @@
 # Kennel
 
-![](template/github/cage.jpg?raw=true)
+![](github/cage.jpg?raw=true)
 
 Keep datadog monitors/dashboards/etc in version control, avoid chaotic management via UI.
 
@@ -9,15 +9,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - Good defaults like no-data / re-notify are preselected
  - Reliable cleanup with automated deletion
 
-![](template/github/screen.png?raw=true)
-
-## Install
-
- - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo 
- - `git grep yourcompany` and change all of them
- - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
- - setup travis build for the repo
- - add a basic project/team so others can copy-paste to get started
+![](github/screen.png?raw=true)
 
 ## Structure
 
