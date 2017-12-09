@@ -4,4 +4,5 @@ env:
   # in order of most likely failure so `rake` fails fast
   - TASK=test
   - TASK=rubocop
+  - TASK=readme
 script: bundle exec rake $TASK
