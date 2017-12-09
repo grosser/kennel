@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
   task no_diff: :generate do

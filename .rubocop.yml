@@ -4,6 +4,7 @@ AllCops:
   DisplayCopNames: true
   Exclude:
     - vendor/**/*
+    - template/vendor/**/*
     - projects/**/*
   TargetRubyVersion: 2.4
 

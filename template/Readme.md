@@ -77,7 +77,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 ### Debugging locally
 
  - make sure to be on update `master` to not undo other changes
- - run `bundle exec rake update_datadog`
+ - run `bundle exec rake kennel:update_datadog`
 
 ## Examples
 
