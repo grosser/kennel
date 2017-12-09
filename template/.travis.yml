@@ -1,12 +1,7 @@
 language: ruby
 cache: bundler
 if: type = push # only build pushes, not theoretical merge commits so commenting works
-env:
-  # in order of most likely failure so `rake` fails fast
-  - TASK=test
-  - TASK=no_diff
-  - TASK=rubocop
-script: bundle exec rake $TASK
+script: bundle exec rake no_diff
 cache:
   bundler: true
   directories:

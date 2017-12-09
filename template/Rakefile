@@ -48,8 +48,4 @@ task :environment do
   Dotenv.load
 end
 
-# make sure we always run what travis runs
-require "yaml"
-travis = YAML.load_file(".travis.yml").fetch("env").map { |v| v.delete("TASK=") }
-raise if travis.empty?
-task default: travis
+task default: :no_diff
