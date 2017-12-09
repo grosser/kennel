@@ -12,7 +12,7 @@ cache:
 # fill this out with a datadog  credentials and a github token of a user that ideally only has access your private repo
 #matrix:
 #  include:
-#    - script: bundle exec rake travis --trace
+#    - script: bundle exec rake kennel:travis --trace
 #      env:
 #        - DATADOG_SUBDOMAIN=yourcompany
 #        - secure: "FILL-IN" # travis encrypt DATADOG_API_KEY=?
