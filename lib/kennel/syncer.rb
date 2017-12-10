@@ -99,7 +99,7 @@ module Kennel
         m.api_resource
       end
 
-      api_resources.compact.uniq.flat_map do |api_resource|
+      Utils.parallel(api_resources.compact.uniq) do |api_resource|
         # lookup monitors without adding unnecessary downtime information
         results = @api.list(api_resource, with_downtimes: false)
         if results.is_a?(Hash)
@@ -107,7 +107,7 @@ module Kennel
           results.each { |r| r[:id] = Integer(r.fetch(:id)) }
         end
         results.each { |c| c[:api_resource] = api_resource }
-      end
+      end.flatten(1)
     end
 
     def ensure_all_ids_found

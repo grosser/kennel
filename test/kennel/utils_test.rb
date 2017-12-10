@@ -104,4 +104,23 @@ describe Kennel::Utils do
       end
     end
   end
+
+  describe ".parallel" do
+    it "executes in parallel" do
+      Benchmark.realtime do
+        Kennel::Utils.parallel([1, 2, 3, 4, 5]) do |i|
+          sleep 0.1
+          i * 2
+        end.must_equal [2, 4, 6, 8, 10]
+      end.must_be :<, 0.2
+    end
+
+    it "raises exceptions" do
+      assert_raises ArgumentError do
+        Kennel::Utils.parallel([1, 2, 3, 4, 5]) do
+          raise ArgumentError
+        end
+      end
+    end
+  end
 end
