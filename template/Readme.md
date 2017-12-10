@@ -70,41 +70,39 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ### Adding a new dashboard
  - structure is similar to monitors, so `lib/kennel/models/dash.rb`
+ - add to `parts:` list
  ```Ruby
-  parts: -> {
-    [
-      Kennel::Models::Dash.new(
-        kennel_id: -> { "kube-app" },
-        template_variables: -> { ["environment"] },
-        title: -> { project.name },
-        definitions: -> {
-          kube_project = project.kennel_id.tr("_", "-")
-          [
-            [
-              "Instance count", "timeseries", "area",
-              "sum:kube_stats.pods{phase:ready,kube_project:#{kube_project},$environment} by {pod}"
-            ],
-            [
-              "Memory", "timeseries", "area",
-              "sum:docker.mem.rss{kube_project:#{kube_project},$environment} by {pod}"
-            ],
-            [
-              "Swap", "timeseries", "area",
-              "sum:docker.mem.swap{kube_project:#{kube_project},$environment} by {pod}"
-            ],
-            [
-              "CPU", "timeseries", "area",
-              "sum:docker.cpu.user{kube_project:#{kube_project},$environment} by {pod}"
-            ]
-          ]
-        }
-      )
-    ]
-  }
+  Kennel::Models::Dash.new(
+    kennel_id: -> { "kube-app" },
+    template_variables: -> { ["environment"] },
+    title: -> { project.name },
+    definitions: -> {
+      kube_project = project.kennel_id.tr("_", "-")
+      [
+        [
+          "Instance count", "timeseries", "area",
+          "sum:kube_stats.pods{phase:ready,kube_project:#{kube_project},$environment} by {pod}"
+        ],
+        [
+          "Memory", "timeseries", "area",
+          "sum:docker.mem.rss{kube_project:#{kube_project},$environment} by {pod}"
+        ],
+        [
+          "Swap", "timeseries", "area",
+          "sum:docker.mem.swap{kube_project:#{kube_project},$environment} by {pod}"
+        ],
+        [
+          "CPU", "timeseries", "area",
+          "sum:docker.cpu.user{kube_project:#{kube_project},$environment} by {pod}"
+        ]
+      ]
+    }
+  )
  ```
 
 ### Adding a new screenboard
  - needs to be implemented, is be similar to `dash.rb`
+ - add to `parts:` list
  ```Ruby
  Kennel::Models::Screen.new(
    self,

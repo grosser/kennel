@@ -6,7 +6,7 @@ SingleCov.not_covered!
 
 describe "Readme.md" do
   it "has working code blocks" do
-    file = "Readme.md"
+    file = "template/Readme.md"
     lines = File.readlines(file)
 
     # code blocks with line number so when the eval fails we get a usable error
