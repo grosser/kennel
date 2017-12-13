@@ -271,6 +271,12 @@ describe Kennel::Syncer do
       assert syncer.confirm
     end
 
+    it "confirms when on CI" do
+      with_env CI: "true" do
+        assert syncer.confirm
+      end
+    end
+
     it "denies on n" do
       STDIN.expects(:gets).returns("n\n")
       refute syncer.confirm

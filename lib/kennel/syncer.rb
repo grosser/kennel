@@ -22,7 +22,7 @@ module Kennel
     end
 
     def confirm
-      !STDIN.tty? || Utils.ask("Execute Plan ?") unless noop?
+      ENV["CI"] || !STDIN.tty? || Utils.ask("Execute Plan ?") unless noop?
     end
 
     def update
