@@ -43,7 +43,8 @@ describe Kennel::Utils do
     it "removes control characters from progress" do
       text = Kennel::Utils.capture_stdout { Kennel::Progress.progress("Foo") { sleep 0.01 } }
       text.must_include "\b"
-      Kennel::Utils.strip_shell_control(text).wont_include "\b"
+      text.gsub!(/\d+/, "0")
+      Kennel::Utils.strip_shell_control(text).must_equal "Foo ... 0.0s\n"
     end
   end
 

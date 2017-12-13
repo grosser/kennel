@@ -5,6 +5,7 @@ require "single_cov"
 SingleCov.setup :minitest
 
 require "maxitest/autorun"
+require "maxitest/timeout"
 require "webmock/minitest"
 require "mocha/mini_test"
 
