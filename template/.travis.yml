@@ -14,7 +14,7 @@ cache:
 #  include:
 #    - script: bundle exec rake kennel:travis --trace
 #      env:
-#        - DATADOG_SUBDOMAIN=yourcompany
+#        - DATADOG_SUBDOMAIN=app
 #        - secure: "FILL-IN" # travis encrypt DATADOG_API_KEY=?
 #        - secure: "FILL-IN" # travis encrypt DATADOG_APP_KEY=?
 #        - secure: "FILL-IN" # travis encrypt GITHUB_TOKEN=?

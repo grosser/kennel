@@ -15,7 +15,6 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 ## Install
 
  - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo 
- - `git grep yourcompany` and change all of them
  - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
  - setup travis build for the repo
  - add a basic projects and teams so others can copy-paste to get started
@@ -33,12 +32,12 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
- - go to [Datadog API Settings](https://yourcompany.datadoghq.com/account/settings#api)
+ - go to [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
  - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
- - copy the `yourcompany` `API Key` and add it to `.env` as `DATADOG_API_KEY`
+ - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
 
 ### Adding a new monitor
- - use [datadog monitor UI](https://yourcompany.datadoghq.com/monitors#create/metric) to create a monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
  - get the `id` from the url, click "Export Monitor" on the monitors edit tab to get the `query` and `type`
  - see below
 
