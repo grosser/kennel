@@ -1,8 +1,10 @@
 language: ruby
 cache: bundler
+if: type = push
 env:
   # in order of most likely failure so `rake` fails fast
   - TASK=test
+  - TASK=integration
   - TASK=rubocop
   - TASK=readme
 script: bundle exec rake $TASK

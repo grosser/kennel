@@ -29,7 +29,7 @@ module Kennel
       end
 
       def strip_shell_control(text)
-        text.gsub(/\e\[\d+m(.*?)\e\[0m/, "\\1").tr("\b", "")
+        text.gsub(/\e\[\d+m(.*?)\e\[0m/, "\\1").gsub(/.#{Regexp.escape("\b")}/, "")
       end
 
       def capture_stdout

@@ -11,6 +11,11 @@ task :test do
   sh "forking-test-runner test --merge-coverage --quiet"
 end
 
+desc "Run integration tests"
+task :integration do
+  sh "ruby test/integration.rb"
+end
+
 desc "Keep readmes in sync"
 task :readme do
   install = File.read("Readme.md")[/<!-- CUT.* -->.*<!-- CUT -->\n/m]
