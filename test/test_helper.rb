@@ -4,6 +4,8 @@ require "bundler/setup"
 require "single_cov"
 SingleCov.setup :minitest
 
+ENV.delete("CI") # make travis and local behave the same
+
 require "maxitest/autorun"
 require "maxitest/timeout"
 require "webmock/minitest"
