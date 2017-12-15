@@ -2,7 +2,7 @@
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
   task no_diff: :generate do
-    sh "git diff HEAD --exit-code -- generated"
+    sh '[ -z "$(git status --porcelain)" ]'
   end
 
   desc "generate local definitions"
