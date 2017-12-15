@@ -5,7 +5,6 @@ module Kennel
       API_LIST_INCOMPLETE = false
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "24h"].freeze
-      METRIC_TYPES = ["query alert", "metric alert"].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
@@ -14,7 +13,7 @@ module Kennel
       defaults(
         message: -> { "" },
         escalation_message: -> { "" },
-        type: -> { "metric alert" }, # TODO: can we auto-determine that ?
+        type: -> { "query alert" },
         renotify_interval: -> { 120 },
         warning: -> { nil },
         ok: ->  { nil },
@@ -22,7 +21,7 @@ module Kennel
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         tags: -> { [] },
-        multi: ->  { !METRIC_TYPES.include?(type) || query.include?(" by ") }
+        multi: ->  { type != "query alert" || query.include?(" by ") }
       )
 
       attr_reader :project
@@ -80,7 +79,7 @@ module Kennel
         thresholds[:ok] = ok if ok
 
         # metric and query values are stored as float by datadog
-        if ["metric alert", "query alert"].include? data.fetch(:type)
+        if data.fetch(:type) == "query alert"
           thresholds.each { |k, v| thresholds[k] = Float(v) }
         end
 
@@ -123,9 +122,6 @@ module Kennel
         # nil or "" are not returned from the api
         options[:evaluation_delay] ||= nil
 
-        # datadog uses these types randomly
-        actual[:type] = type if METRIC_TYPES.include?(actual[:type])
-
         super
       end
 
@@ -133,6 +129,10 @@ module Kennel
 
       def validate_json(data)
         type = data.fetch(:type)
+
+        if type == "metric alert"
+          raise "#{tracking_id} type 'metric alert' is deprecated, do not set type to use the default 'query alert'"
+        end
 
         if type == "service check" && [ok, warning, critical].compact.map(&:class).uniq != [Integer]
           raise "#{tracking_id} :ok, :warning and :critical must be integers for service check type"

@@ -53,7 +53,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
           Kennel::Models::Monitor.new(
             self,
             id: -> { 123456 }, # id from datadog url
-            type: -> { "metric alert" },
+            type: -> { "query alert" },
             kennel_id: -> { "load-too-high" }, # make up a unique name
             name: -> { "Foobar Load too high" }, # nice descriptive name that will show up in alerts and emails
             message: -> {

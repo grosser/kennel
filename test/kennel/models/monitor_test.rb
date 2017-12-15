@@ -27,7 +27,7 @@ describe Kennel::Models::Monitor do
   let(:expected_basic_json) do
     {
       name: "Kennel::Models::Monitor\u{1F512}",
-      type: "metric alert",
+      type: "query alert",
       query: +"(last_5m) > 123.0",
       message: "@slack-foo",
       tags: ["service:test_project"],
@@ -90,8 +90,8 @@ describe Kennel::Models::Monitor do
       monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
     end
 
-    it "sets multi false on none multi query alerts" do
-      monitor(type: -> { "query alert" }).as_json[:multi].must_equal false
+    it "sets multi true on multi query alerts" do
+      monitor(query: -> { "(last_5m) by foo > 123.0" }).as_json[:multi].must_equal true
     end
 
     it "converts threshold values to floats to avoid api diff" do
@@ -109,7 +109,7 @@ describe Kennel::Models::Monitor do
       e.message.must_equal "test_project:m1 :ok, :warning and :critical must be integers for service check type"
     end
 
-    it "fails when using invalid interval for metric alert type" do
+    it "fails when using invalid interval for query alert type" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 234.1 }, query: -> { "avg(last_20m).count() < #{critical}" }).as_json }
       e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 24h"
     end
@@ -132,6 +132,11 @@ describe Kennel::Models::Monitor do
       m = monitor
       m.as_json[:foo] = 1
       m.as_json[:foo].must_equal 1
+    end
+
+    it "fails on deprecated metric alert type" do
+      e = assert_raises(RuntimeError) { monitor(type: -> { "metric alert" }).as_json }
+      e.message.must_include "metric alert"
     end
   end
 
