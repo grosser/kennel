@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (0.2.2)
+    kennel (0.2.3)
       faraday
       hashdiff
 
