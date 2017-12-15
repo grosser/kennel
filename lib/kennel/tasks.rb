@@ -1,8 +1,12 @@
 # frozen_string_literal: true
+require "English"
+
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
   task no_diff: :generate do
-    sh '[ -z "$(git status --porcelain)" ]'
+    result = `git status --porcelain`.strip
+    abort "Diff found:\n#{result}" unless result == ""
+    abort "Error during diffing" unless $CHILD_STATUS.success?
   end
 
   desc "generate local definitions"
