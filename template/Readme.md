@@ -95,6 +95,11 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
                 [
                   # title, viz, type, query, edit an existing graph and see the json definition
                   "Graph name", "timeseries", "area", "sum:mystats.foobar{$environment}"
+                ],
+                [
+                  # queries can be an Array as well, this will generate multiple requests
+                  # for a single graph
+                  "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"]
                 ]
               ]
             }
