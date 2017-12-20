@@ -75,9 +75,8 @@ module Kennel
       end
 
       def render_graphs
-        all = definitions.map do |title, viz, type, query|
-          queries = query.is_a?(Array) ? query : [query]
-          requests = queries.map { |q| { q: q, type: type } }
+        all = definitions.map do |title, viz, type, queries|
+          requests = Array(queries).map { |q| { q: q, type: type } }
           { title: title, definition: { viz: viz, requests: requests } }
         end + graphs
 
