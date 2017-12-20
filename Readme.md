@@ -14,7 +14,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 <!-- CUT only make changes to template/Readme.md -->
 ## Install
 
- - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo 
+ - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo
  - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
  - setup travis build for the repo
  - add a basic projects and teams so others can copy-paste to get started
@@ -104,6 +104,11 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
                 [
                   # title, viz, type, query, edit an existing graph and see the json definition
                   "Graph name", "timeseries", "area", "sum:mystats.foobar{$environment}"
+                ],
+                [
+                  # queries can be an Array as well, this will generate multiple requests
+                  # for a single graph
+                  "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"]
                 ]
               ]
             }

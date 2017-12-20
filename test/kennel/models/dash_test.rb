@@ -83,6 +83,28 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "adds definitions as graphs with multiple queries" do
+      dash(
+        definitions: -> { [["TI", "V", "TY", ["Q", "Q2"]]] }
+      ).as_json.must_equal(
+        expected_json.merge(
+          graphs: [
+            {
+              title: "TI",
+              definition: {
+                viz: "V",
+                requests: [
+                  { q: "Q", type: "TY", conditional_formats: [] },
+                  { q: "Q2", type: "TY", conditional_formats: [] }
+                ],
+                autoscale: true
+              }
+            }
+          ]
+        )
+      )
+    end
+
     it "expands template_variables" do
       dash(
         template_variables: -> { ["foo"] }
