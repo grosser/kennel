@@ -3,6 +3,7 @@ module Kennel
   module Models
     class Dash < Base
       include TemplateVariables
+      include OptionalValidations
 
       API_LIST_INCOMPLETE = true
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
@@ -37,7 +38,7 @@ module Kennel
           graphs: render_graphs
         }
 
-        validate_json(@json)
+        validate_json(@json) if validate
 
         @json
       end
