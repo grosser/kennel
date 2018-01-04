@@ -115,14 +115,22 @@ describe Kennel::Models::Dash do
       )
     end
 
-    it "fails when not using all template variables" do
-      e = assert_raises(RuntimeError) do
-        dash(
+    describe "with invalid dash" do
+      let(:invalid) do
+        {
           definitions: -> { [["TI", "V", "TY", "Q"], ["TI", "V", "TY", "Q2"]] },
           template_variables: -> { ["foo", "bar"] }
-        ).as_json
+        }
       end
-      e.message.must_equal "test_project:test_dash queries Q, Q2 must use the template variables $foo, $bar"
+
+      it "fails when not using all template variables" do
+        e = assert_raises(RuntimeError) { dash(invalid).as_json }
+        e.message.must_equal "test_project:test_dash queries Q, Q2 must use the template variables $foo, $bar"
+      end
+
+      it "can skip validations" do
+        dash(invalid.merge(validate: -> { false })).as_json
+      end
     end
   end
 

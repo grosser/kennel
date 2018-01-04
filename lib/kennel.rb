@@ -11,6 +11,7 @@ require "kennel/github_reporter"
 require "kennel/subclass_tracking"
 require "kennel/file_cache"
 require "kennel/template_variables"
+require "kennel/optional_validations"
 
 require "kennel/models/base"
 

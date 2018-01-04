@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Monitor < Base
+      include OptionalValidations
+
       API_LIST_INCOMPLETE = false
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "24h"].freeze
@@ -83,7 +85,7 @@ module Kennel
           thresholds.each { |k, v| thresholds[k] = Float(v) }
         end
 
-        validate_json(data)
+        validate_json(data) if validate
 
         @as_json = data
       end
