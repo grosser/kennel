@@ -39,13 +39,13 @@ describe Kennel::Syncer do
     monitor
   end
 
-  def dash(pid, cid, extra)
+  def dash(pid, cid, extra = {})
     dash = Kennel::Models::Dash.new(
       project(pid),
       title: -> { "x" },
       description: -> { "x" },
       kennel_id: -> { cid },
-      id: -> { extra[:id].to_s }
+      id: -> { extra[:id]&.to_s }
     )
     dash.as_json.delete_if { |k, _| ![:description, :options, :graphs, :template_variables].include?(k) }
     dash.as_json.merge!(extra)
@@ -340,6 +340,12 @@ describe Kennel::Syncer do
         api.expects(:show).with("dash", 123).returns(dash: {})
         api.expects(:update).with("dash", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
         output.must_equal "Updated dash a:b /dash/123\n"
+      end
+
+      it "can create dashes" do
+        expected << dash("a", "b")
+        api.expects(:create).with("dash", anything).returns(dash: { id: 123 })
+        output.must_equal "Created dash a:b /dash/123\n"
       end
     end
 
