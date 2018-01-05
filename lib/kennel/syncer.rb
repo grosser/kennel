@@ -28,6 +28,7 @@ module Kennel
     def update
       @create.each do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
+        reply = unnest(e.class.api_resource, reply)
         puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
       end
 
@@ -79,12 +80,17 @@ module Kennel
 
     # Hack to get diff to work until we can mass-fetch definitions
     def fill_details(a, cache)
-      args = [a.fetch(:api_resource), a.fetch(:id)]
+      resource = a.fetch(:api_resource)
+      args = [resource, a.fetch(:id)]
       full = cache.fetch(args, a.fetch(:modified)) do
-        result = @api.show(*args)
-        result[a.fetch(:api_resource).to_sym] || result # dashes are nested, others are not
+        unnest(resource, @api.show(*args))
       end
       a.merge!(full)
+    end
+
+    # dashes are nested, others are not
+    def unnest(api_resource, result)
+      result[api_resource.to_sym] || result
     end
 
     def details_cache
