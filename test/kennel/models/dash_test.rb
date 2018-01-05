@@ -115,6 +115,27 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "raises when using too many arguments for definition" do
+      e = assert_raises ArgumentError do
+        dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], "Whoops"]] }).as_json
+      end
+      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+    end
+
+    it "raises when using too few arguments for definition" do
+      e = assert_raises ArgumentError do
+        dash(definitions: -> { [["TI", "V", "TY"]] }).as_json
+      end
+      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+    end
+
+    it "raises when using nil arguments for definition" do
+      e = assert_raises ArgumentError do
+        dash(definitions: -> { [["TI", "V", nil, ["Q", "Q2"]]] }).as_json
+      end
+      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+    end
+
     describe "with invalid dash" do
       let(:invalid) do
         {

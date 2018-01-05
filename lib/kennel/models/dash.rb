@@ -76,7 +76,11 @@ module Kennel
       end
 
       def render_graphs
-        all = definitions.map do |title, viz, type, queries|
+        all = definitions.map do |title, viz, type, queries, ignored|
+          if ignored || (!title || !viz || !type || !queries)
+            raise ArgumentError, "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+          end
+
           requests = Array(queries).map { |q| { q: q, type: type } }
           { title: title, definition: { viz: viz, requests: requests } }
         end + graphs
