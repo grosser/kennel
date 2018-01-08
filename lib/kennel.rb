@@ -71,7 +71,9 @@ module Kennel
     end
 
     def load_all
-      Dir["{parts,teams,projects}/**/*.rb"].each { |f| require "./#{f}" }
+      ["teams", "parts", "projects"].each do |folder|
+        Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" }
+      end
     end
   end
 end
