@@ -5,10 +5,15 @@ require "tmpdir"
 SingleCov.covered!
 
 describe Kennel do
+  def write(file, content)
+    folder = File.dirname(file)
+    FileUtils.mkdir folder unless File.exist?(folder)
+    File.write file, content
+  end
+
   capture_stdout
   in_temp_dir do
-    FileUtils.mkdir "projects"
-    File.write "projects/simple.rb", <<~RUBY
+    write "projects/simple.rb", <<~RUBY
       class TempProject < Kennel::Models::Project
         defaults(
           team: -> { TestTeam.new },
@@ -41,9 +46,16 @@ describe Kennel do
       json[:query].must_equal "avg(last_5m) > 1"
     end
 
+    it "requires in order" do
+      write "teams/a.rb", "AAA = 1"
+      write "parts/a.rb", "BBB = AAA"
+      write "parts/b.rb", "CCC = BBB"
+      write "projects/a.rb", "DDD = CCC"
+      Kennel.generate
+    end
+
     it "cleans up old stuff" do
-      FileUtils.mkdir("generated")
-      File.write "generated/bar.json", "HO"
+      write "generated/bar.json", "HO"
       Kennel.generate
       refute File.exist?("generated/bar.json")
     end

@@ -61,11 +61,11 @@ Minitest::Test.class_eval do
     end
   end
 
-  def self.in_temp_dir
+  def self.in_temp_dir(&block)
     around do |t|
       Dir.mktmpdir do |dir|
         Dir.chdir(dir) do
-          yield if block_given?
+          instance_eval(&block) if block
           t.call
         end
       end
