@@ -13,7 +13,7 @@ module Kennel
     def plan
       puts "Plan:"
       if noop?
-        puts Utils.color(:green, "Nothing to do.")
+        puts Utils.color(:green, "Nothing to do")
       else
         print_plan "Create", @create, :green
         print_plan "Update", @update, :yellow
@@ -173,7 +173,7 @@ module Kennel
     end
 
     def tracking_id(a)
-      a[tracking_field(a)][/-- Managed by kennel (\S+:\S+)/, 1]
+      a[tracking_field(a)].to_s[/-- Managed by kennel (\S+:\S+)/, 1]
     end
 
     def tracking_field(a)
