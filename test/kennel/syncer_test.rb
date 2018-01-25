@@ -89,7 +89,7 @@ describe Kennel::Syncer do
     end
 
     it "does nothing when everything is empty" do
-      output.must_equal "Plan:\nNothing to do.\n"
+      output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "creates missing" do
@@ -100,19 +100,19 @@ describe Kennel::Syncer do
     it "ignores identical" do
       expected << monitor("a", "b")
       monitors << component("a", "b")
-      output.must_equal "Plan:\nNothing to do.\n"
+      output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "ignores readonly attributes since we do not generate them" do
       expected << monitor("a", "b")
       monitors << component("a", "b", created: true)
-      output.must_equal "Plan:\nNothing to do.\n"
+      output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "ignores silencing since that is managed via the UI" do
       expected << monitor("a", "b")
       monitors << component("a", "b", options: { silenced: { "*" => 1 } })
-      output.must_equal "Plan:\nNothing to do.\n"
+      output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "updates when changed" do
@@ -155,9 +155,14 @@ describe Kennel::Syncer do
       output.must_equal "Plan:\nDelete a:b\n"
     end
 
+    it "does not break on nil tracking field (dashboards can have nil description)" do
+      monitors << component("a", "b", message: nil)
+      output.must_equal "Plan:\nNothing to do\n"
+    end
+
     it "leaves unmanaged alone" do
       monitors << { id: 123, message: "foo", tags: [] }
-      output.must_equal "Plan:\nNothing to do.\n"
+      output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "notifies about duplicate components since they would be ignored otherwise" do
@@ -170,7 +175,7 @@ describe Kennel::Syncer do
     it "shows progress" do
       Kennel::Progress.unstub(:print)
       output.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal(
-        "Downloading definitions ... 0.0s\nDiffing ... 0.0s\nPlan:\nNothing to do.\n"
+        "Downloading definitions ... 0.0s\nDiffing ... 0.0s\nPlan:\nNothing to do\n"
       )
     end
 
@@ -186,7 +191,7 @@ describe Kennel::Syncer do
           graphs: []
         }
         api.expects(:show).with("dash", 123).returns(dash: {})
-        output.must_equal "Plan:\nNothing to do.\n"
+        output.must_equal "Plan:\nNothing to do\n"
       end
     end
 
@@ -202,7 +207,7 @@ describe Kennel::Syncer do
           widgets: []
         }
         api.expects(:show).with("screen", 123).returns({})
-        output.must_equal "Plan:\nNothing to do.\n"
+        output.must_equal "Plan:\nNothing to do\n"
       end
     end
 
