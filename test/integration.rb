@@ -47,7 +47,7 @@ describe "Integration" do
       Downloading definitions ... 0.00s
       Diffing ... 0.00s
       Plan:
-      Nothing to do.
+      Nothing to do
     TXT
   end
 end
