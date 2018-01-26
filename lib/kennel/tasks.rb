@@ -5,7 +5,7 @@ namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
   task no_diff: :generate do
     result = `git status --porcelain`.strip
-    abort "Diff found:\n#{result}" unless result == ""
+    abort "Diff found:\n#{result}\nrun `rake generate` and commit the diff to fix" unless result == ""
     abort "Error during diffing" unless $CHILD_STATUS.success?
   end
 
