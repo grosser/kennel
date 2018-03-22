@@ -10,7 +10,7 @@ module Kennel
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
-        :ok, :id, :no_data_timeframe, :notify_no_data, :tags, :multi
+        :ok, :id, :no_data_timeframe, :notify_no_data, :tags, :multi, :critical_recovery, :warning_recovery
       )
       defaults(
         message: -> { "" },
@@ -23,7 +23,9 @@ module Kennel
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         tags: -> { [] },
-        multi: ->  { type != "query alert" || query.include?(" by ") }
+        multi: ->  { type != "query alert" || query.include?(" by ") },
+        critical_recovery: -> { nil },
+        warning_recovery: -> { nil }
       )
 
       attr_reader :project
@@ -76,9 +78,11 @@ module Kennel
 
         data[:id] = id if id
 
-        # warning and ok are optional
+        # warning, ok, critical_recovery, and warning_recovery are optional
         thresholds[:warning] = warning if warning
         thresholds[:ok] = ok if ok
+        thresholds[:critical_recovery] = critical_recovery if critical_recovery
+        thresholds[:warning_recovery] = warning_recovery if warning_recovery
 
         # metric and query values are stored as float by datadog
         if data.fetch(:type) == "query alert"

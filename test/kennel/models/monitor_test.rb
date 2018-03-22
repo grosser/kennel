@@ -82,6 +82,14 @@ describe Kennel::Models::Monitor do
       monitor(warning: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning).must_equal 123.0
     end
 
+    it "can set warning_recovery" do
+      monitor(warning_recovery: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning_recovery).must_equal 123.0
+    end
+
+    it "can set critical_recovery" do
+      monitor(critical_recovery: -> { 123.0 }).as_json.dig(:options, :thresholds, :critical_recovery).must_equal 123.0
+    end
+
     it "adds project tags" do
       monitor(project: TestProject.new(tags: -> { ["foo"] })).as_json[:tags].must_equal(["foo"])
     end
