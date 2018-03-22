@@ -79,10 +79,11 @@ module Kennel
         data[:id] = id if id
 
         # warning, ok, critical_recovery, and warning_recovery are optional
-        thresholds[:warning] = warning if warning
-        thresholds[:ok] = ok if ok
-        thresholds[:critical_recovery] = critical_recovery if critical_recovery
-        thresholds[:warning_recovery] = warning_recovery if warning_recovery
+        [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
+          if value = send(key)
+            thresholds[key] = value
+          end
+        end
 
         # metric and query values are stored as float by datadog
         if data.fetch(:type) == "query alert"

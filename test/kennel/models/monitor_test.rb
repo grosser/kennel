@@ -82,6 +82,12 @@ describe Kennel::Models::Monitor do
       monitor(warning: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning).must_equal 123.0
     end
 
+    it "does not call optional methods twice" do
+      called = 0
+      monitor(warning: -> { called += 1 }).as_json
+      called.must_equal 1
+    end
+
     it "can set warning_recovery" do
       monitor(warning_recovery: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning_recovery).must_equal 123.0
     end
