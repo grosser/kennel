@@ -38,6 +38,11 @@ describe Kennel::Models::Dash do
       dash.as_json.must_equal(expected_json)
     end
 
+    it "caches" do
+      d = dash
+      d.as_json.object_id.must_equal(d.as_json.object_id)
+    end
+
     it "renders graphs and backfills common fields" do
       dash(
         graphs: -> { [{ definition: { requests: [{ q: "bar" }] } }] }
@@ -111,6 +116,16 @@ describe Kennel::Models::Dash do
       ).as_json.must_equal(
         expected_json.merge(
           template_variables: [{ default: "*", prefix: "foo", name: "foo" }]
+        )
+      )
+    end
+
+    it "does not expand full template_variables" do
+      dash(
+        template_variables: -> { [{ name: "bar" }] }
+      ).as_json.must_equal(
+        expected_json.merge(
+          template_variables: [{ name: "bar" }]
         )
       )
     end

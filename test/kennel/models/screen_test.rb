@@ -80,6 +80,17 @@ describe Kennel::Models::Screen do
         )
       )
     end
+
+    it "does not set autoscale when it was set to false" do
+      screen(widgets: -> { [{ tile_def: { autoscale: false, requests: [] } }] }).as_json
+        .dig(:widgets, 0, :tile_def, :autoscale)
+        .must_equal false
+    end
+
+    it "caches" do
+      s = screen
+      s.as_json.object_id.must_equal s.as_json.object_id
+    end
   end
 
   describe "#diff" do

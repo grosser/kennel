@@ -57,11 +57,9 @@ module Kennel
       def parallel(items)
         items.map do |item|
           Thread.new do
-            begin
-              yield item
-            rescue StandardError => e
-              e
-            end
+            yield item
+          rescue StandardError => e
+            e
           end
         end.map(&:value).each { |i| raise i if i.is_a?(StandardError) }
       end
