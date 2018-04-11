@@ -133,6 +133,10 @@ describe Kennel::Models::Monitor do
       e.message.must_equal "test_project:m1 critical and value used in query must match"
     end
 
+    it "does not break on queries that are unparseable for critical" do
+      monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }).as_json
+    end
+
     it "fails on invalid renotify intervals" do
       e = assert_raises(RuntimeError) { monitor(renotify_interval: -> { 123 }).as_json }
       e.message.must_include "test_project:m1 renotify_interval must be one of 0, 10, 20,"
@@ -151,6 +155,17 @@ describe Kennel::Models::Monitor do
     it "fails on deprecated metric alert type" do
       e = assert_raises(RuntimeError) { monitor(type: -> { "metric alert" }).as_json }
       e.message.must_include "metric alert"
+    end
+
+    it "does not fail when validations are disabled" do
+      monitor(type: -> { "metric alert" }, validate: -> { false }).as_json
+    end
+
+    it "sets id when not given" do
+      assert_json_equal(
+        monitor(id: -> { 123 }).as_json,
+        expected_basic_json.merge(id: 123)
+      )
     end
   end
 

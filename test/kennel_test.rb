@@ -37,6 +37,13 @@ describe Kennel do
     Kennel.instance_variable_set(:@syncer, nil)
   end
 
+  # we need to clean up so new definitions of TempProject trigger subclass addition
+  # and leftover classes do not break other tests
+  after do
+    Kennel::Models::Project.subclasses.clear
+    Object.send(:remove_const, :TempProject) if defined?(TempProject)
+  end
+
   describe ".generate" do
     it "generates" do
       Kennel.generate
@@ -89,6 +96,15 @@ describe Kennel do
 
       stdout.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo /monitors#123"
+    end
+
+    it "does not update when user does not confirm" do
+      Kennel::Api.any_instance.expects(:list).times(3).returns([])
+      STDIN.expects(:gets).returns("n\n") # proceed ? ... no!
+
+      Kennel.update
+
+      stdout.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end
   end
 

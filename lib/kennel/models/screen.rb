@@ -66,7 +66,7 @@ module Kennel
         widgets.map do |widget|
           widget = widget_defaults(widget[:type]).merge(widget)
           if tile = widget[:tile_def]
-            tile[:requests].each { |r| r[:conditional_formats] ||= [] }
+            tile.fetch(:requests).each { |r| r[:conditional_formats] ||= [] }
             tile[:autoscale] = true unless widget[:tile_def].key?(:autoscale)
           end
           widget

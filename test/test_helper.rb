@@ -9,7 +9,7 @@ ENV.delete("CI") # make travis and local behave the same
 require "maxitest/autorun"
 require "maxitest/timeout"
 require "webmock/minitest"
-require "mocha/mini_test"
+require "mocha/setup"
 
 $LOAD_PATH.unshift "lib"
 
@@ -52,12 +52,10 @@ Minitest::Test.class_eval do
     let(:stdout) { StringIO.new }
 
     around do |t|
-      begin
-        $stdout = stdout
-        t.call
-      ensure
-        $stdout = STDOUT
-      end
+      $stdout = stdout
+      t.call
+    ensure
+      $stdout = STDOUT
     end
   end
 

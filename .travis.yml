@@ -8,4 +8,5 @@ env:
   - TASK=integration
   - TASK=rubocop
   - TASK=readme
+before_install: gem install bundler --no-ri --no-rdoc
 script: bundle exec rake $TASK
