@@ -32,9 +32,14 @@ module Kennel
     def request(method, path, body: nil, params: {})
       params = params.merge(application_key: @app_key, api_key: @api_key)
       query = Faraday::FlatParamsEncoder.encode(params)
-      response = @client.send(method, "#{path}?#{query}") do |request|
-        request.body = JSON.generate(body) if body
-        request.headers["Content-type"] = "application/json"
+      response = nil
+
+      2.times do |i|
+        response = @client.send(method, "#{path}?#{query}") do |request|
+          request.body = JSON.generate(body) if body
+          request.headers["Content-type"] = "application/json"
+        end
+        break if i == 1 || method != :get || response.status != 500
       end
 
       unless response.success?
