@@ -53,5 +53,11 @@ describe Kennel::Api do
         .with(body: nil).to_return(body: "{}")
       api.delete("monitor", 123).must_equal({})
     end
+
+    it "deletes a dash" do
+      stub_request(:delete, "https://app.datadoghq.com/api/v1/dash/123?api_key=api&application_key=app")
+        .with(body: nil).to_return(body: "")
+      api.delete("dash", 123).must_equal({})
+    end
   end
 end

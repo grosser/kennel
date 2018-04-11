@@ -37,7 +37,11 @@ module Kennel
         request.headers["Content-type"] = "application/json"
       end
       raise "Error #{method} #{path} -> #{response.status}:\n#{response.body}" unless response.success?
-      JSON.parse(response.body, symbolize_names: true)
+      if response.body.empty?
+        {}
+      else
+        JSON.parse(response.body, symbolize_names: true)
+      end
     end
   end
 end
