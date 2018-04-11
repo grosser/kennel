@@ -36,7 +36,14 @@ module Kennel
         request.body = JSON.generate(body) if body
         request.headers["Content-type"] = "application/json"
       end
-      raise "Error #{method} #{path} -> #{response.status}:\n#{response.body}" unless response.success?
+
+      unless response.success?
+        message = +"Error #{response.status} during #{method.upcase} #{path}\n"
+        message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
+        message << response.body
+        raise message
+      end
+
       if response.body.empty?
         {}
       else
