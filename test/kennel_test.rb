@@ -59,6 +59,16 @@ describe Kennel do
       Kennel.generate
       refute File.exist?("generated/bar.json")
     end
+
+    it "complains when duplicates would be written" do
+      write "projects/a.rb", <<~RUBY
+        class Foo < Kennel::Models::Project
+          defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
+        end
+      RUBY
+      e = assert_raises(RuntimeError) { Kennel.generate }
+      e.message.must_equal "foo:bar is defined 2 times"
+    end
   end
 
   describe ".plan" do

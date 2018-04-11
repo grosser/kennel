@@ -63,9 +63,13 @@ module Kennel
       @generated ||= begin
         Progress.progress "Generating" do
           load_all
-          Models::Project.recursive_subclasses.flat_map do |project_class|
+          parts = Models::Project.recursive_subclasses.flat_map do |project_class|
             project_class.new.parts
           end
+          parts.map(&:tracking_id).group_by { |id| id }.select do |id, same|
+            raise "#{id} is defined #{same.size} times" if same.size != 1
+          end
+          parts
         end
       end
     end
