@@ -18,9 +18,11 @@ end
 
 desc "Keep readmes in sync"
 task :readme do
-  install = File.read("Readme.md")[/<!-- CUT.* -->.*<!-- CUT -->\n/m]
+  keep = File.read("Readme.md").scan(/<!-- CUT.*? -->.*?<!-- CUT -->\n/m)
+  raise "expected 2 parts, found #{keep.size}" unless keep.size == 2
   template = File.read("template/Readme.md")
-  template.sub!("## Structure", "#{install}\n## Structure")
+  template.sub!("## Structure", "#{keep[0]}\n## Structure")
+  template += keep[1]
   template.gsub!("(github/", "(template/github/")
   File.write("Readme.md", template)
   sh "git diff HEAD --exit-code -- Readme.md"

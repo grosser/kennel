@@ -168,3 +168,12 @@ class Database < Kennel::Models::Project
   )
 end
 ```
+<!-- CUT only make changes to template/Readme.md -->
+
+Author
+======
+[Michael Grosser](http://grosser.it)<br/>
+michael@grosser.it<br/>
+License: MIT<br/>
+[![Build Status](https://travis-ci.org/grosser/kennel.png)](https://travis-ci.org/grosser/kennel)
+<!-- CUT -->
