@@ -111,7 +111,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  ```
 
 ### Adding a new screenboard
- - needs to be implemented, is be similar to `dash.rb`
+ - similar to `dash.rb`
  - add to `parts:` list
  ```Ruby
  Kennel::Models::Screen.new(
@@ -123,8 +123,8 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ### Skipping validations
 
-Some validations might be too strict for your usecase or just wrong, please open an issue for that and
-in the meantime use the `validate: -> { false }` option.
+Some validations might be too strict for your usecase or just wrong, please open an issue and
+to unblock use the `validate: -> { false }` option.
 
 ### Debugging locally
 

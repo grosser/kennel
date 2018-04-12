@@ -132,7 +132,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ### Skipping validations
 
-Some validations might be too strict for your usecase or just wrong, please open an issue for that and
+Some validations might be too strict for your usecase or just wrong, please open an issue and
 to unblock use the `validate: -> { false }` option.
 
 ### Debugging locally
