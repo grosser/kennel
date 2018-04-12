@@ -5,6 +5,7 @@ cache:
   bundler: true
   directories:
     - tmp/cache
+before_install: gem install bundler --no-ri --no-rdoc
 script: bundle exec rake $TASK
 
 matrix:
