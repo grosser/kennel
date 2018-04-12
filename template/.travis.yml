@@ -12,7 +12,7 @@ matrix:
     # Ensure there is no diff between generated and actual
     - env: TASK="kennel:no_diff"
     # automated planing and updating for PRs
-    # fill this out with datadog credentials and a github token of a user that ideally only has access your private repo
+    # fill this out with datadog credentials and a github token of a user that can access your repo
 #   - env:
 #     - TASK="kennel:travis --trace"
 #     - DATADOG_SUBDOMAIN=app

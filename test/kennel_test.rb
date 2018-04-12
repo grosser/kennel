@@ -107,14 +107,4 @@ describe Kennel do
       stdout.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end
   end
-
-  describe ".report_plan_to_github" do
-    with_env GITHUB_TOKEN: "abc", DEPLOY_URL: "foo"
-
-    it "reports" do
-      Kennel::Utils.stubs(capture_sh: "foo github.com:sdfsfd/sdfsd.git")
-      Kennel::GithubReporter.any_instance.expects(:report)
-      Kennel.report_plan_to_github
-    end
-  end
 end

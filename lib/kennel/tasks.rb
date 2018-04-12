@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require "English"
+require "kennel"
 
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
@@ -25,24 +26,20 @@ namespace :kennel do
     Kennel.update
   end
 
-  desc "comment on github commit with planned datadog changes"
-  task report_plan_to_github: :environment do
-    Kennel.report_plan_to_github
-  end
-
-  desc "update if this is a push to the default branch, otherwise report plan"
+  desc "update if this is a push to the default branch, otherwise plan (report to github with GITHUB_TOKEN)"
   task :travis do
     on_default_branch = (ENV["TRAVIS_BRANCH"] == (ENV["DEFAULT_BRANCH"] || "master"))
     is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false")
     task_name =
       if on_default_branch && is_push
         "kennel:update_datadog"
-      elsif ENV["GITHUB_TOKEN"]
-        "kennel:report_plan_to_github"
       else
-        "kennel:plan"
+        "kennel:plan" # show plan in travis logs
       end
-    Rake::Task[task_name].invoke
+
+    Kennel::GithubReporter.report(ENV["GITHUB_TOKEN"]) do
+      Rake::Task[task_name].invoke
+    end
   end
 
   task :environment do

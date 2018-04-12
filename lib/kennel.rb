@@ -44,11 +44,6 @@ module Kennel
       syncer.update if syncer.confirm
     end
 
-    def report_plan_to_github
-      reporter = GithubReporter.new(ENV.fetch("GITHUB_TOKEN"))
-      reporter.report { plan }
-    end
-
     private
 
     def syncer
