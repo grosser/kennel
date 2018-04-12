@@ -54,6 +54,16 @@ describe Kennel::Utils do
     end
   end
 
+  describe ".tee_stdout" do
+    it "captures and prints" do
+      Kennel::Utils.capture_stdout do
+        Kennel::Utils.tee_stdout do
+          puts "hello"
+        end.must_equal "hello\n"
+      end.must_equal "hello\n"
+    end
+  end
+
   describe ".capture_sh" do
     it "captures" do
       Kennel::Utils.capture_sh("echo 111").must_equal "111\n"

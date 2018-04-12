@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 module Kennel
   module Utils
+    class TeeIO < IO
+      def initialize(ios)
+        @ios = ios
+      end
+
+      def write(string)
+        @ios.each { |io| io.write string }
+      end
+    end
+
     class << self
       def snake_case(string)
         string.gsub(/::/, "_") # Foo::Bar -> foo_bar
@@ -33,11 +43,22 @@ module Kennel
       end
 
       def capture_stdout
+        old = $stdout
         $stdout = StringIO.new
         yield
         $stdout.string
       ensure
-        $stdout = STDOUT
+        $stdout = old
+      end
+
+      def tee_stdout
+        old = $stdout
+        string = StringIO.new
+        $stdout = TeeIO.new([$stdout, string])
+        yield
+        string.string
+      ensure
+        $stdout = old
       end
 
       def capture_sh(command)
