@@ -35,7 +35,7 @@ describe Kennel::GithubReporter do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with(body: { body: "```\nHELLOOOO\n```" }.to_json)
         .to_return(status: 201)
-      reporter.report { puts "HELLOOOO" }
+      Kennel::Utils.capture_stdout { reporter.report { puts "HELLOOOO" } }.must_equal "HELLOOOO\n"
       assert_requested request
     end
 
