@@ -12,12 +12,31 @@ describe Kennel::GithubReporter do
     Kennel::Utils.expects(:capture_sh).with("git remote -v").returns(remote_response)
   end
 
+  describe ".report" do
+    it "does not report when no token was given" do
+      Kennel::Utils.unstub(:capture_sh)
+      Kennel::Utils.expects(:capture_sh).never
+      a = nil
+      Kennel::GithubReporter.report(nil) { a = 1 }
+      a.must_equal 1
+    end
+
+    it "reports when token was given" do
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments").to_return(status: 201)
+      a = nil
+      Kennel::GithubReporter.report("foo") { a = 1 }
+      a.must_equal 1
+      assert_requested request
+    end
+  end
+
   describe "#report" do
     it "reports success" do
-      stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with(body: { body: "```\nHELLOOOO\n```" }.to_json)
         .to_return(status: 201)
       reporter.report { puts "HELLOOOO" }
+      assert_requested request
     end
 
     it "can parse https remote" do
@@ -35,15 +54,16 @@ describe Kennel::GithubReporter do
     end
 
     it "shows user errors" do
-      stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with(body: { body: "```\nError\n```" }.to_json)
         .to_return(status: 201)
       e = assert_raises(RuntimeError) { reporter.report { raise "whoops" } }
       e.message.must_equal "whoops"
+      assert_requested request
     end
 
     it "shows api errors" do
-      stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .to_return(status: 301, body: "Nope")
       e = assert_raises(RuntimeError) { reporter.report {} }
       e.message.must_equal <<~TEXT.strip
@@ -51,6 +71,7 @@ describe Kennel::GithubReporter do
         https://api.github.com/repos/foo/bar/commits/abcd/comments -> 301
         Nope
       TEXT
+      assert_requested request
     end
   end
 end

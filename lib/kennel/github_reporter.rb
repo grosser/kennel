@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 module Kennel
   class GithubReporter
+    class << self
+      def report(token, &block)
+        return yield unless token
+        new(token).report(&block)
+      end
+    end
+
     def initialize(token)
       @token = token
       @git_sha = Utils.capture_sh("git rev-parse HEAD").strip
@@ -8,8 +15,8 @@ module Kennel
       @repo_part = origin[%r{github\.com[:/](.+?)(\.git|$)}, 1] || raise("no origin found")
     end
 
-    def report
-      output = Utils.strip_shell_control(Utils.capture_stdout { yield }.strip)
+    def report(&block)
+      output = Utils.strip_shell_control(Utils.capture_stdout(&block).strip)
     ensure
       comment "```\n#{output || "Error"}\n```"
     end
