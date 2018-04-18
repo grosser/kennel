@@ -13,7 +13,7 @@ describe Kennel::Syncer do
 
   def component(pid, cid, extra = {})
     {
-      tags: extra.delete(:tags) || ["service:a"],
+      tags: extra.delete(:tags) || ["service:a", "team:test_team"],
       message: "@slack-foo\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
       options: {}
     }.merge(extra)
