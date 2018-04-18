@@ -30,7 +30,7 @@ describe Kennel::Models::Monitor do
       type: "query alert",
       query: +"(last_5m) > 123.0",
       message: "@slack-foo",
-      tags: ["service:test_project"],
+      tags: ["service:test_project", "team:test_team"],
       multi: false,
       options: {
         timeout_h: 0,

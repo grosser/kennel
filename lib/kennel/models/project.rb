@@ -4,7 +4,7 @@ module Kennel
     class Project < Base
       settings :team, :parts, :tags
       defaults(
-        tags: -> { ["service:#{kennel_id}"] }
+        tags: -> { ["service:#{kennel_id}"] + team.tags }
       )
 
       def self.file_location
