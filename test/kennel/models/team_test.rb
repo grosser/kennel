@@ -8,5 +8,9 @@ describe Kennel::Models::Team do
     it "is a nice searchable name" do
       TestTeam.new.tags.must_equal ["team:test_team"]
     end
+
+    it "does not prefix teams with folder name if it is teams too" do
+      Teams::MyTeam.new.tags.must_equal ["team:my_team"]
+    end
   end
 end
