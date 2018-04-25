@@ -54,13 +54,23 @@ describe Kennel::Utils do
     end
   end
 
-  describe ".tee_stdout" do
+  describe ".capture_stderr" do
+    it "captures" do
+      Kennel::Utils.capture_stderr { warn "hello" }.must_equal "hello\n"
+    end
+  end
+
+  describe ".tee_output" do
     it "captures and prints" do
-      Kennel::Utils.capture_stdout do
-        Kennel::Utils.tee_stdout do
-          puts "hello"
-        end.must_equal "hello\n"
-      end.must_equal "hello\n"
+      Kennel::Utils.capture_stderr do
+        Kennel::Utils.capture_stdout do
+          Kennel::Utils.tee_output do
+            puts "hello"
+            warn "error"
+            puts "world"
+          end.must_equal "hello\nerror\nworld\n"
+        end.must_equal "hello\nworld\n"
+      end.must_equal "error\n"
     end
   end
 

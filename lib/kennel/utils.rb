@@ -51,14 +51,26 @@ module Kennel
         $stdout = old
       end
 
-      def tee_stdout
-        old = $stdout
-        string = StringIO.new
-        $stdout = TeeIO.new([$stdout, string])
+      def capture_stderr
+        old = $stderr
+        $stderr = StringIO.new
         yield
-        string.string
+        $stderr.string
       ensure
-        $stdout = old
+        $stderr = old
+      end
+
+      def tee_output
+        old_stdout = $stdout
+        old_stderr = $stderr
+        capture = StringIO.new
+        $stdout = TeeIO.new([capture, $stdout])
+        $stderr = TeeIO.new([capture, $stderr])
+        yield
+        capture.string
+      ensure
+        $stderr = old_stderr
+        $stdout = old_stdout
       end
 
       def capture_sh(command)

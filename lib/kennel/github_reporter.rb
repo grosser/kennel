@@ -16,7 +16,7 @@ module Kennel
     end
 
     def report(&block)
-      output = Utils.strip_shell_control(Utils.tee_stdout(&block).strip)
+      output = Utils.strip_shell_control(Utils.tee_output(&block).strip)
     ensure
       comment "```\n#{output || "Error"}\n```"
     end
