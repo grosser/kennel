@@ -55,7 +55,7 @@ describe Kennel::GithubReporter do
 
     it "shows user errors" do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
-        .with(body: { body: "```\nError\n```" }.to_json)
+        .with(body: { body: "```\nError:\nwhoops\n```" }.to_json)
         .to_return(status: 201)
       e = assert_raises(RuntimeError) { reporter.report { raise "whoops" } }
       e.message.must_equal "whoops"

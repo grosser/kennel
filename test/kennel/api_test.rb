@@ -79,7 +79,7 @@ describe Kennel::Api do
       api.delete("dash", 123).must_equal({})
     end
 
-    it "shows a descriptive failure when request fails" do
+    it "shows a descriptive failure when request fails, without including api keys" do
       stub_request(:delete, "monitor/123")
         .with(body: nil).to_return(body: "{}", status: 300)
       e = assert_raises(RuntimeError) { api.delete("monitor", 123) }
