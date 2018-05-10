@@ -44,6 +44,7 @@ namespace :kennel do
 
   task :environment do
     require "kennel"
+    gem "dotenv"
     require "dotenv"
     Dotenv.load
   end

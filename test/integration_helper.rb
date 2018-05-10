@@ -6,7 +6,7 @@ module IntegrationHelper
     # obfuscated keys so it is harder to find them
     env = "REFUQURPR19BUElfS0VZPThkMDU5MmY4YmE5MDhiNWE2MmRmN2MwMGM3MGUy\nNmYwCkRBVEFET0dfQVBQX0tFWT05YjNkYWQxMzQyMmY5ZGJjMWU1NDY3YTk0\nMTdmNWYxNzk4ZjJmZTcw\n"
     File.write(".env", Base64.decode64(env))
-    Bundler.with_original_env do
+    Bundler.with_clean_env do
       # we need to make sure we use the test credentials
       # so delete real credentials in the users env
       ENV.delete "DATADOG_API_KEY"
