@@ -3,13 +3,15 @@ require "bundler/setup"
 require "maxitest/autorun"
 require "maxitest/timeout"
 require "tmpdir"
-require "base64"
 require "kennel/utils"
 require "English"
+require "./test/integration_helper"
 
 Maxitest.timeout = 10
 
 describe "Integration" do
+  include IntegrationHelper
+
   def sh(script)
     result = `#{script}`
     raise "Failed:\n#{script}\n#{result}" unless $CHILD_STATUS.success?
@@ -20,19 +22,11 @@ describe "Integration" do
     Dir.mktmpdir do |dir|
       FileUtils.cp_r("template", dir)
       Dir.chdir("#{dir}/template") do
-        # obfuscated keys so it is harder to find them
-        env = "REFUQURPR19BUElfS0VZPThkMDU5MmY4YmE5MDhiNWE2MmRmN2MwMGM3MGUy\nNmYwCkRBVEFET0dfQVBQX0tFWT05YjNkYWQxMzQyMmY5ZGJjMWU1NDY3YTk0\nMTdmNWYxNzk4ZjJmZTcw\n"
-        File.write(".env", Base64.decode64(env))
-
-        Bundler.with_clean_env do
-          # we need to make sure we use the test credentials
-          # so delete real credentials in the users env
-          ENV.delete "DATADOG_API_KEY"
-          ENV.delete "DATADOG_APP_KEY"
-
-          sh "bundle install --quiet"
-
-          test.call
+        with_test_keys_in_dotenv do
+          with_local_kennel do
+            sh "bundle install --quiet"
+            test.call
+          end
         end
       end
     end

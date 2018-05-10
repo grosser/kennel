@@ -170,6 +170,18 @@ end
 ```
 <!-- CUT only make changes to template/Readme.md -->
 
+### Integration testing
+
+```
+rake play
+cd template
+rake kennel:plan
+```
+
+Then make changes to play around, do not commit changes and make sure to revert with a `rake kennel:update` after deleting everything.
+
+To make changes via the UI, make a new free datadog account and use it's credentaisl instead.
+
 Author
 ======
 [Michael Grosser](http://grosser.it)<br/>
