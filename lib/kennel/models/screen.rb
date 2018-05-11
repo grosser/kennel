@@ -52,7 +52,6 @@ module Kennel
         actual.delete(:height)
         actual.delete(:width)
         actual[:template_variables] ||= []
-        actual[:widgets].each { |w| w.delete :board_id }
         super
       end
 
