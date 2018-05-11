@@ -21,6 +21,7 @@ describe Kennel::Models::Screen do
       widgets: []
     }
   end
+  let(:default_widget) { { title_size: 16, title_align: "left", height: 20, width: 30 }.freeze }
 
   describe "#as_json" do
     it "renders" do
@@ -91,6 +92,10 @@ describe Kennel::Models::Screen do
       s = screen
       s.as_json.object_id.must_equal s.as_json.object_id
     end
+
+    it "does not render board_id to avoid useless diff when user copy-pasted api reply" do
+      screen(widgets: -> { [{ board_id: 123 }] }).as_json.must_equal(expected_json.merge(widgets: [default_widget]))
+    end
   end
 
   describe "#diff" do
@@ -98,7 +103,11 @@ describe Kennel::Models::Screen do
       screen.diff(expected_json).must_be_nil
     end
 
-    it "does not compare read-only fields" do
+    it "does not compare read-only widget board_id field" do
+      screen(widgets: -> { [{ board_id: 123 }] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
+    end
+
+    it "does not compare read-only disableCog field" do
       screen.diff(expected_json.merge(disableCog: true)).must_be_nil
     end
 

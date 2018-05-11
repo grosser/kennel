@@ -69,6 +69,7 @@ module Kennel
             tile.fetch(:requests).each { |r| r[:conditional_formats] ||= [] }
             tile[:autoscale] = true unless widget[:tile_def].key?(:autoscale)
           end
+          widget.delete :board_id
           widget
         end
       end
