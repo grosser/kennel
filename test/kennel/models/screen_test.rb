@@ -103,6 +103,12 @@ describe Kennel::Models::Screen do
       screen.diff(expected_json).must_be_nil
     end
 
+    # idk how to reproduce this, but saw it in a real test failure
+    it "does not blow up when datadog returns no widgets" do
+      assert expected_json.delete(:widgets)
+      screen.diff(expected_json).must_equal [["+", "widgets", []]]
+    end
+
     it "does not compare read-only widget board_id field" do
       screen(widgets: -> { [{ board_id: 123 }] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
     end
