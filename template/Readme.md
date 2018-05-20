@@ -113,12 +113,17 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 ### Adding a new screenboard
  - similar to `dash.rb`
  - add to `parts:` list
- ```Ruby
- Kennel::Models::Screen.new(
-   self,
-   board_title: -> { "test-board" },
-   widgets: -> { [{text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"}] }
- )
+  ```Ruby
+  Kennel::Models::Screen.new(
+    self,
+    board_title: -> { "test-board" },
+    widgets: -> {
+      [
+        {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
+        {title_text: "CPU", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:system.cpu.user{*}", type: "line"}]}}
+      ]
+    }
+  )
  ```
 
 ### Skipping validations
