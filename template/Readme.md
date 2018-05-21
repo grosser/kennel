@@ -117,6 +117,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
   Kennel::Models::Screen.new(
     self,
     board_title: -> { "test-board" },
+    kennel_id: -> { "test-screen" },
     widgets: -> {
       [
         {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
@@ -159,7 +160,7 @@ Reuse it in multiple projects.
 ```Ruby
 class Database < Kennel::Models::Project
   defaults(
-    team: -> { Kennel::Models::Team.new(slack: -> { 'foo' }) },
+    team: -> { Kennel::Models::Team.new(slack: -> { 'foo' }, kennel_id: -> { 'foo' }) },
     parts: -> { [Monitors::LoadTooHigh.new(self, critical: -> { 13 })] }
   )
 end

@@ -54,10 +54,19 @@ module Kennel
           self.class.validate_setting_exists name
           define_singleton_method name, &block
         end
+
+        @invocation_location = caller.detect { |l| l.start_with?(Dir.pwd) }
       end
 
       def kennel_id
-        @kennel_id ||= Utils.snake_case self.class.name
+        name = self.class.name
+        if name.start_with?("Kennel::")
+          message = +"Set :kennel_id"
+          message << " for project #{project.kennel_id}" if defined?(project)
+          message << " on #{@invocation_location}" if @invocation_location
+          raise ArgumentError, message
+        end
+        @kennel_id ||= Utils.snake_case name
       end
 
       def name
