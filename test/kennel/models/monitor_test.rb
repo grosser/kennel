@@ -59,17 +59,6 @@ describe Kennel::Models::Monitor do
     end
   end
 
-  describe "#kennel_id" do
-    it "cannot be called for 1-off base class since it would be weird" do
-      e = assert_raises(RuntimeError) { Kennel::Models::Monitor.new(111).kennel_id }
-      e.message.must_equal "Need to set :kennel_id when defining monitors from Kennel::Models::Monitor"
-    end
-
-    it "can call on regular monitor" do
-      TestMonitor.new(111).kennel_id.must_equal "test_monitor"
-    end
-  end
-
   describe "#as_json" do
     it "creates a basic json" do
       assert_json_equal(

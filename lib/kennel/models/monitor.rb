@@ -35,13 +35,6 @@ module Kennel
         super(*args)
       end
 
-      def kennel_id
-        if self.class == Kennel::Models::Monitor
-          raise "Need to set :kennel_id when defining monitors from Kennel::Models::Monitor"
-        end
-        super
-      end
-
       def as_json
         return @as_json if @as_json
         data = {
