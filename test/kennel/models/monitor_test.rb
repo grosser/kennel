@@ -97,14 +97,22 @@ describe Kennel::Models::Monitor do
       monitor(query: -> { "(last_5m) by foo > 123.0" }).as_json[:multi].must_equal true
     end
 
-    it "converts threshold values to floats to avoid api diff" do
-      monitor(critical: -> { 234 }).as_json
-        .dig(:options, :thresholds, :critical).must_equal 234.0
+    describe "query alert" do
+      it "converts threshold values to floats to avoid api diff" do
+        monitor(critical: -> { 234 }).as_json
+          .dig(:options, :thresholds, :critical).must_equal 234.0
+      end
+
+      it "does not converts threshold values to floats for types that store integers" do
+        monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
+          .dig(:options, :thresholds, :critical).must_equal 234
+      end
     end
 
-    it "does not converts threshold values to floats for types that store integers" do
-      monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
-        .dig(:options, :thresholds, :critical).must_equal 234
+    it "fills default values for service check ok/warning" do
+      json = monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
+      json.dig(:options, :thresholds, :ok).must_equal 1
+      json.dig(:options, :thresholds, :warning).must_equal 1
     end
 
     it "fails when using invalid type for service type thresholds" do

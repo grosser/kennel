@@ -7,6 +7,7 @@ module Kennel
       API_LIST_INCOMPLETE = false
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "24h"].freeze
+      OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
@@ -78,8 +79,12 @@ module Kennel
           end
         end
 
-        # metric and query values are stored as float by datadog
-        if data.fetch(:type) == "query alert"
+        case data.fetch(:type)
+        when "service check"
+          # avoid diff for default values of 1
+          OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
+        when "query alert"
+          # metric and query values are stored as float by datadog
           thresholds.each { |k, v| thresholds[k] = Float(v) }
         end
 
@@ -107,16 +112,16 @@ module Kennel
           options[:require_full_window] = true unless options.key?(:require_full_window)
         end
 
-        # setting 0 results in thresholds not getting returned from the api
-        if actual[:type] == "event alert"
+        case actual[:type]
+        when "event alert"
+          # setting 0 results in thresholds not getting returned from the api
           options[:thresholds] ||= { critical: 0 }
-        end
 
-        # fields are not returned when set to true
-        if actual[:type] == "service check"
-          options[:thresholds][:critical] ||= 1
-          options[:thresholds][:warning] ||= 1
-          options[:thresholds][:ok] ||= 1
+        when "service check"
+          # fields are not returned when created with default values via UI
+          OPTIONAL_SERVICE_CHECK_THRESHOLDS.each do |t|
+            options[:thresholds][t] ||= 1
+          end
         end
 
         # nil or "" are not returned from the api
