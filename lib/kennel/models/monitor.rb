@@ -14,7 +14,7 @@ module Kennel
         :ok, :id, :no_data_timeframe, :notify_no_data, :tags, :multi, :critical_recovery, :warning_recovery
       )
       defaults(
-        message: -> { "" },
+        message: -> { "\n\n@slack-#{project.team.slack}" },
         escalation_message: -> { "" },
         type: -> { "query alert" },
         renotify_interval: -> { 120 },
@@ -23,7 +23,7 @@ module Kennel
         id: ->  { nil },
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
-        tags: -> { [] },
+        tags: -> { @project.tags },
         multi: ->  { type != "query alert" || query.include?(" by ") },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil }
@@ -42,12 +42,8 @@ module Kennel
           name: "#{name}#{LOCK}",
           type: type,
           query: query,
-          message: <<~TEXT.strip,
-            #{message}
-
-            @slack-#{project.team.slack}
-          TEXT
-          tags: @project.tags + tags,
+          message: message.strip,
+          tags: tags,
           multi: multi,
           options: {
             timeout_h: 0,
