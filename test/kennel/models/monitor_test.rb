@@ -97,6 +97,10 @@ describe Kennel::Models::Monitor do
       monitor(query: -> { "(last_5m) by foo > 123.0" }).as_json[:multi].must_equal true
     end
 
+    it "can set require_full_window" do
+      monitor(require_full_window: -> { false }).as_json[:options][:require_full_window].must_equal false
+    end
+
     describe "query alert" do
       it "converts threshold values to floats to avoid api diff" do
         monitor(critical: -> { 234 }).as_json
