@@ -27,7 +27,7 @@ module Kennel
         multi: ->  { type != "query alert" || query.include?(" by ") },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
-        require_full_window: -> { true }
+        require_full_window: -> { require_full_window_default(type, query) }
       )
 
       attr_reader :project
@@ -128,6 +128,14 @@ module Kennel
       end
 
       private
+
+      def require_full_window_default(type, query)
+        return true unless type == "query alert"
+        # default 'on_average', 'at_all_times', 'in_total' aggregations to true, otherwise false
+        # https://docs.datadoghq.com/ap/#create-a-monitor
+        regex = /\A(avg|min|sum)/
+        query =~ regex ? true : false
+      end
 
       def validate_json(data)
         type = data.fetch(:type)

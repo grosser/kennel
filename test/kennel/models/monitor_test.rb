@@ -37,7 +37,7 @@ describe Kennel::Models::Monitor do
         notify_no_data: true,
         no_data_timeframe: 60,
         notify_audit: true,
-        require_full_window: true,
+        require_full_window: false,
         new_host_delay: 300,
         include_tags: true,
         escalation_message: nil,
@@ -98,7 +98,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "can set require_full_window" do
-      monitor(require_full_window: -> { false }).as_json[:options][:require_full_window].must_equal false
+      monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
     end
 
     describe "query alert" do
@@ -216,6 +216,7 @@ describe Kennel::Models::Monitor do
     it "ignores missing critical from event alert" do
       assert expected_basic_json[:query].sub!("123.0", "0")
       expected_basic_json[:options].delete(:thresholds)
+      expected_basic_json[:options][:require_full_window] = true
       diff_resource(
         {
           type: -> { "event alert" },
@@ -246,6 +247,36 @@ describe Kennel::Models::Monitor do
   describe ".api_resource" do
     it "is set" do
       Kennel::Models::Monitor.api_resource.must_equal "monitor"
+    end
+  end
+
+  describe '#require_full_window_default' do
+    describe 'when query alert' do
+      let(:type) { 'query alert' }
+
+      it 'returns true for on_average query' do
+        assert_equal true, monitor.send(:require_full_window_default, type, 'avg(last_5m) > 1' )
+      end
+
+      it 'returns true for at_all_times query' do
+        assert_equal true, monitor.send(:require_full_window_default, type, 'min(last_5m) > 1' )
+      end
+
+      it 'returns true for in_total query' do
+        assert_equal true, monitor.send(:require_full_window_default, type, 'sum(last_5m) > 1' )
+      end
+
+      it 'returns false for at_least_once query' do
+        assert_equal false, monitor.send(:require_full_window_default, type, 'max(last_5m) > 1' )
+      end
+    end
+
+    describe 'when not a query alert' do
+      let(:type) { 'service check' }
+
+      it 'returns true' do
+        assert_equal true, monitor.send(:require_full_window_default, type, 'max(last_5m) > 1' )
+      end
     end
   end
 end
