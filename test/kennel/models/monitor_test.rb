@@ -17,7 +17,7 @@ describe Kennel::Models::Monitor do
       options.delete(:project) || project,
       {
         kennel_id: -> { "m1" },
-        query: -> { "(last_5m) > #{critical}" },
+        query: -> { "avg(last_5m) > #{critical}" },
         critical: -> { 123.0 }
       }.merge(options)
     )
@@ -28,7 +28,7 @@ describe Kennel::Models::Monitor do
     {
       name: "Kennel::Models::Monitor\u{1F512}",
       type: "query alert",
-      query: +"(last_5m) > 123.0",
+      query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",
       tags: ["service:test_project", "team:test_team"],
       multi: false,
@@ -37,7 +37,7 @@ describe Kennel::Models::Monitor do
         notify_no_data: true,
         no_data_timeframe: 60,
         notify_audit: true,
-        require_full_window: false,
+        require_full_window: true,
         new_host_delay: 300,
         include_tags: true,
         escalation_message: nil,
@@ -251,64 +251,24 @@ describe Kennel::Models::Monitor do
   end
 
   describe "#require_full_window" do
-    describe "when query alert" do
-      it "returns true for on_average query" do
-        monitor = Kennel::Models::Monitor.new(
-          project,
-          kennel_id: -> { "m2" },
-          query: -> { "avg(last_5m) > #{critical}" },
-          critical: -> { 123.0 }
-        )
-
-        assert_equal true, monitor.as_json[:options][:require_full_window]
-      end
-
-      it "returns true for at_all_times query" do
-        monitor = Kennel::Models::Monitor.new(
-          project,
-          kennel_id: -> { "m2" },
-          query: -> { "min(last_5m) > #{critical}" },
-          critical: -> { 123.0 }
-        )
-
-        assert_equal true, monitor.as_json[:options][:require_full_window]
-      end
-
-      it "returns true for in_total query" do
-        monitor = Kennel::Models::Monitor.new(
-          project,
-          kennel_id: -> { "m2" },
-          query: -> { "sum(last_5m) > #{critical}" },
-          critical: -> { 123.0 }
-        )
-
-        assert_equal true, monitor.as_json[:options][:require_full_window]
-      end
-
-      it "returns false for at_least_once query" do
-        monitor = Kennel::Models::Monitor.new(
-          project,
-          kennel_id: -> { "m2" },
-          query: -> { "max(last_5m) > #{critical}" },
-          critical: -> { 123.0 }
-        )
-
-        assert_equal false, monitor.as_json[:options][:require_full_window]
-      end
+    it "is true for on_average query" do
+      assert monitor.as_json.dig(:options, :require_full_window)
     end
 
-    describe "when not a query alert" do
-      it "returns true" do
-        monitor = Kennel::Models::Monitor.new(
-          project,
-          kennel_id: -> { "m2" },
-          query: -> { "sum(last_5m) > #{critical}" },
-          critical: -> { 123 },
-          type: -> { "service check" }
-        )
+    it "is true for at_all_times query" do
+      assert monitor(query: -> { "min(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+    end
 
-        assert_equal true, monitor.as_json[:options][:require_full_window]
-      end
+    it "is true for in_total query" do
+      assert monitor(query: -> { "sum(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+    end
+
+    it "is false for at_least_once query" do
+      refute monitor(query: -> { "max(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+    end
+
+    it "is true for non-query" do
+      assert monitor(type: -> { "foo bar" }).as_json.dig(:options, :require_full_window)
     end
   end
 end
