@@ -37,7 +37,7 @@ describe Kennel::Models::Monitor do
         notify_no_data: true,
         no_data_timeframe: 60,
         notify_audit: true,
-        require_full_window: true,
+        require_full_window: false,
         new_host_delay: 300,
         include_tags: true,
         escalation_message: nil,
@@ -98,7 +98,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "can set require_full_window" do
-      monitor(require_full_window: -> { false }).as_json[:options][:require_full_window].must_equal false
+      monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
     end
 
     describe "query alert" do
@@ -216,6 +216,7 @@ describe Kennel::Models::Monitor do
     it "ignores missing critical from event alert" do
       assert expected_basic_json[:query].sub!("123.0", "0")
       expected_basic_json[:options].delete(:thresholds)
+      expected_basic_json[:options][:require_full_window] = true
       diff_resource(
         {
           type: -> { "event alert" },
@@ -246,6 +247,68 @@ describe Kennel::Models::Monitor do
   describe ".api_resource" do
     it "is set" do
       Kennel::Models::Monitor.api_resource.must_equal "monitor"
+    end
+  end
+
+  describe "#require_full_window" do
+    describe "when query alert" do
+      it "returns true for on_average query" do
+        monitor = Kennel::Models::Monitor.new(
+          project,
+          kennel_id: -> { "m2" },
+          query: -> { "avg(last_5m) > #{critical}" },
+          critical: -> { 123.0 }
+        )
+
+        assert_equal true, monitor.as_json[:options][:require_full_window]
+      end
+
+      it "returns true for at_all_times query" do
+        monitor = Kennel::Models::Monitor.new(
+          project,
+          kennel_id: -> { "m2" },
+          query: -> { "min(last_5m) > #{critical}" },
+          critical: -> { 123.0 }
+        )
+
+        assert_equal true, monitor.as_json[:options][:require_full_window]
+      end
+
+      it "returns true for in_total query" do
+        monitor = Kennel::Models::Monitor.new(
+          project,
+          kennel_id: -> { "m2" },
+          query: -> { "sum(last_5m) > #{critical}" },
+          critical: -> { 123.0 }
+        )
+
+        assert_equal true, monitor.as_json[:options][:require_full_window]
+      end
+
+      it "returns false for at_least_once query" do
+        monitor = Kennel::Models::Monitor.new(
+          project,
+          kennel_id: -> { "m2" },
+          query: -> { "max(last_5m) > #{critical}" },
+          critical: -> { 123.0 }
+        )
+
+        assert_equal false, monitor.as_json[:options][:require_full_window]
+      end
+    end
+
+    describe "when not a query alert" do
+      it "returns true" do
+        monitor = Kennel::Models::Monitor.new(
+          project,
+          kennel_id: -> { "m2" },
+          query: -> { "sum(last_5m) > #{critical}" },
+          critical: -> { 123 },
+          type: -> { "service check" }
+        )
+
+        assert_equal true, monitor.as_json[:options][:require_full_window]
+      end
     end
   end
 end
