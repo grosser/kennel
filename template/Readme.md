@@ -99,7 +99,9 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
                 [
                   # queries can be an Array as well, this will generate multiple requests
                   # for a single graph
-                  "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"]
+                  "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"],
+                  # add events too ...
+                  events: [{q: "tags:foobar,deploy", tags_execution: "and"}]
                 ]
               ]
             }

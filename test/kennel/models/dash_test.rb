@@ -88,6 +88,26 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "adds events" do
+      dash(
+        definitions: -> { [["TI", "V", "TY", "Q", events: [{ foo: "bar" }]]] }
+      ).as_json.must_equal(
+        expected_json.merge(
+          graphs: [
+            {
+              title: "TI",
+              definition: {
+                viz: "V",
+                requests: [{ q: "Q", type: "TY", conditional_formats: [] }],
+                autoscale: true,
+                events: [{ foo: "bar" }]
+              }
+            }
+          ]
+        )
+      )
+    end
+
     it "adds definitions as graphs with multiple queries" do
       dash(
         definitions: -> { [["TI", "V", "TY", ["Q", "Q2"]]] }
@@ -134,21 +154,28 @@ describe Kennel::Models::Dash do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], "Whoops"]] }).as_json
       end
-      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+      e.message.must_equal "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
     end
 
     it "raises when using too few arguments for definition" do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY"]] }).as_json
       end
-      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+      e.message.must_equal "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
+    end
+
+    it "raises when using bad options" do
+      e = assert_raises ArgumentError do
+        dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], foo: "bar"]] }).as_json
+      end
+      e.message.must_equal "Supported options are: :events"
     end
 
     it "raises when using nil arguments for definition" do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", nil, ["Q", "Q2"]]] }).as_json
       end
-      e.message.must_equal "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+      e.message.must_equal "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
     end
 
     describe "with invalid dash" do
