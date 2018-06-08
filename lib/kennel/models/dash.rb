@@ -6,6 +6,7 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
+      SUPPORTED_GRAPH_OPTIONS = [:events].freeze
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
       defaults(
@@ -76,13 +77,18 @@ module Kennel
       end
 
       def render_graphs
-        all = definitions.map do |title, viz, type, queries, ignored|
-          if ignored || (!title || !viz || !type || !queries)
-            raise ArgumentError, "Expected exactly 4 arguments for each definition (title, viz, type, queries)"
+        all = definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
+          if ignored || (!title || !viz || !type || !queries || !options.is_a?(Hash))
+            raise ArgumentError, "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
+          end
+          if options.each_key.any? { |k| !SUPPORTED_GRAPH_OPTIONS.include?(k) }
+            raise ArgumentError, "Supported options are: #{SUPPORTED_GRAPH_OPTIONS.map(&:inspect).join(", ")}"
           end
 
           requests = Array(queries).map { |q| { q: q, type: type } }
-          { title: title, definition: { viz: viz, requests: requests } }
+          graph = { title: title, definition: { viz: viz, requests: requests } }
+          graph[:definition][:events] = options[:events] if options[:events]
+          graph
         end + graphs
 
         all.each do |g|
