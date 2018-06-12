@@ -21,17 +21,44 @@ describe Kennel::Models::Screen do
       widgets: []
     }
   end
+  let(:expected_json_timeseries) do
+    expected_json.merge(
+      widgets: [
+        {
+          title_size: 16,
+          title_align: "left",
+          height: 20,
+          width: 30,
+          title: true,
+          legend: false,
+          legend_size: "0",
+          timeframe: "1h",
+          type: "timeseries",
+          title_text: "Hello",
+          x: 0,
+          y: 0,
+          tile_def: {
+            viz: "timeseries",
+            requests: [
+              {
+                q: "avg:foo.bar",
+                aggregator: "avg",
+                type: "area",
+                conditional_formats: []
+              }
+            ],
+            autoscale: true
+          }
+        }
+      ]
+    )
+  end
   let(:default_widget) { { title_size: 16, title_align: "left", height: 20, width: 30 }.freeze }
-
-  describe "#as_json" do
-    it "renders" do
-      screen.as_json.must_equal(expected_json)
-    end
-
-    it "renders widgets and backfills common fields" do
-      screen(
-        widgets: -> {
-          [{
+  let(:timeseries_widget) do
+    {
+      widgets: -> {
+        [
+          {
             title_text: "Hello",
             type: "timeseries",
             x: 0,
@@ -46,40 +73,21 @@ describe Kennel::Models::Screen do
                 }
               ]
             }
-          }]
-        }
-      ).as_json.must_equal(
-        expected_json.merge(
-          widgets: [
-            {
-              title_size: 16,
-              title_align: "left",
-              height: 20,
-              width: 30,
-              title: true,
-              legend: false,
-              legend_size: "0",
-              timeframe: "1h",
-              type: "timeseries",
-              title_text: "Hello",
-              x: 0,
-              y: 0,
-              tile_def: {
-                viz: "timeseries",
-                requests: [
-                  {
-                    q: "avg:foo.bar",
-                    aggregator: "avg",
-                    type: "area",
-                    conditional_formats: []
-                  }
-                ],
-                autoscale: true
-              }
-            }
-          ]
-        )
-      )
+          }
+        ]
+      }
+    }
+  end
+
+  describe "#as_json" do
+    it "renders" do
+      screen.as_json.must_equal(expected_json)
+    end
+
+    describe "with timeseries" do
+      it "renders widgets and backfills common fields" do
+        screen(timeseries_widget).as_json.must_equal(expected_json_timeseries)
+      end
     end
 
     it "does not set autoscale when it was set to false" do
@@ -119,6 +127,12 @@ describe Kennel::Models::Screen do
 
     it "can diff text tiles" do
       screen(widgets: -> { [{ text: "A", type: "free_text" }] }).diff(expected_json)
+    end
+
+    it "does not show diff when api randomly returns time.live_span instead of timeframe" do
+      expected_json_timeseries[:widgets][0].delete :timeframe
+      expected_json_timeseries[:widgets][0][:time] = { live_span: "1h" }
+      screen(timeseries_widget).diff(expected_json_timeseries).must_be_nil
     end
 
     it "can diff unknown to be future proof" do

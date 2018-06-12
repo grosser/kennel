@@ -32,7 +32,7 @@ module IntegrationHelper
           )
         end
       end
-      
+
       class MyProject < Kennel::Models::Project
         defaults(
           team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/
