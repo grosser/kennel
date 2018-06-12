@@ -20,7 +20,7 @@ module Kennel
       end
 
       def presence(value)
-        value.empty? ? nil : value
+        value.nil? || value.empty? ? nil : value
       end
 
       def ask(question)

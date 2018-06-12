@@ -50,9 +50,11 @@ module Kennel
         actual[:template_variables] ||= []
         actual[:graphs].each do |g|
           g[:definition].delete(:status)
-          g[:definition][:requests].each { |r| r.delete(:aggregator) }
         end
-        super
+
+        # NOTE: we might not trigger an update since the api never returns aggregator ... maybe datadog fixes their api
+        # as temporary workaround change something else about the dash to force an update
+        Utils.presence(super&.reject { |op, key| op == "+" && key.end_with?(".aggregator") })
       end
 
       def url(id)
