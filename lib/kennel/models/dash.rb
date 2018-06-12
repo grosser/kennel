@@ -62,11 +62,19 @@ module Kennel
       private
 
       def validate_json(data)
+        # check for bad variables
         variables = data.fetch(:template_variables).map { |v| "$#{v.fetch(:name)}" }
         queries = data[:graphs].flat_map { |g| g[:definition][:requests].map { |r| r.fetch(:q) } }
         bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
         if bad.any?
           raise "#{tracking_id} queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
+        end
+
+        # check for fields that are unsettable
+        data[:graphs].each do |g|
+          if g.dig(:definition, :status)
+            raise "#{tracking_id} remove definition status, it is unsettable and will always produce a diff"
+          end
         end
       end
 

@@ -186,6 +186,11 @@ describe Kennel::Models::Dash do
         }
       end
 
+      it "fails when using unsettable status (from api output copy-paste) instead of silently ignoring it" do
+        e = assert_raises(RuntimeError) { dash(graphs: -> { [{ definition: { status: "done", requests: [] } }] }).as_json }
+        e.message.must_equal "test_project:test_dash remove definition status, it is unsettable and will always produce a diff"
+      end
+
       it "fails when not using all template variables" do
         e = assert_raises(RuntimeError) { dash(invalid).as_json }
         e.message.must_equal "test_project:test_dash queries Q, Q2 must use the template variables $foo, $bar"
