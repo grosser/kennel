@@ -50,9 +50,11 @@ module Kennel
         actual[:template_variables] ||= []
         actual[:graphs].each do |g|
           g[:definition].delete(:status)
-          g[:definition][:requests].each { |r| r.delete(:aggregator) }
         end
-        super
+
+        # NOTE: we might not trigger an update since the api never returns aggregator ... maybe datadog fixes their api
+        # as temporary workaround change something else about the dash to force an update
+        Utils.presence(super&.reject { |op, key| op == "+" && key.end_with?(".aggregator") })
       end
 
       def url(id)
@@ -62,11 +64,19 @@ module Kennel
       private
 
       def validate_json(data)
+        # check for bad variables
         variables = data.fetch(:template_variables).map { |v| "$#{v.fetch(:name)}" }
         queries = data[:graphs].flat_map { |g| g[:definition][:requests].map { |r| r.fetch(:q) } }
         bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
         if bad.any?
           raise "#{tracking_id} queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
+        end
+
+        # check for fields that are unsettable
+        data[:graphs].each do |g|
+          if g.dig(:definition, :status)
+            raise "#{tracking_id} remove definition status, it is unsettable and will always produce a diff"
+          end
         end
       end
 

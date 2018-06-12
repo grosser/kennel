@@ -52,7 +52,13 @@ module Kennel
         actual.delete(:height)
         actual.delete(:width)
         actual[:template_variables] ||= []
-        (actual[:widgets] || []).each { |w| w.delete :board_id }
+        (actual[:widgets] || []).each do |w|
+          # api randomly returns time.live_span or timeframe
+          w[:timeframe] = w.delete(:time)[:live_span] if w[:time]
+
+          # board_id is a copied value, can ignore
+          w.delete :board_id
+        end
         super
       end
 

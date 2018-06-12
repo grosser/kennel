@@ -36,6 +36,20 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
  - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
 
+### Adding a team
+
+```ruby
+# teams/my_team.rb
+module Teams
+  class MyTeam < Kennel::Models::Team
+    defaults(
+      slack: -> { "my-alerts" },
+      email: -> { "my-team@exmaple.com" }
+    )
+  end
+end
+```
+
 ### Adding a new monitor
  - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
  - get the `id` from the url, click "Export Monitor" on the monitors edit tab to get the `query` and `type`
@@ -45,6 +59,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - find or create a project in `projects/`
  - add a monitor to `parts: [` list
   ```Ruby
+  # projects/my_project.rb
   class MyProject < Kennel::Models::Project
     defaults(
       team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/

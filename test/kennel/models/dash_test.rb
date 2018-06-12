@@ -186,6 +186,11 @@ describe Kennel::Models::Dash do
         }
       end
 
+      it "fails when using unsettable status (from api output copy-paste) instead of silently ignoring it" do
+        e = assert_raises(RuntimeError) { dash(graphs: -> { [{ definition: { status: "done", requests: [] } }] }).as_json }
+        e.message.must_equal "test_project:test_dash remove definition status, it is unsettable and will always produce a diff"
+      end
+
       it "fails when not using all template variables" do
         e = assert_raises(RuntimeError) { dash(invalid).as_json }
         e.message.must_equal "test_project:test_dash queries Q, Q2 must use the template variables $foo, $bar"
@@ -214,14 +219,15 @@ describe Kennel::Models::Dash do
       dash.diff(expected_json.merge(title: "Wut")).must_equal([["~", "title", "Wut", "Hello🔒"]])
     end
 
-    it "does not compare randomly added status" do
+    it "does not compare unsettable status" do
       expected_json_with_graphs[:graphs][0][:definition][:status] = "done"
       dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_be_nil
     end
 
-    it "does not compare randomly added aggregator" do
-      expected_json_with_graphs[:graphs][0][:definition][:requests][0][:aggregator] = "avg"
-      dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_be_nil
+    it "does not compare user-defined aggregator, since it is settable but never returned" do
+      created = dash(definitions: -> { [["TI", "V", "TY", "Q"]] })
+      created.as_json.dig(:graphs, 0, :definition, :requests, 0)[:aggregator] = "max"
+      created.diff(expected_json_with_graphs).must_be_nil
     end
 
     it "does not compare missing template_variables" do
