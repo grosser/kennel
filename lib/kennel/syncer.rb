@@ -93,10 +93,9 @@ module Kennel
       result[api_resource.to_sym] || result
     end
 
-    def details_cache
-      cache = FileCache.new CACHE_FILE
-      yield cache
-      cache.persist
+    def details_cache(&block)
+      cache = FileCache.new CACHE_FILE, Kennel::VERSION
+      cache.open(&block)
     end
 
     def download_definitions
