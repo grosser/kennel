@@ -224,12 +224,6 @@ describe Kennel::Models::Dash do
       dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_be_nil
     end
 
-    it "does not compare user-defined aggregator, since it is settable but never returned" do
-      created = dash(definitions: -> { [["TI", "V", "TY", "Q"]] })
-      created.as_json.dig(:graphs, 0, :definition, :requests, 0)[:aggregator] = "max"
-      created.diff(expected_json_with_graphs).must_be_nil
-    end
-
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
       dash.diff(expected_json).must_be_nil
