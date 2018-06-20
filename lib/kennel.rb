@@ -47,7 +47,7 @@ module Kennel
     private
 
     def syncer
-      @syncer ||= Syncer.new(api, generated)
+      @syncer ||= Syncer.new(api, generated, project: ENV["PROJECT"])
     end
 
     def api
