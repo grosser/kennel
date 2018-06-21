@@ -179,6 +179,25 @@ describe Kennel::Syncer do
       )
     end
 
+    describe "filter" do
+      let(:syncer) { Kennel::Syncer.new(api, expected, project: "foo") }
+
+      it "does nothing when ignores changes" do
+        expected << monitor("a", "b")
+        output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "does something when filtered changes" do
+        expected << monitor("foo", "b")
+        output.must_equal "Plan:\nCreate foo:b\n"
+      end
+
+      it "leaves unmanaged alone" do
+        monitors << { id: 123, message: "foo", tags: [] }
+        output.must_equal "Plan:\nNothing to do\n"
+      end
+    end
+
     describe "dashes" do
       in_temp_dir # uses file-cache
 

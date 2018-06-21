@@ -3,9 +3,11 @@ module Kennel
   class Syncer
     CACHE_FILE = "tmp/cache/details" # keep in sync with .travis.yml caching
 
-    def initialize(api, expected)
+    def initialize(api, expected, project: nil)
       @api = api
+      @project_filter = project
       @expected = expected
+      @expected = @expected.select { |e| e.project.kennel_id == @project_filter } if @project_filter
       @expected.each { |e| add_tracking_id e }
       calculate_diff
     end
@@ -56,6 +58,7 @@ module Kennel
       actual = Progress.progress "Downloading definitions" do
         download_definitions
       end
+      actual.select! { |a| tracking_id(a)&.start_with?("#{@project_filter}:") } if @project_filter
 
       Progress.progress "Diffing" do
         details_cache do |cache|

@@ -152,7 +152,7 @@ to unblock use the `validate: -> { false }` option.
 ### Debugging locally
 
  - make sure to be on update `master` to not undo other changes
- - run `bundle exec rake kennel:update_datadog`
+ - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project 
 
 ## Examples
 
