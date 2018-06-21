@@ -3,6 +3,7 @@ require "faraday"
 require "json"
 require "English"
 
+require "kennel/version"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/syncer"
