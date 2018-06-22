@@ -147,6 +147,10 @@ describe Kennel::Models::Monitor do
       monitor(notify_no_data: -> { false }).as_json[:options][:no_data_timeframe].must_be_nil
     end
 
+    it "can set notify_audit" do
+      monitor(notify_audit: -> { false }).as_json.dig(:options, :notify_audit).must_equal false
+    end
+
     it "is cached so we can modify it in syncer" do
       m = monitor
       m.as_json[:foo] = 1

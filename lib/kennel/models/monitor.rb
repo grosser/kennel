@@ -11,7 +11,7 @@ module Kennel
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
-        :ok, :id, :no_data_timeframe, :notify_no_data, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
+        :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
       )
       defaults(
         message: -> { "\n\n@slack-#{project.team.slack}" },
@@ -23,6 +23,7 @@ module Kennel
         id: ->  { nil },
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
+        notify_audit: -> { true },
         tags: -> { @project.tags },
         multi: ->  { type != "query alert" || query.include?(" by ") },
         critical_recovery: -> { nil },
@@ -49,7 +50,7 @@ module Kennel
             timeout_h: 0,
             notify_no_data: notify_no_data,
             no_data_timeframe: no_data_timeframe,
-            notify_audit: true,
+            notify_audit: notify_audit,
             require_full_window: require_full_window,
             new_host_delay: 300,
             include_tags: true,
