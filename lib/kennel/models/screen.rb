@@ -5,12 +5,14 @@ module Kennel
       include TemplateVariables
 
       API_LIST_INCOMPLETE = true
+      SUPPORTED_DEFINITION_OPTIONS = [:title_text, :height, :width, :timeframe, :x, :y].freeze
 
-      settings :id, :board_title, :description, :widgets, :kennel_id
+      settings :id, :board_title, :description, :widgets, :definitions, :kennel_id
 
       defaults(
         description: -> { "" },
         widgets: -> { [] },
+        definitions: -> { [] },
         id: -> { nil }
       )
 
@@ -69,7 +71,36 @@ module Kennel
       private
 
       def render_widgets
-        widgets.map do |widget|
+        index = -1
+        rows = 5
+
+        all = definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
+          if ignored || (!title || !viz || !type || !queries || !options.is_a?(Hash))
+            raise ArgumentError, "Expected exactly 4 arguments for each definition (title, viz | nil, type, queries | text, options)"
+          end
+
+          if options.each_key.any? { |k| !SUPPORTED_DEFINITION_OPTIONS.include?(k) }
+            raise ArgumentError, "Supported options are: #{SUPPORTED_DEFINITION_OPTIONS.map(&:inspect).join(", ")}"
+          end
+
+          index += 1
+          column = index % rows
+
+          {
+            width: 8,
+            height: 4,
+            timeframe: "1h",
+            x: column * 8,
+            y: rows * 4,
+            type: type,
+            tile_def: {
+              viz: viz,
+              requests: queries.map { |q| { q: q, type: type } }
+            }
+          }.merge(options)
+        end + widgets
+
+        all.map do |widget|
           widget = widget_defaults(widget[:type]).merge(widget)
           if tile = widget[:tile_def]
             tile.fetch(:requests).each { |r| r[:conditional_formats] ||= [] }
