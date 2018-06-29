@@ -17,8 +17,8 @@ describe Kennel::Models::Screen do
       id: nil,
       board_title: "Hello🔒",
       description: "",
-      template_variables: [],
-      widgets: []
+      widgets: [],
+      template_variables: []
     }
   end
   let(:expected_json_timeseries) do
@@ -33,8 +33,8 @@ describe Kennel::Models::Screen do
           legend: false,
           legend_size: "0",
           timeframe: "1h",
-          type: "timeseries",
           title_text: "Hello",
+          type: "timeseries",
           x: 0,
           y: 0,
           tile_def: {
@@ -43,8 +43,7 @@ describe Kennel::Models::Screen do
               {
                 q: "avg:foo.bar",
                 aggregator: "avg",
-                type: "area",
-                conditional_formats: []
+                type: "area"
               }
             ],
             autoscale: true
@@ -167,6 +166,33 @@ describe Kennel::Models::Screen do
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
       screen.diff(expected_json).must_equal []
+    end
+
+    describe "when datadog randomly leaves out aggregator" do
+      def screen
+        @screen ||= super(timeseries_widget)
+      end
+
+      before { expected_json_timeseries.dig(:widgets, 0, :tile_def, :requests, 0).delete(:aggregator) }
+
+      it "does not compare default aggregator missing" do
+        screen.diff(expected_json_timeseries).must_equal []
+      end
+
+      it "compares aggregator being non-default in actual" do
+        screen.as_json.dig(:widgets, 0, :tile_def, :requests, 0)[:aggregator] = "sum"
+        screen.diff(expected_json_timeseries).must_equal [["+", "widgets[0].tile_def.requests[0].aggregator", "sum"]]
+      end
+
+      it "compares aggregator being non-default in expected" do
+        screen.as_json.dig(:widgets, 0, :tile_def, :requests, 0).delete(:aggregator)
+        expected_json_timeseries.dig(:widgets, 0, :tile_def, :requests, 0)[:aggregator] = "sum"
+        screen.diff(expected_json_timeseries).must_equal [["-", "widgets[0].tile_def.requests[0].aggregator", "sum"]]
+      end
+
+      it "does not blow up on missing tile_def" do
+        screen.diff(expected_json)
+      end
     end
 
     it "ignores showGlobalTimeOnboarding" do
