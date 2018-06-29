@@ -3,6 +3,7 @@ module Kennel
   module Models
     class Screen < Base
       include TemplateVariables
+      include OptionalValidations
 
       API_LIST_INCOMPLETE = true
 
@@ -34,6 +35,9 @@ module Kennel
           widgets: render_widgets,
           template_variables: render_template_variables
         }
+
+        validate_json(@json) if validate
+
         @json
       end
 
@@ -68,6 +72,15 @@ module Kennel
 
       private
 
+      def validate_json(data)
+        # check for fields that are unsettable
+        data[:widgets].each do |w|
+          if w.key?(:board_id)
+            raise "#{tracking_id} remove definition board_id, it is unsettable and will always produce a diff"
+          end
+        end
+      end
+
       def render_widgets
         widgets.map do |widget|
           widget = widget_defaults(widget[:type]).merge(widget)
@@ -75,7 +88,6 @@ module Kennel
             tile.fetch(:requests).each { |r| r[:conditional_formats] ||= [] }
             tile[:autoscale] = true unless widget[:tile_def].key?(:autoscale)
           end
-          widget.delete :board_id
           widget
         end
       end

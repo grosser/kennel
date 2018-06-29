@@ -101,8 +101,15 @@ describe Kennel::Models::Screen do
       s.as_json.object_id.must_equal s.as_json.object_id
     end
 
-    it "does not render board_id to avoid useless diff when user copy-pasted api reply" do
-      screen(widgets: -> { [{ board_id: 123 }] }).as_json.must_equal(expected_json.merge(widgets: [default_widget]))
+    it "does not allow rendering board_id to avoid useless diff when user copy-pasted api reply" do
+      e = assert_raises RuntimeError do
+        screen(widgets: -> { [{ board_id: 123 }] }).as_json
+      end
+      e.message.must_equal "test_project:test_screen remove definition board_id, it is unsettable and will always produce a diff"
+    end
+
+    it "allow invalid widgets when validations are disabled" do
+      screen(widgets: -> { [{ board_id: 123 }] }, validate: -> { false }).as_json
     end
   end
 
@@ -118,7 +125,7 @@ describe Kennel::Models::Screen do
     end
 
     it "does not compare read-only widget board_id field" do
-      screen(widgets: -> { [{ board_id: 123 }] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
     end
 
     it "does not compare read-only disableCog field" do

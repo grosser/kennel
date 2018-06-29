@@ -71,7 +71,7 @@ module Kennel
 
         # check for fields that are unsettable
         data[:graphs].each do |g|
-          if g.dig(:definition, :status)
+          if g[:definition].key?(:status)
             raise "#{tracking_id} remove definition status, it is unsettable and will always produce a diff"
           end
         end
