@@ -66,13 +66,13 @@ module Kennel
         queries = data[:graphs].flat_map { |g| g[:definition][:requests].map { |r| r.fetch(:q) } }
         bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
         if bad.any?
-          raise "#{tracking_id} queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
+          invalid! "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
         end
 
         # check for fields that are unsettable
         data[:graphs].each do |g|
           if g[:definition].key?(:status)
-            raise "#{tracking_id} remove definition status, it is unsettable and will always produce a diff"
+            invalid! "remove definition status, it is unsettable and will always produce a diff"
           end
         end
       end

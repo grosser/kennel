@@ -97,7 +97,7 @@ module Kennel
         data[:widgets].each do |w|
           [:isShared, :board_id].each do |ignored|
             if w.key?(ignored)
-              raise "#{tracking_id} remove definition #{ignored}, it is unsettable and will always produce a diff"
+              invalid! "remove definition #{ignored}, it is unsettable and will always produce a diff"
             end
           end
         end

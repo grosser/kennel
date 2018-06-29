@@ -139,27 +139,27 @@ module Kennel
         type = data.fetch(:type)
 
         if type == "metric alert"
-          raise "#{tracking_id} type 'metric alert' is deprecated, do not set type to use the default 'query alert'"
+          invalid! "type 'metric alert' is deprecated, do not set type to use the default 'query alert'"
         end
 
         if type == "service check" && [ok, warning, critical].compact.map(&:class).uniq != [Integer]
-          raise "#{tracking_id} :ok, :warning and :critical must be integers for service check type"
+          invalid! ":ok, :warning and :critical must be integers for service check type"
         end
 
         if query_value = data.fetch(:query)[/\s*[<>]\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
-            raise "#{tracking_id} critical and value used in query must match"
+            invalid! "critical and value used in query must match"
           end
         end
 
         unless RENOTIFY_INTERVALS.include? data.dig(:options, :renotify_interval)
-          raise "#{tracking_id} renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
+          invalid! "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
         end
 
         if ["metric alert", "query alert"].include?(type)
           interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
           unless QUERY_INTERVALS.include?(interval)
-            raise "#{tracking_id} query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
+            invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
           end
         end
       end

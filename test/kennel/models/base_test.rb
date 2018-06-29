@@ -65,7 +65,7 @@ describe Kennel::Models::Base do
         Kennel::Models::Project.new.kennel_id
       end
       message = e.message
-      assert message.sub!(/ \/\S+?:\d+/, " file.rb:123")
+      assert message.sub!(/[\.\/]+\S+?:\d+/, "file.rb:123")
       message.must_equal "Set :kennel_id on file.rb:123:in `new'"
     end
 
@@ -92,6 +92,15 @@ describe Kennel::Models::Base do
   describe "#name" do
     it "is readable for nice names in the UI" do
       TestBase.new.name.must_equal "TestBase"
+    end
+  end
+
+  describe "#invalid!" do
+    it "raises a validation error whit project name to help when backtrace is generic" do
+      e = assert_raises Kennel::Models::Base::ValidationError do
+        Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }, kennel_id: -> { "x" }).send(:invalid!, "X")
+      end
+      e.message.must_equal "test_project:x X"
     end
   end
 

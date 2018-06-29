@@ -10,6 +10,9 @@ module Kennel
         :overall_state_modified, :overall_state, :api_resource
       ].freeze
 
+      class ValidationError < RuntimeError
+      end
+
       class << self
         include SubclassTracking
 
@@ -55,7 +58,8 @@ module Kennel
           define_singleton_method name, &block
         end
 
-        @invocation_location = caller.detect { |l| l.start_with?(Dir.pwd) }
+        # need expand_path so it works wih rake and when run individually
+        @invocation_location = caller.detect { |l| File.expand_path(l).start_with?(Dir.pwd) }
       end
 
       def kennel_id
@@ -87,6 +91,11 @@ module Kennel
       end
 
       private
+
+      # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
+      def invalid!(message)
+        raise ValidationError, "#{tracking_id} #{message}"
+      end
 
       def validate_options(options)
         unless options.is_a?(Hash)
