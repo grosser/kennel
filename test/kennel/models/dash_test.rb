@@ -204,15 +204,15 @@ describe Kennel::Models::Dash do
 
   describe "#diff" do
     it "is nil when empty" do
-      dash.diff(expected_json).must_be_nil
+      dash.diff(expected_json).must_equal []
     end
 
     it "does not compare unchangable resource" do
-      dash.diff(expected_json.merge(resource: "dash")).must_be_nil
+      dash.diff(expected_json.merge(resource: "dash")).must_equal []
     end
 
     it "does not compare readonly created_by" do
-      dash.diff(expected_json.merge(created_by: "dash")).must_be_nil
+      dash.diff(expected_json.merge(created_by: "dash")).must_equal []
     end
 
     it "compares important fields" do
@@ -221,12 +221,12 @@ describe Kennel::Models::Dash do
 
     it "does not compare unsettable status" do
       expected_json_with_graphs[:graphs][0][:definition][:status] = "done"
-      dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_be_nil
+      dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_equal []
     end
 
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
-      dash.diff(expected_json).must_be_nil
+      dash.diff(expected_json).must_equal []
     end
   end
 

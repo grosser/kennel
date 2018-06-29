@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 require "base64"
+require "faraday"
 
 module IntegrationHelper
+  # obfuscated keys so it is harder to find them
+  TEST_KEYS = Base64.decode64("REFUQURPR19BUElfS0VZPThkMDU5MmY4YmE5MDhiNWE2MmRmN2MwMGM3MGUy\nNmYwCkRBVEFET0dfQVBQX0tFWT05YjNkYWQxMzQyMmY5ZGJjMWU1NDY3YTk0\nMTdmNWYxNzk4ZjJmZTcw\n")
+
   def with_test_keys_in_dotenv
-    # obfuscated keys so it is harder to find them
-    env = "REFUQURPR19BUElfS0VZPThkMDU5MmY4YmE5MDhiNWE2MmRmN2MwMGM3MGUy\nNmYwCkRBVEFET0dfQVBQX0tFWT05YjNkYWQxMzQyMmY5ZGJjMWU1NDY3YTk0\nMTdmNWYxNzk4ZjJmZTcw\n"
-    File.write(".env", Base64.decode64(env))
+    File.write(".env", TEST_KEYS)
     Bundler.with_clean_env do
       # we need to make sure we use the test credentials
       # so delete real credentials in the users env
@@ -82,7 +84,7 @@ module IntegrationHelper
                 widgets: -> {
                   [
                     {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
-                    {title_text: "CPU", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:system.cpu.user{*}", type: "line"}]}}
+                    {title_text: "Test", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:test.metric{*}.as_count()", type: "line"}]}}
                   ]
                 }
               )
@@ -95,5 +97,26 @@ module IntegrationHelper
   ensure
     File.write("Gemfile", old)
     File.unlink(example) if File.exist?(example)
+  end
+
+  # we need something to build our test dashboards on
+  # NOTE: due to a bug newly create metrics do not show up in the UI,
+  # force it by modifying the url https://app.datadoghq.com/metric/explorer?exp_metric=test.metric
+  def report_fake_metric
+    api_key = TEST_KEYS[/DATADOG_API_KEY=(.*)/, 1] || raise
+    payload = {
+      series: [
+        {
+          metric: "test.metric",
+          points: [["$currenttime", 20]],
+          type: "rate",
+          interval: 20,
+          host: "test.example.com",
+          tags: ["environment:test"]
+        }
+      ]
+    }
+    response = Faraday.post "https://api.datadoghq.com/api/v1/series?api_key=#{api_key}", payload.to_json
+    raise "Error reporting fake metric #{response}" unless response.success?
   end
 end

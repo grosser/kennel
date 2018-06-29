@@ -183,21 +183,21 @@ describe Kennel::Models::Monitor do
     end
 
     it "calls super" do
-      diff_resource({}, deleted: true).must_be_nil
+      diff_resource({}, deleted: true).must_equal []
     end
 
     it "ignores silenced" do
-      diff_resource({}, options: { silenced: true }).must_be_nil
+      diff_resource({}, options: { silenced: true }).must_equal []
     end
 
     it "ignores missing escalation_message" do
       expected_basic_json[:options].delete(:escalation_message)
-      diff_resource({}, {}).must_be_nil
+      diff_resource({}, {}).must_equal []
     end
 
     it "ignores missing evaluation_delay" do
       expected_basic_json[:options].delete(:evaluation_delay)
-      diff_resource({}, {}).must_be_nil
+      diff_resource({}, {}).must_equal []
     end
 
     it "ignores include_tags/require_full_window for service alerts" do
@@ -214,7 +214,7 @@ describe Kennel::Models::Monitor do
         },
         type: "service check",
         multi: true
-      ).must_be_nil
+      ).must_equal []
     end
 
     it "ignores missing critical from event alert" do
@@ -228,11 +228,11 @@ describe Kennel::Models::Monitor do
         },
         type: "event alert",
         multi: true
-      ).must_be_nil
+      ).must_equal []
     end
 
     it "ignores type diff between metric and query since datadog uses both randomly" do
-      diff_resource({ type: -> { "query alert" } }, {}).must_be_nil
+      diff_resource({ type: -> { "query alert" } }, {}).must_equal []
     end
   end
 

@@ -17,8 +17,8 @@ describe Kennel::Models::Screen do
       id: nil,
       board_title: "Hello🔒",
       description: "",
-      template_variables: [],
-      widgets: []
+      widgets: [],
+      template_variables: []
     }
   end
   let(:expected_json_timeseries) do
@@ -33,8 +33,8 @@ describe Kennel::Models::Screen do
           legend: false,
           legend_size: "0",
           timeframe: "1h",
-          type: "timeseries",
           title_text: "Hello",
+          type: "timeseries",
           x: 0,
           y: 0,
           tile_def: {
@@ -43,8 +43,7 @@ describe Kennel::Models::Screen do
               {
                 q: "avg:foo.bar",
                 aggregator: "avg",
-                type: "area",
-                conditional_formats: []
+                type: "area"
               }
             ],
             autoscale: true
@@ -101,14 +100,28 @@ describe Kennel::Models::Screen do
       s.as_json.object_id.must_equal s.as_json.object_id
     end
 
-    it "does not render board_id to avoid useless diff when user copy-pasted api reply" do
-      screen(widgets: -> { [{ board_id: 123 }] }).as_json.must_equal(expected_json.merge(widgets: [default_widget]))
+    it "does not allow rendering board_id to avoid useless diff when user copy-pasted api reply" do
+      e = assert_raises RuntimeError do
+        screen(widgets: -> { [{ board_id: 123 }] }).as_json
+      end
+      e.message.must_equal "test_project:test_screen remove definition board_id, it is unsettable and will always produce a diff"
+    end
+
+    it "does not allow rendering isShared to avoid useless diff when user copy-pasted api reply" do
+      e = assert_raises RuntimeError do
+        screen(widgets: -> { [{ isShared: false }] }).as_json
+      end
+      e.message.must_equal "test_project:test_screen remove definition isShared, it is unsettable and will always produce a diff"
+    end
+
+    it "allow invalid widgets when validations are disabled" do
+      screen(widgets: -> { [{ board_id: 123 }] }, validate: -> { false }).as_json
     end
   end
 
   describe "#diff" do
     it "is nil when empty" do
-      screen.diff(expected_json).must_be_nil
+      screen.diff(expected_json).must_equal []
     end
 
     # idk how to reproduce this, but saw it in a real test failure
@@ -118,11 +131,15 @@ describe Kennel::Models::Screen do
     end
 
     it "does not compare read-only widget board_id field" do
-      screen(widgets: -> { [{ board_id: 123 }] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup.merge(board_id: 123)])).must_equal []
+    end
+
+    it "does not compare read-only widget isShared field" do
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup.merge(isShared: false)])).must_equal []
     end
 
     it "does not compare read-only disableCog field" do
-      screen.diff(expected_json.merge(disableCog: true)).must_be_nil
+      screen.diff(expected_json.merge(disableCog: true)).must_equal []
     end
 
     it "can diff text tiles" do
@@ -132,14 +149,14 @@ describe Kennel::Models::Screen do
     it "does not show diff when api randomly returns time.live_span instead of timeframe" do
       expected_json_timeseries[:widgets][0].delete :timeframe
       expected_json_timeseries[:widgets][0][:time] = { live_span: "1h" }
-      screen(timeseries_widget).diff(expected_json_timeseries).must_be_nil
+      screen(timeseries_widget).diff(expected_json_timeseries).must_equal []
     end
 
     it "can diff unknown to be future proof" do
       expected = expected_json.merge(
         widgets: [{ title_size: 16, title_align: "left", height: 20, width: 30, text: "A", type: "foo" }]
       )
-      screen(widgets: -> { [{ text: "A", type: "foo" }] }).diff(expected).must_be_nil
+      screen(widgets: -> { [{ text: "A", type: "foo" }] }).diff(expected).must_equal []
     end
 
     it "compares important fields" do
@@ -148,7 +165,39 @@ describe Kennel::Models::Screen do
 
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
-      screen.diff(expected_json).must_be_nil
+      screen.diff(expected_json).must_equal []
+    end
+
+    describe "when datadog randomly leaves out aggregator" do
+      def screen
+        @screen ||= super(timeseries_widget)
+      end
+
+      before { expected_json_timeseries.dig(:widgets, 0, :tile_def, :requests, 0).delete(:aggregator) }
+
+      it "does not compare default aggregator missing" do
+        screen.diff(expected_json_timeseries).must_equal []
+      end
+
+      it "compares aggregator being non-default in actual" do
+        screen.as_json.dig(:widgets, 0, :tile_def, :requests, 0)[:aggregator] = "sum"
+        screen.diff(expected_json_timeseries).must_equal [["+", "widgets[0].tile_def.requests[0].aggregator", "sum"]]
+      end
+
+      it "compares aggregator being non-default in expected" do
+        screen.as_json.dig(:widgets, 0, :tile_def, :requests, 0).delete(:aggregator)
+        expected_json_timeseries.dig(:widgets, 0, :tile_def, :requests, 0)[:aggregator] = "sum"
+        screen.diff(expected_json_timeseries).must_equal [["-", "widgets[0].tile_def.requests[0].aggregator", "sum"]]
+      end
+
+      it "does not blow up on missing tile_def" do
+        screen.diff(expected_json)
+      end
+    end
+
+    it "ignores showGlobalTimeOnboarding" do
+      expected_json[:showGlobalTimeOnboarding] = true
+      screen.diff(expected_json).must_equal []
     end
   end
 
