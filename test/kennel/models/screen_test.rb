@@ -115,7 +115,7 @@ describe Kennel::Models::Screen do
 
   describe "#diff" do
     it "is nil when empty" do
-      screen.diff(expected_json).must_be_nil
+      screen.diff(expected_json).must_equal []
     end
 
     # idk how to reproduce this, but saw it in a real test failure
@@ -125,11 +125,11 @@ describe Kennel::Models::Screen do
     end
 
     it "does not compare read-only widget board_id field" do
-      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_be_nil
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_equal []
     end
 
     it "does not compare read-only disableCog field" do
-      screen.diff(expected_json.merge(disableCog: true)).must_be_nil
+      screen.diff(expected_json.merge(disableCog: true)).must_equal []
     end
 
     it "can diff text tiles" do
@@ -139,14 +139,14 @@ describe Kennel::Models::Screen do
     it "does not show diff when api randomly returns time.live_span instead of timeframe" do
       expected_json_timeseries[:widgets][0].delete :timeframe
       expected_json_timeseries[:widgets][0][:time] = { live_span: "1h" }
-      screen(timeseries_widget).diff(expected_json_timeseries).must_be_nil
+      screen(timeseries_widget).diff(expected_json_timeseries).must_equal []
     end
 
     it "can diff unknown to be future proof" do
       expected = expected_json.merge(
         widgets: [{ title_size: 16, title_align: "left", height: 20, width: 30, text: "A", type: "foo" }]
       )
-      screen(widgets: -> { [{ text: "A", type: "foo" }] }).diff(expected).must_be_nil
+      screen(widgets: -> { [{ text: "A", type: "foo" }] }).diff(expected).must_equal []
     end
 
     it "compares important fields" do
@@ -155,7 +155,7 @@ describe Kennel::Models::Screen do
 
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
-      screen.diff(expected_json).must_be_nil
+      screen.diff(expected_json).must_equal []
     end
   end
 

@@ -147,19 +147,19 @@ describe Kennel::Models::Base do
     end
 
     it "is empty when empty" do
-      diff_resource({}, {}).must_be_nil
+      diff_resource({}, {}).must_equal []
     end
 
     it "ignores readonly attributes" do
-      diff_resource({}, deleted: true).must_be_nil
+      diff_resource({}, deleted: true).must_equal []
     end
 
     it "ignores ids" do
-      diff_resource({ id: 123 }, id: 234).must_be_nil
+      diff_resource({ id: 123 }, id: 234).must_equal []
     end
 
     it "ignores api_resource that syncer adds as a hack to get delete to work" do
-      diff_resource({}, api_resource: 234).must_be_nil
+      diff_resource({}, api_resource: 234).must_equal []
     end
 
     it "makes tag diffs look neat" do

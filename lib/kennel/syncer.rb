@@ -67,7 +67,8 @@ module Kennel
 
             if e = delete_matching_expected(a)
               fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
-              if diff = e.diff(a)
+              diff = e.diff(a)
+              if diff.any?
                 @update << [id, e, a, diff]
               end
             elsif tracking_id(a) # was previously managed

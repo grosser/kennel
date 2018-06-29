@@ -79,8 +79,7 @@ module Kennel
 
         READONLY_ATTRIBUTES.each { |k| actual.delete k }
 
-        diff = HashDiff.diff(actual, expected, use_lcs: false)
-        diff if diff.any?
+        HashDiff.diff(actual, expected, use_lcs: false)
       end
 
       def tracking_id
