@@ -168,6 +168,11 @@ describe Kennel::Models::Screen do
       expected_json.delete(:template_variables)
       screen.diff(expected_json).must_equal []
     end
+
+    it "ignores showGlobalTimeOnboarding" do
+      expected_json[:showGlobalTimeOnboarding] = true
+      screen.diff(expected_json).must_equal []
+    end
   end
 
   describe "#url" do

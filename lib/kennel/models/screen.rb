@@ -55,6 +55,7 @@ module Kennel
         actual.delete(:board_bgtype)
         actual.delete(:height)
         actual.delete(:width)
+        actual.delete(:showGlobalTimeOnboarding)
         actual[:template_variables] ||= []
         (actual[:widgets] || []).each do |w|
           # api randomly returns time.live_span or timeframe
