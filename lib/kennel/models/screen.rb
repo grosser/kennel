@@ -60,8 +60,8 @@ module Kennel
           # api randomly returns time.live_span or timeframe
           w[:timeframe] = w.delete(:time)[:live_span] if w[:time]
 
-          # board_id is a copied value, can ignore
-          w.delete :board_id
+          w.delete :board_id # copied value, can ignore
+          w.delete :isShared # copied value, can ignore
         end
         super
       end
@@ -75,8 +75,10 @@ module Kennel
       def validate_json(data)
         # check for fields that are unsettable
         data[:widgets].each do |w|
-          if w.key?(:board_id)
-            raise "#{tracking_id} remove definition board_id, it is unsettable and will always produce a diff"
+          [:isShared, :board_id].each do |ignored|
+            if w.key?(ignored)
+              raise "#{tracking_id} remove definition #{ignored}, it is unsettable and will always produce a diff"
+            end
           end
         end
       end

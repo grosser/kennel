@@ -108,6 +108,13 @@ describe Kennel::Models::Screen do
       e.message.must_equal "test_project:test_screen remove definition board_id, it is unsettable and will always produce a diff"
     end
 
+    it "does not allow rendering isShared to avoid useless diff when user copy-pasted api reply" do
+      e = assert_raises RuntimeError do
+        screen(widgets: -> { [{ isShared: false }] }).as_json
+      end
+      e.message.must_equal "test_project:test_screen remove definition isShared, it is unsettable and will always produce a diff"
+    end
+
     it "allow invalid widgets when validations are disabled" do
       screen(widgets: -> { [{ board_id: 123 }] }, validate: -> { false }).as_json
     end
@@ -125,7 +132,11 @@ describe Kennel::Models::Screen do
     end
 
     it "does not compare read-only widget board_id field" do
-      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup])).must_equal []
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup.merge(board_id: 123)])).must_equal []
+    end
+
+    it "does not compare read-only widget isShared field" do
+      screen(widgets: -> { [{}] }).diff(expected_json.merge(widgets: [default_widget.dup.merge(isShared: false)])).must_equal []
     end
 
     it "does not compare read-only disableCog field" do
