@@ -51,6 +51,7 @@ module Kennel
         actual[:graphs].each do |g|
           g[:definition].delete(:status)
         end
+        ignore_request_defaults as_json, actual, :graphs, :definition
         super
       end
 
@@ -99,7 +100,6 @@ module Kennel
         end + graphs
 
         all.each do |g|
-          g[:definition][:requests].each { |r| r[:conditional_formats] ||= [] }
           g[:definition][:autoscale] = true unless g[:definition].key?(:autoscale)
         end
       end

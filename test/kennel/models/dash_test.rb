@@ -48,7 +48,7 @@ describe Kennel::Models::Dash do
         graphs: -> { [{ definition: { requests: [{ q: "bar" }] } }] }
       ).as_json.must_equal(
         expected_json.merge(
-          graphs: [{ definition: { requests: [{ q: "bar", conditional_formats: [] }], autoscale: true } }]
+          graphs: [{ definition: { requests: [{ q: "bar" }], autoscale: true } }]
         )
       )
     end
@@ -81,7 +81,7 @@ describe Kennel::Models::Dash do
           graphs: [
             {
               title: "TI",
-              definition: { viz: "V", requests: [{ q: "Q", type: "TY", conditional_formats: [] }], autoscale: true }
+              definition: { viz: "V", requests: [{ q: "Q", type: "TY" }], autoscale: true }
             }
           ]
         )
@@ -98,7 +98,7 @@ describe Kennel::Models::Dash do
               title: "TI",
               definition: {
                 viz: "V",
-                requests: [{ q: "Q", type: "TY", conditional_formats: [] }],
+                requests: [{ q: "Q", type: "TY" }],
                 autoscale: true,
                 events: [{ foo: "bar" }]
               }
@@ -119,8 +119,8 @@ describe Kennel::Models::Dash do
               definition: {
                 viz: "V",
                 requests: [
-                  { q: "Q", type: "TY", conditional_formats: [] },
-                  { q: "Q2", type: "TY", conditional_formats: [] }
+                  { q: "Q", type: "TY" },
+                  { q: "Q2", type: "TY" }
                 ],
                 autoscale: true
               }
