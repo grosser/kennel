@@ -69,4 +69,8 @@ Minitest::Test.class_eval do
       end
     end
   end
+
+  def deep_dup(value)
+    Marshal.load(Marshal.dump(value))
+  end
 end

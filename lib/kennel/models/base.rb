@@ -9,6 +9,11 @@ module Kennel
         :deleted, :matching_downtimes, :id, :created, :created_at, :creator, :org_id, :modified,
         :overall_state_modified, :overall_state, :api_resource
       ].freeze
+      REQUEST_DEFAULTS = {
+        style: { width: "normal", palette: "dog_classic", type: "solid" },
+        conditional_formats: [],
+        aggregator: "avg"
+      }.freeze
 
       class ValidationError < RuntimeError
       end
@@ -91,6 +96,21 @@ module Kennel
       end
 
       private
+
+      # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
+      def ignore_request_defaults(expected, actual, level1, level2)
+        expected[level1].each_with_index do |e_w, wi|
+          (e_w.dig(level2, :requests) || []).each_with_index do |e_r, ri|
+            next unless a_r = actual.dig(level1, wi, level2, :requests, ri) # skip newly added widgets/requests
+            REQUEST_DEFAULTS.each do |key, default|
+              if [a_r, e_r].all? { |r| r[key].nil? || r[key] == default }
+                a_r.delete(key)
+                e_r.delete(key)
+              end
+            end
+          end
+        end
+      end
 
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)

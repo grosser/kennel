@@ -6,11 +6,6 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
-      REQUEST_DEFAULTS = {
-        style: { width: "normal", palette: "dog_classic", type: "solid" },
-        conditional_formats: [],
-        aggregator: "avg"
-      }.freeze
 
       settings :id, :board_title, :description, :widgets, :kennel_id
 
@@ -70,18 +65,7 @@ module Kennel
           w.delete :isShared # copied value, can ignore
         end
 
-        # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
-        as_json[:widgets].each_with_index do |e_w, wi|
-          (e_w.dig(:tile_def, :requests) || []).each_with_index do |e_r, ri|
-            next unless a_r = actual.dig(:widgets, wi, :tile_def, :requests, ri) # skip newly added widgets/requests
-            REQUEST_DEFAULTS.each do |key, default|
-              if [a_r, e_r].all? { |r| r[key].nil? || r[key] == default }
-                a_r.delete(key)
-                e_r.delete(key)
-              end
-            end
-          end
-        end
+        ignore_request_defaults as_json, actual, :widgets, :tile_def
 
         super
       end
