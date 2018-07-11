@@ -129,7 +129,7 @@ describe Kennel::Syncer do
       TEXT
     end
 
-    describe("with project filter set") do
+    describe "with project filter set" do
       let(:project_filter) { "a" }
 
       it "updates when previously unmanaged" do

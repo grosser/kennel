@@ -55,7 +55,7 @@ module Kennel
       @update = []
       @delete = []
       actual = Progress.progress "Downloading definitions" do
-        filtered_resources_from_dd
+        filter_by_project! download_definitions
       end
 
       Progress.progress "Diffing" do
@@ -168,6 +168,16 @@ module Kennel
       end
     end
 
+    def filter_by_project!(definitions)
+      if @project_filter
+        definitions.select! do |a|
+          id = tracking_id(a)
+          !id || id.start_with?("#{@project_filter}:")
+        end
+      end
+      definitions
+    end
+
     def add_tracking_id(e)
       e.as_json[tracking_field(e.as_json)] +=
         "\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually"
@@ -179,17 +189,6 @@ module Kennel
 
     def tracking_field(a)
       a[:message] ? :message : :description
-    end
-
-    def filtered_resources_from_dd
-      download_definitions.select do |a|
-        if @project_filter
-          tracking_id = tracking_id(a)
-          tracking_id.nil? || tracking_id.start_with?("#{@project_filter}:")
-        else
-          true
-        end
-      end
     end
   end
 end
