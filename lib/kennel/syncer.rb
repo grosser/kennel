@@ -54,7 +54,9 @@ module Kennel
     def calculate_diff
       @update = []
       @delete = []
-      actual = filtered_resources_from_dd
+      actual = Progress.progress "Downloading definitions" do
+        filtered_resources_from_dd
+      end
 
       Progress.progress "Diffing" do
         details_cache do |cache|
@@ -180,14 +182,12 @@ module Kennel
     end
 
     def filtered_resources_from_dd
-      Progress.progress "Downloading definitions" do
-        download_definitions.select do |a|
-          if @project_filter
-            tracking_id = tracking_id(a)
-            tracking_id.nil? || tracking_id.start_with?("#{@project_filter}:")
-          else
-            true
-          end
+      download_definitions.select do |a|
+        if @project_filter
+          tracking_id = tracking_id(a)
+          tracking_id.nil? || tracking_id.start_with?("#{@project_filter}:")
+        else
+          true
         end
       end
     end
