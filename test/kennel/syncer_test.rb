@@ -136,9 +136,9 @@ describe Kennel::Syncer do
         expected << monitor("a", "b", id: 123)
         monitors << component("a", "", id: 123, message: "old stuff")
         output.must_equal <<~TEXT
-        Plan:
-        Update a:b
-          ~message \"old stuff\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+          Plan:
+          Update a:b
+            ~message \"old stuff\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
         TEXT
       end
     end
