@@ -70,7 +70,8 @@ describe Kennel::Syncer do
   let(:dashes) { [] }
   let(:screens) { [] }
   let(:expected) { [] }
-  let(:syncer) { Kennel::Syncer.new(api, expected) }
+  let(:project_filter) { nil }
+  let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter) }
 
   before do
     Kennel::Progress.stubs(:print).yields
@@ -126,6 +127,20 @@ describe Kennel::Syncer do
           ~nested.foo \"baz\" -> \"bar\"
           +bar nil -> \"foo\"
       TEXT
+    end
+
+    describe("with project filter set") do
+      let(:project_filter) { "a" }
+
+      it "updates when previously unmanaged" do
+        expected << monitor("a", "b", id: 123)
+        monitors << component("a", "", id: 123, message: "old stuff")
+        output.must_equal <<~TEXT
+          Plan:
+          Update a:b
+            ~message \"old stuff\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+        TEXT
+      end
     end
 
     it "shows long updates nicely" do
