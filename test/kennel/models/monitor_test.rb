@@ -172,6 +172,10 @@ describe Kennel::Models::Monitor do
         expected_basic_json.merge(id: 123)
       )
     end
+
+    it "strips query to avoid perma-diff" do
+      monitor(query: -> { " avg(last_5m) > 123.0 " }).as_json.dig(:query).must_equal "avg(last_5m) > 123.0"
+    end
   end
 
   describe "#diff" do

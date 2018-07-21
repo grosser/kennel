@@ -42,7 +42,7 @@ module Kennel
         data = {
           name: "#{name}#{LOCK}",
           type: type,
-          query: query,
+          query: query.strip,
           message: message.strip,
           tags: tags,
           multi: multi,
