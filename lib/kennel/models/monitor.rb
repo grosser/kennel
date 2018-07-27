@@ -138,28 +138,44 @@ module Kennel
       def validate_json(data)
         type = data.fetch(:type)
 
+        # do not allow deprecated type that will be coverted by datadog and then produce a diff
         if type == "metric alert"
           invalid! "type 'metric alert' is deprecated, do not set type to use the default 'query alert'"
         end
 
+        # verify service checks use interger thresholds to avoid diff
         if type == "service check" && [ok, warning, critical].compact.map(&:class).uniq != [Integer]
           invalid! ":ok, :warning and :critical must be integers for service check type"
         end
 
+        # verify query includes critical value
         if query_value = data.fetch(:query)[/\s*[<>]\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
             invalid! "critical and value used in query must match"
           end
         end
 
+        # verify renotify interval is valid
         unless RENOTIFY_INTERVALS.include? data.dig(:options, :renotify_interval)
           invalid! "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
         end
 
-        if ["metric alert", "query alert"].include?(type)
+        if type == "query alert"
+          # verify interval is valud
           interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
           unless QUERY_INTERVALS.include?(interval)
             invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
+          end
+        end
+
+        if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
+          # verify is_match uses available variables
+          message = data.fetch(:message)
+          used = message.scan(/{{\s*#is_match\s*"([a-zA-Z\d_.-]+).name"/).flatten.uniq
+          allowed = data.fetch(:query)[/by\s*{([^\}]+)}/, 1].to_s.split(/\s*,\s*/)
+          unsupported = used - allowed
+          if unsupported.any?
+            invalid! "is_match used with unsupported dimensions #{unsupported}, allowed dimensions are #{allowed}"
           end
         end
       end

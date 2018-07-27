@@ -176,6 +176,25 @@ describe Kennel::Models::Monitor do
     it "strips query to avoid perma-diff" do
       monitor(query: -> { " avg(last_5m) > 123.0 " }).as_json.dig(:query).must_equal "avg(last_5m) > 123.0"
     end
+
+    describe "is_match validation" do
+      let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
+
+      it "passes without is_match" do
+        mon.as_json
+      end
+
+      it "fails when using invalid is_match" do
+        mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
+        e = assert_raises(RuntimeError) { mon.as_json }
+        e.message.must_equal "test_project:m1 is_match used with unsupported dimensions [\"environment\"], allowed dimensions are [\"env\"]"
+      end
+
+      it "passes when using valid is_match" do
+        mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
+        mon.as_json
+      end
+    end
   end
 
   describe "#diff" do
