@@ -224,4 +224,10 @@ describe Kennel::Models::Base do
       base.tracking_id.must_equal "test_project:test_base"
     end
   end
+
+  describe ".to_json" do
+    it "blows up when used by accident instead of rendering unexpected json" do
+      assert_raises(NotImplementedError) { TestBase.new.to_json }
+    end
+  end
 end

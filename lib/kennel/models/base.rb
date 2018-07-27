@@ -95,6 +95,10 @@ module Kennel
         "#{project.kennel_id}:#{kennel_id}"
       end
 
+      def to_json
+        raise NotImplementedError, "Use as_json"
+      end
+
       private
 
       # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
