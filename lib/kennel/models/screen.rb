@@ -6,6 +6,11 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
+      COPIED_WIDGET_VALUES = [:board_id, :isShared].freeze
+      WIDGET_DEFAULTS = {
+        time: {},
+        timeframe: "1h"
+      }.freeze
 
       settings :id, :board_title, :description, :widgets, :kennel_id
 
@@ -58,13 +63,15 @@ module Kennel
         actual.delete(:showGlobalTimeOnboarding)
         actual[:template_variables] ||= []
         (actual[:widgets] || []).each do |w|
-          # api randomly returns time.live_span or timeframe
-          w[:timeframe] = w.delete(:time)[:live_span] if w[:time]
+          # api randomly returns time.live_span or timeframe or empty time hash
+          if w.dig(:time, :live_span)
+            w[:timeframe] = w[:time].delete(:live_span)
+          end
 
-          w.delete :board_id # copied value, can ignore
-          w.delete :isShared # copied value, can ignore
+          COPIED_WIDGET_VALUES.each { |v| w.delete v }
         end
 
+        ignore_defaults as_json[:widgets], actual[:widgets], WIDGET_DEFAULTS
         ignore_request_defaults as_json, actual, :widgets, :tile_def
 
         super
@@ -79,7 +86,7 @@ module Kennel
       def validate_json(data)
         # check for fields that are unsettable
         data[:widgets].each do |w|
-          [:isShared, :board_id].each do |ignored|
+          COPIED_WIDGET_VALUES.each do |ignored|
             if w.key?(ignored)
               invalid! "remove definition #{ignored}, it is unsettable and will always produce a diff"
             end
@@ -119,8 +126,7 @@ module Kennel
             {
               title: true,
               legend: false,
-              legend_size: "0",
-              timeframe: "1h"
+              legend_size: "0"
             }
           else
             {}
