@@ -32,7 +32,6 @@ describe Kennel::Models::Screen do
           title: true,
           legend: false,
           legend_size: "0",
-          timeframe: "1h",
           title_text: "Hello",
           type: "timeseries",
           x: 0,
@@ -53,29 +52,29 @@ describe Kennel::Models::Screen do
     )
   end
   let(:default_widget) { { title_size: 16, title_align: "left", height: 20, width: 30 }.freeze }
-  let(:timeseries_widget) do
-    {
-      widgets: -> {
-        [
-          {
-            title_text: "Hello",
-            type: "timeseries",
-            x: 0,
-            y: 0,
-            tile_def: {
-              viz: "timeseries",
-              requests: [
-                {
-                  q: "avg:foo.bar",
-                  aggregator: "avg",
-                  type: "area"
-                }
-              ]
+  let(:timeseries_widgets) do
+    [
+      {
+        title_text: "Hello",
+        type: "timeseries",
+        x: 0,
+        y: 0,
+        tile_def: {
+          viz: "timeseries",
+          requests: [
+            {
+              q: "avg:foo.bar",
+              aggregator: "avg",
+              type: "area"
             }
-          }
-        ]
+          ]
+        }
       }
-    }
+    ]
+  end
+  let(:timeseries_widget) do
+    w = timeseries_widgets
+    { widgets: -> { w } }
   end
 
   describe "#as_json" do
@@ -149,6 +148,12 @@ describe Kennel::Models::Screen do
     it "does not show diff when api randomly returns time.live_span instead of timeframe" do
       expected_json_timeseries[:widgets][0].delete :timeframe
       expected_json_timeseries[:widgets][0][:time] = { live_span: "1h" }
+      screen(timeseries_widget).diff(expected_json_timeseries).must_equal []
+    end
+
+    it "does not show diff when api randomly returns empty time" do
+      timeseries_widgets[0][:time] = {}
+      expected_json_timeseries[:widgets][0][:time] = {}
       screen(timeseries_widget).diff(expected_json_timeseries).must_equal []
     end
 
