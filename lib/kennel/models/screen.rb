@@ -6,6 +6,7 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
+      COPIED_WIDGET_VALUES = [:board_id, :isShared].freeze
 
       settings :id, :board_title, :description, :widgets, :kennel_id
 
@@ -61,8 +62,7 @@ module Kennel
           # api randomly returns time.live_span or timeframe
           w[:timeframe] = w.delete(:time)[:live_span] if w[:time]
 
-          w.delete :board_id # copied value, can ignore
-          w.delete :isShared # copied value, can ignore
+          COPIED_WIDGET_VALUES.each { |v| w.delete v }
         end
 
         ignore_request_defaults as_json, actual, :widgets, :tile_def
@@ -79,7 +79,7 @@ module Kennel
       def validate_json(data)
         # check for fields that are unsettable
         data[:widgets].each do |w|
-          [:isShared, :board_id].each do |ignored|
+          COPIED_WIDGET_VALUES.each do |ignored|
             if w.key?(ignored)
               invalid! "remove definition #{ignored}, it is unsettable and will always produce a diff"
             end
