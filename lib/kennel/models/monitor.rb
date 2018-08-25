@@ -8,6 +8,7 @@ module Kennel
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
+      NON_MULTI_TYPES = ["query alert", "log alert"].freeze # NOTE: event alerts don't seem to return their multi setting
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
@@ -25,7 +26,7 @@ module Kennel
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         notify_audit: -> { true },
         tags: -> { @project.tags },
-        multi: ->  { type != "query alert" || query.include?(" by ") },
+        multi: ->  { !NON_MULTI_TYPES.include?(type) || query.include?(" by ") },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil }
       )
