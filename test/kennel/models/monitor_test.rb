@@ -97,6 +97,10 @@ describe Kennel::Models::Monitor do
       monitor(query: -> { "(last_5m) by foo > 123.0" }).as_json[:multi].must_equal true
     end
 
+    it "sets multi false for log alerts" do
+      monitor(type: -> { "log alert" }).as_json[:multi].must_equal false
+    end
+
     it "can set require_full_window" do
       monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
     end
