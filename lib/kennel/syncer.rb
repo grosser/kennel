@@ -179,8 +179,9 @@ module Kennel
     end
 
     def add_tracking_id(e)
-      e.as_json[tracking_field(e.as_json)] +=
-        "\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually"
+      json = e.as_json
+      field = tracking_field(json)
+      json[field] = "#{json[field]}\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually".lstrip
     end
 
     def tracking_id(a)
