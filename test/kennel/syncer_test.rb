@@ -347,7 +347,7 @@ describe Kennel::Syncer do
     it "sets values we do not compare on" do
       expected << monitor("a", "b", type: "event alert", options: { thresholds: { critical: 2 } })
       sent = deep_dup(expected.first.as_json)
-      sent[:message] += "\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+      sent[:message] = "@slack-foo\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually".lstrip
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
       output.must_equal "Created monitor a:b /monitors#123/edit\n"
     end
