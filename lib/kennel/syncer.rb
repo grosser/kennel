@@ -54,11 +54,11 @@ module Kennel
     def calculate_diff
       @update = []
       @delete = []
-      actual = Progress.progress "Downloading definitions" do
-        filter_by_project! download_definitions
-      end
+      actual = Progress.progress("Downloading definitions") { download_definitions }
 
       Progress.progress "Diffing" do
+        filter_by_project! actual
+
         details_cache do |cache|
           actual.each do |a|
             id = a.fetch(:id)
@@ -66,9 +66,7 @@ module Kennel
             if e = delete_matching_expected(a)
               fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
               diff = e.diff(a)
-              if diff.any?
-                @update << [id, e, a, diff]
-              end
+              @update << [id, e, a, diff] if diff.any?
             elsif tracking_id(a) # was previously managed
               @delete << [id, nil, a]
             end
@@ -169,13 +167,11 @@ module Kennel
     end
 
     def filter_by_project!(definitions)
-      if @project_filter
-        definitions.select! do |a|
-          id = tracking_id(a)
-          !id || id.start_with?("#{@project_filter}:")
-        end
+      return unless @project_filter
+      definitions.select! do |a|
+        id = tracking_id(a)
+        !id || id.start_with?("#{@project_filter}:")
       end
-      definitions
     end
 
     def add_tracking_id(e)
