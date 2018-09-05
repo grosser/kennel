@@ -2,6 +2,7 @@
 module Kennel
   class Syncer
     CACHE_FILE = "tmp/cache/details" # keep in sync with .travis.yml caching
+    TRACKING_FIELDS = [:message, :description].freeze
 
     def initialize(api, expected, project: nil)
       @api = api
@@ -28,6 +29,8 @@ module Kennel
     end
 
     def update
+      block_irreversible_partial_changes
+
       @create.each do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
         reply = unnest(e.class.api_resource, reply)
@@ -166,6 +169,15 @@ module Kennel
       end
     end
 
+    def block_irreversible_partial_changes
+      return unless @project_filter
+      return if
+        @delete.none? &&
+        @update.none? { |_, e, _, diff| e.id && diff.any? { |_, field| TRACKING_FIELDS.include?(field.to_sym) } }
+
+      raise "Partial updates should not modify resources with an id, since these changes are irreversible"
+    end
+
     def filter_by_project!(definitions)
       return unless @project_filter
       definitions.select! do |a|
@@ -185,7 +197,7 @@ module Kennel
     end
 
     def tracking_field(a)
-      a[:message] ? :message : :description
+      TRACKING_FIELDS.detect { |f| a.key?(f) }
     end
   end
 end

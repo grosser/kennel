@@ -365,6 +365,30 @@ describe Kennel::Syncer do
       output.must_equal "Deleted monitor a:b 123\n"
     end
 
+    describe "with project_filter" do
+      let(:project_filter) { "a" }
+
+      it "refuses to do deletes since they could be irreversible" do
+        monitors << component("a", "b", id: 123)
+        e = assert_raises(RuntimeError) { output }
+        e.message.must_include "modify resources with an id"
+      end
+
+      it "refuses to tag resources with ids since they would be irreversibly deleted by other branches" do
+        expected << monitor("a", "b", foo: "bar", id: 123)
+        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor")
+        e = assert_raises(RuntimeError) { output }
+        e.message.must_include "modify resources with an id"
+      end
+
+      it "allows partial updates on monitors with ids when it does not modify tracking" do
+        expected << monitor("a", "b", foo: "bar", id: 123)
+        monitors << component("a", "b", id: 123)
+        api.expects(:update)
+        output
+      end
+    end
+
     describe "dashes" do
       in_temp_dir # uses file-cache
 
