@@ -41,7 +41,6 @@ module Kennel
         puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
-      block_irreversible_partial_deletes
       @delete.each do |id, _, a|
         @api.delete a.fetch(:api_resource), id
         puts "Deleted #{a.fetch(:api_resource)} #{tracking_id(a)} #{id}"
@@ -175,15 +174,6 @@ module Kennel
       raise <<~TEXT
         Updates with PROJECT= filter should not update #{TRACKING_FIELDS.join("/")} of resources with a set `id:`, since this makes them get deleted by a full update.
         Remove the `id:` to test them out, which will result in a copy being created and later deleted.
-      TEXT
-    end
-
-    def block_irreversible_partial_deletes
-      return unless @project_filter
-      return if @delete.empty?
-      raise <<~TEXT
-        Deletes with PROJECT= filter should not delete resources, since they could end up deleting things with a fixed `id:`.
-        Run a full update from an updated master branch to delete unwanted resources.
       TEXT
     end
 
