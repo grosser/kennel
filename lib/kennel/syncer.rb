@@ -29,19 +29,19 @@ module Kennel
     end
 
     def update
-      block_irreversible_partial_changes
-
       @create.each do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
         reply = unnest(e.class.api_resource, reply)
         puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
       end
 
+      block_irreversible_partial_updates
       @update.each do |id, e|
         @api.update e.class.api_resource, id, e.as_json
         puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
+      block_irreversible_partial_deletes
       @delete.each do |id, _, a|
         @api.delete a.fetch(:api_resource), id
         puts "Deleted #{a.fetch(:api_resource)} #{tracking_id(a)} #{id}"
@@ -169,13 +169,22 @@ module Kennel
       end
     end
 
-    def block_irreversible_partial_changes
+    def block_irreversible_partial_updates
       return unless @project_filter
-      return if
-        @delete.none? &&
-        @update.none? { |_, e, _, diff| e.id && diff.any? { |_, field| TRACKING_FIELDS.include?(field.to_sym) } }
+      return if @update.none? { |_, e, _, diff| e.id && diff.any? { |_, field| TRACKING_FIELDS.include?(field.to_sym) } }
+      raise <<~TEXT
+        Updates with PROJECT= filter should not update #{TRACKING_FIELDS.join("/")} of resources with a set `id:`, since this makes them get deleted by a full update.
+        Remove the `id:` to test them out, which will result in a copy being created and later deleted.
+      TEXT
+    end
 
-      raise "Partial updates should not modify resources with an id, since these changes are irreversible"
+    def block_irreversible_partial_deletes
+      return unless @project_filter
+      return if @delete.empty?
+      raise <<~TEXT
+        Deletes with PROJECT= filter should not delete resources, since they could end up deleting things with a fixed `id:`.
+        Run a full update from an updated master branch to delete unwanted resources.
+      TEXT
     end
 
     def filter_by_project!(definitions)

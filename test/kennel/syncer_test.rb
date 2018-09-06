@@ -371,14 +371,14 @@ describe Kennel::Syncer do
       it "refuses to do deletes since they could be irreversible" do
         monitors << component("a", "b", id: 123)
         e = assert_raises(RuntimeError) { output }
-        e.message.must_include "modify resources with an id"
+        e.message.must_include "should not delete resources"
       end
 
       it "refuses to tag resources with ids since they would be irreversibly deleted by other branches" do
         expected << monitor("a", "b", foo: "bar", id: 123)
         monitors << component("a", "b", id: 123).merge(message: "An innocent monitor")
         e = assert_raises(RuntimeError) { output }
-        e.message.must_include "modify resources with an id"
+        e.message.must_include "should not update"
       end
 
       it "allows partial updates on monitors with ids when it does not modify tracking" do
