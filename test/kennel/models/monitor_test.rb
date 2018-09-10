@@ -41,7 +41,7 @@ describe Kennel::Models::Monitor do
         new_host_delay: 300,
         include_tags: true,
         escalation_message: nil,
-        evaluation_delay: nil,
+        evaluation_delay: 0,
         locked: false,
         renotify_interval: 120,
         thresholds: { critical: 123.0 }
@@ -155,6 +155,10 @@ describe Kennel::Models::Monitor do
       monitor(notify_audit: -> { false }).as_json.dig(:options, :notify_audit).must_equal false
     end
 
+    it "can set evaluation_delay" do
+      monitor(evaluation_delay: -> { 20 }).as_json.dig(:options, :evaluation_delay).must_equal 20
+    end
+
     it "is cached so we can modify it in syncer" do
       m = monitor
       m.as_json[:foo] = 1
@@ -219,11 +223,6 @@ describe Kennel::Models::Monitor do
 
     it "ignores missing escalation_message" do
       expected_basic_json[:options].delete(:escalation_message)
-      diff_resource({}, {}).must_equal []
-    end
-
-    it "ignores missing evaluation_delay" do
-      expected_basic_json[:options].delete(:evaluation_delay)
       diff_resource({}, {}).must_equal []
     end
 

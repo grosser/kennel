@@ -11,12 +11,13 @@ module Kennel
       NON_MULTI_TYPES = ["query alert", "log alert"].freeze # NOTE: event alerts don't seem to return their multi setting
 
       settings(
-        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
+        :query, :name, :message, :escalation_message, :evaluation_delay, :critical, :kennel_id, :type, :renotify_interval, :warning,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
       )
       defaults(
         message: -> { "\n\n@slack-#{project.team.slack}" },
         escalation_message: -> { "" },
+        evaluation_delay:  -> { 0 },
         type: -> { "query alert" },
         renotify_interval: -> { 120 },
         warning: -> { nil },
@@ -56,7 +57,7 @@ module Kennel
             new_host_delay: 300,
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
-            evaluation_delay: nil,
+            evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
             renotify_interval: renotify_interval || 0,
             thresholds: {
