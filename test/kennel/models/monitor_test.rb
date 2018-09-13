@@ -181,6 +181,10 @@ describe Kennel::Models::Monitor do
       monitor(query: -> { " avg(last_5m) > 123.0 " }).as_json.dig(:query).must_equal "avg(last_5m) > 123.0"
     end
 
+    it "can set slack on the project" do
+      monitor(project: TestProject.new(slack: -> { "project" })).as_json[:message].must_equal "@slack-project"
+    end
+
     describe "is_match validation" do
       let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
 

@@ -15,7 +15,7 @@ module Kennel
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
       )
       defaults(
-        message: -> { "\n\n@slack-#{project.team.slack}" },
+        message: -> { "\n\n@slack-#{project.slack}" },
         escalation_message: -> { "" },
         type: -> { "query alert" },
         renotify_interval: -> { 120 },

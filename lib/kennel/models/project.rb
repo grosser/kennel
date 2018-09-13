@@ -2,9 +2,10 @@
 module Kennel
   module Models
     class Project < Base
-      settings :team, :parts, :tags
+      settings :team, :parts, :tags, :slack
       defaults(
-        tags: -> { ["service:#{kennel_id}"] + team.tags }
+        tags: -> { ["service:#{kennel_id}"] + team.tags },
+        slack: -> { team.slack }
       )
 
       def self.file_location
