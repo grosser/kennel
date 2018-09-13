@@ -13,4 +13,10 @@ describe Kennel::Models::Team do
       Teams::MyTeam.new.tags.must_equal ["team:my_team"]
     end
   end
+
+  describe "#slack" do
+    it "is invalid when using leading #" do
+      assert_raises(Kennel::Models::Base::ValidationError) { Teams::MyTeam.new(slack: -> { "#foo" }) }
+    end
+  end
 end
