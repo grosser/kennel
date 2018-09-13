@@ -15,4 +15,10 @@ describe Kennel::Models::Project do
       TestProject.new.tags.must_equal ["service:test_project", "team:test_team"]
     end
   end
+
+  describe "#slack" do
+    it "uses teams slack" do
+      TestProject.new.slack.must_equal "foo"
+    end
+  end
 end
