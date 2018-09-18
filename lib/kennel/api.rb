@@ -39,7 +39,7 @@ module Kennel
           request.body = JSON.generate(body) if body
           request.headers["Content-type"] = "application/json"
         end
-        break if i == 1 || method != :get || response.status != 500
+        break if i == 1 || method != :get || response.status < 500
       end
 
       unless response.success?
