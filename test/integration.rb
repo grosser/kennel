@@ -7,7 +7,7 @@ require "kennel/utils"
 require "English"
 require "./test/integration_helper"
 
-Maxitest.timeout = 10
+Maxitest.timeout = 30
 
 describe "Integration" do
   include IntegrationHelper
