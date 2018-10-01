@@ -7,8 +7,8 @@ module Kennel
       @client = Faraday.new(url: "https://app.datadoghq.com")
     end
 
-    def show(api_resource, id)
-      request :get, "/api/v1/#{api_resource}/#{id}"
+    def show(api_resource, id, params = {})
+      request :get, "/api/v1/#{api_resource}/#{id}", params: params
     end
 
     def list(api_resource, params)
