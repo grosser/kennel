@@ -37,10 +37,10 @@ describe Kennel::UnmutedAlerts do
       out.must_equal <<~TEXT
         monitor_name
         /monitors/12345
-        Foo\tpod:pod3
-        Alert\tpod:pod3,project:foo,team:bar
-        Alert\tpod:pod10
-        OK\tpod:pod11
+        \e[0mFoo\e[0m\tpod:pod3
+        \e[31mAlert\e[0m\tpod:pod3,project:foo,team:bar
+        \e[31mAlert\e[0m\tpod:pod10
+        \e[0mOK\e[0m\tpod:pod11
 
       TEXT
     end
