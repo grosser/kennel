@@ -24,11 +24,11 @@ module Kennel
       end
 
       def ask(question)
-        printf color(:red, "#{question} -  press 'y' to continue: ")
+        $stderr.printf color(:red, "#{question} -  press 'y' to continue: ")
         begin
           STDIN.gets.chomp == "y"
         rescue Interrupt # do not show a backtrace if user decides to Ctrl+C here
-          printf "\n"
+          $stderr.print "\n"
           exit 1
         end
       end
@@ -95,6 +95,10 @@ module Kennel
             e
           end
         end.map(&:value).each { |i| raise i if i.is_a?(StandardError) }
+      end
+
+      def natural_order(name)
+        name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
       end
     end
   end

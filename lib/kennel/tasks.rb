@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require "English"
 require "kennel"
+require "kennel/unmuted_alerts"
 
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
@@ -40,6 +41,12 @@ namespace :kennel do
     Kennel::GithubReporter.report(ENV["GITHUB_TOKEN"]) do
       Rake::Task[task_name].invoke
     end
+  end
+
+  desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
+  task alerts: :environment do
+    tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
+    Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
   end
 
   task :environment do

@@ -11,7 +11,7 @@ describe Kennel do
     File.write file, content
   end
 
-  capture_stdout
+  capture_all
   in_temp_dir do
     write "projects/simple.rb", <<~RUBY
       class TempProject < Kennel::Models::Project
@@ -94,7 +94,7 @@ describe Kennel do
 
       Kennel.update
 
-      stdout.string.must_include "press 'y' to continue"
+      stderr.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo /monitors#123"
     end
 
@@ -104,7 +104,7 @@ describe Kennel do
 
       Kennel.update
 
-      stdout.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
+      stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end
   end
 end

@@ -34,7 +34,7 @@ describe "Integration" do
 
   it "has an empty diff" do
     # result = sh "echo y | bundle exec rake kennel:update_datadog" # Uncomment this to apply know good diff
-    result = sh "bundle exec rake plan"
+    result = sh "bundle exec rake plan 2>&1"
     result.gsub!(/\d\.\d+s/, "0.00s")
     result = Kennel::Utils.strip_shell_control(result)
     result.must_equal <<~TXT

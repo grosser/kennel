@@ -13,6 +13,7 @@ require "kennel/subclass_tracking"
 require "kennel/file_cache"
 require "kennel/template_variables"
 require "kennel/optional_validations"
+require "kennel/unmuted_alerts"
 
 require "kennel/models/base"
 

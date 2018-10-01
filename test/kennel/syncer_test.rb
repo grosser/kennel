@@ -80,7 +80,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("screen", anything).returns(screenboards: screens)
   end
 
-  capture_stdout
+  capture_all
 
   describe "#plan" do
     let(:output) do
@@ -189,9 +189,8 @@ describe Kennel::Syncer do
 
     it "shows progress" do
       Kennel::Progress.unstub(:print)
-      output.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal(
-        "Downloading definitions ... 0.0s\nDiffing ... 0.0s\nPlan:\nNothing to do\n"
-      )
+      output.must_equal "Plan:\nNothing to do\n"
+      stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal "Downloading definitions ... 0.0s\nDiffing ... 0.0s\n"
     end
 
     describe "filter" do
@@ -302,7 +301,7 @@ describe Kennel::Syncer do
     it "confirms on y" do
       STDIN.expects(:gets).returns("y\n")
       assert syncer.confirm
-      stdout.string.must_equal "\e[31mExecute Plan ? -  press 'y' to continue: \e[0m"
+      stderr.string.must_include "\e[31mExecute Plan ? -  press 'y' to continue: \e[0m"
     end
 
     it "confirms when automated" do
