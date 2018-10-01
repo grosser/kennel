@@ -71,6 +71,10 @@ describe Kennel::Models::Monitor do
       monitor(warning: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning).must_equal 123.0
     end
 
+    it "can set timeout_h" do
+      monitor(timeout_h: -> { 1 }).as_json.dig(:options, :timeout_h).must_equal 1
+    end
+
     it "does not call optional methods twice" do
       called = 0
       monitor(warning: -> { called += 1 }).as_json

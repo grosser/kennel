@@ -11,7 +11,7 @@ module Kennel
       NON_MULTI_TYPES = ["query alert", "log alert"].freeze # NOTE: event alerts don't seem to return their multi setting
 
       settings(
-        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning,
+        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
       )
       defaults(
@@ -26,6 +26,7 @@ module Kennel
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         notify_audit: -> { true },
         tags: -> { @project.tags },
+        timeout_h: -> { 0 },
         multi: ->  { !NON_MULTI_TYPES.include?(type) || query.include?(" by ") },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil }
@@ -48,7 +49,7 @@ module Kennel
           tags: tags,
           multi: multi,
           options: {
-            timeout_h: 0,
+            timeout_h: timeout_h,
             notify_no_data: notify_no_data,
             no_data_timeframe: no_data_timeframe,
             notify_audit: notify_audit,
