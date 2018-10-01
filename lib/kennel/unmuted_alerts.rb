@@ -4,6 +4,12 @@ require "kennel"
 # Show Alerts that are not muted and their alerting scopes
 module Kennel
   class UnmutedAlerts
+    COLORS = {
+      "Alert" => :red,
+      "Warn" => :yellow,
+      "No Data" => :cyan
+    }.freeze
+
     class << self
       def print(api, tag)
         monitors = filtered_monitors(api, tag)
@@ -13,7 +19,10 @@ module Kennel
           monitors.each do |m|
             puts m[:name]
             puts Utils.path_to_url("/monitors/#{m[:id]}")
-            m[:state][:groups].each { |g| puts "#{g[:status]}\t#{g[:name]}" }
+            m[:state][:groups].each do |g|
+              color = COLORS[g[:status]] || :default
+              puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}"
+            end
             puts
           end
         end

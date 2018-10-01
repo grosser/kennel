@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 module Kennel
   module Utils
+    COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, default: 0 }.freeze
+
     class TeeIO < IO
       def initialize(ios)
         @ios = ios
@@ -34,8 +36,7 @@ module Kennel
       end
 
       def color(color, text)
-        code = { red: 31, green: 32, yellow: 33 }.fetch(color)
-        "\e[#{code}m#{text}\e[0m"
+        "\e[#{COLORS.fetch(color)}m#{text}\e[0m"
       end
 
       def strip_shell_control(text)
