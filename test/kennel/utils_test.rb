@@ -41,7 +41,7 @@ describe Kennel::Utils do
     end
 
     it "removes control characters from progress" do
-      text = Kennel::Utils.capture_stdout { Kennel::Progress.progress("Foo") { sleep 0.01 } }
+      text = Kennel::Utils.capture_stderr { Kennel::Progress.progress("Foo") { sleep 0.01 } }
       text.must_include "\b"
       text.gsub!(/\d+/, "0")
       Kennel::Utils.strip_shell_control(text).must_equal "Foo ... 0.0s\n"
@@ -86,12 +86,12 @@ describe Kennel::Utils do
   end
 
   describe ".ask" do
-    capture_stdout
+    capture_all
 
     it "is true on yes" do
       STDIN.expects(:gets).returns("y\n")
       assert Kennel::Utils.ask("foo")
-      stdout.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m"
+      stderr.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m"
     end
 
     it "is false on no" do
@@ -110,7 +110,7 @@ describe Kennel::Utils do
       refute Kennel::Utils.ask("foo")
 
       # newline is important or prompt will look weird
-      stdout.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m\n"
+      stderr.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m\n"
     end
   end
 
@@ -142,6 +142,24 @@ describe Kennel::Utils do
           raise ArgumentError
         end
       end
+    end
+  end
+
+  describe ".natural_order" do
+    def sort(list)
+      list.sort_by { |x| Kennel::Utils.natural_order(x) }
+    end
+
+    it "sorts naturally" do
+      sort(["a11", "a1", "a22", "b1", "a12", "a9"]).must_equal ["a1", "a9", "a11", "a12", "a22", "b1"]
+    end
+
+    it "sorts pure numbers" do
+      sort(["11", "1", "22", "12", "9"]).must_equal ["1", "9", "11", "12", "22"]
+    end
+
+    it "sorts pure words" do
+      sort(["bb", "ab", "aa", "a", "b"]).must_equal ["a", "aa", "ab", "b", "bb"]
     end
   end
 end

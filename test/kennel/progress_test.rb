@@ -4,7 +4,7 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::Progress do
-  capture_stdout
+  capture_all
 
   describe ".progress" do
     it "shows progress" do
@@ -18,8 +18,8 @@ describe Kennel::Progress do
         123
       end
       result.must_equal 123
-      stdout.string.must_include "|\b/\b-\b\\\b|\b"
-      stdout.string.sub(/-.*?0/, "0").gsub(/\d\.\d+/, "1.11").must_equal "foo ... 1.11s\n"
+      stderr.string.must_include "|\b/\b-\b\\\b|\b"
+      stderr.string.sub(/-.*?0/, "0").gsub(/\d\.\d+/, "1.11").must_equal "foo ... 1.11s\n"
     end
   end
 end

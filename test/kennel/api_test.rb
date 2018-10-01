@@ -17,6 +17,13 @@ describe Kennel::Api do
         .to_return(body: { bar: "foo" }.to_json)
       api.show("monitor", 1234).must_equal bar: "foo"
     end
+
+    it "can pass params so external users can filter" do
+      stub_request(:get, "monitor/1234", "&foo=bar")
+        .with(body: nil, headers: { "Content-Type" => "application/json" })
+        .to_return(body: { bar: "foo" }.to_json)
+      api.show("monitor", 1234, foo: "bar").must_equal bar: "foo"
+    end
   end
 
   describe "#list" do

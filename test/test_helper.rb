@@ -48,14 +48,17 @@ Minitest::Test.class_eval do
     around { |t| with_env(hash, &t) }
   end
 
-  def self.capture_stdout
+  def self.capture_all
     let(:stdout) { StringIO.new }
+    let(:stderr) { StringIO.new }
 
     around do |t|
       $stdout = stdout
+      $stderr = stderr
       t.call
     ensure
       $stdout = STDOUT
+      $stderr = STDERR
     end
   end
 
@@ -72,5 +75,9 @@ Minitest::Test.class_eval do
 
   def deep_dup(value)
     Marshal.load(Marshal.dump(value))
+  end
+
+  def stub_datadog_request(method, path, extra = "")
+    stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?api_key=api&application_key=app#{extra}")
   end
 end

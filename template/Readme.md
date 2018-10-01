@@ -152,7 +152,11 @@ to unblock use the `validate: -> { false }` option.
 ### Debugging locally
 
  - make sure to be on update `master` to not undo other changes
- - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project 
+ - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
+
+### Listing umuted alerts
+
+Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
 
 ## Examples
 
