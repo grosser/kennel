@@ -88,14 +88,26 @@ module Kennel
         end
       end
 
-      def parallel(items)
-        items.map do |item|
+      def parallel(items, max: 10)
+        threads = [items.size, max].min
+        work = items.each_with_index.to_a
+        done = Array.new(items.size)
+        workers = Array.new(threads).map do
           Thread.new do
-            yield item
-          rescue StandardError => e
-            e
+            loop do
+              item, i = work.pop
+              break unless i
+              done[i] =
+                begin
+                  yield item
+                rescue StandardError => e
+                  e
+                end
+            end
           end
-        end.map(&:value).each { |i| raise i if i.is_a?(StandardError) }
+        end
+        workers.each(&:join)
+        done.each { |d| raise d if d.is_a?(StandardError) }
       end
 
       def natural_order(name)
