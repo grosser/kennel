@@ -150,6 +150,35 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "supports apm_queries" do
+      dash(
+        graphs: -> {
+          [
+            {
+              definition: {
+                viz: "timeseries",
+                requests: [
+                  {
+                    aggregator: "pc95",
+                    apm_query: {
+                      index: "trace-search",
+                      search: {
+                        query: "service:classic-trigger-execution"
+                      },
+                      compute: {
+                        facet: "@duration",
+                        aggregation: "pc95"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ).as_json
+    end
+
     it "raises when using too many arguments for definition" do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], "Whoops"]] }).as_json
