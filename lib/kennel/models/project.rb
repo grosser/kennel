@@ -4,7 +4,7 @@ module Kennel
     class Project < Base
       settings :team, :parts, :tags, :slack
       defaults(
-        tags: -> { ["project:#{kennel_id}"] + team.tags },
+        tags: -> { Array(["project:#{kennel_id}"] + team.tags).uniq },
         slack: -> { team.slack }
       )
 
