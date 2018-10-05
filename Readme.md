@@ -10,15 +10,14 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - Reliable cleanup with automated deletion
 
 ![](template/github/screen.png?raw=true)
-
-<!-- CUT only make changes to template/Readme.md -->
+<!-- REMOVE do not make changes to template/Readme.md -->
 ## Install
 
  - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo
  - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
  - setup travis build for the repo
  - add a basic projects and teams so others can copy-paste to get started
-<!-- CUT -->
+<!-- REMOVE -->
 
 ## Structure
 
@@ -29,12 +28,14 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ## Workflows
 
+<!-- ADD do not make changes to template/Readme.md
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
  - go to [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
  - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
  - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
+-->
 
 ### Adding a team
 
@@ -195,7 +196,7 @@ class Database < Kennel::Models::Project
   )
 end
 ```
-<!-- CUT only make changes to template/Readme.md -->
+<!-- REMOVE do not make changes to template/Readme.md -->
 
 ### Integration testing
 
@@ -215,4 +216,4 @@ Author
 michael@grosser.it<br/>
 License: MIT<br/>
 [![Build Status](https://travis-ci.org/grosser/kennel.png)](https://travis-ci.org/grosser/kennel)
-<!-- CUT -->
+<!-- REMOVE -->

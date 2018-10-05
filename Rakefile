@@ -33,13 +33,11 @@ end
 
 desc "Keep readmes in sync"
 task :readme do
-  keep = File.read("Readme.md").scan(/<!-- CUT.*? -->.*?<!-- CUT -->\n/m)
-  raise "expected 2 parts, found #{keep.size}" unless keep.size == 2
-  template = File.read("template/Readme.md")
-  template.sub!("## Structure", "#{keep[0]}\n## Structure")
-  template += keep[1]
-  template.gsub!("(github/", "(template/github/")
-  File.write("Readme.md", template)
+  readme = File.read("Readme.md")
+  raise "Unable to find ADD" unless readme.gsub!(/<!-- ADD.*?\n(.*?)\n-->/m, "\\1")
+  raise "Unable to find REMOVE" unless readme.gsub!(/<!-- REMOVE.*? -->.*?<!-- REMOVE -->\n/m, "")
+  raise "Unable to find images" unless readme.gsub!(/template\//, "")
+  File.write("template/Readme.md", readme)
   sh "git diff HEAD --exit-code -- Readme.md"
 end
 
