@@ -46,7 +46,7 @@ module Kennel
           type: type,
           query: query.strip,
           message: message.strip,
-          tags: tags,
+          tags: tags.uniq,
           multi: multi,
           options: {
             timeout_h: timeout_h,
