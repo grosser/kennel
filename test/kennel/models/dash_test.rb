@@ -108,6 +108,26 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "adds markers" do
+      dash(
+        definitions: -> { [["TI", "V", "TY", "Q", markers: [{ foo: "bar" }]]] }
+      ).as_json.must_equal(
+        expected_json.merge(
+          graphs: [
+            {
+              title: "TI",
+              definition: {
+                viz: "V",
+                requests: [{ q: "Q", type: "TY" }],
+                autoscale: true,
+                markers: [{ foo: "bar" }]
+              }
+            }
+          ]
+        )
+      )
+    end
+
     it "adds definitions as graphs with multiple queries" do
       dash(
         definitions: -> { [["TI", "V", "TY", ["Q", "Q2"]]] }
@@ -197,7 +217,7 @@ describe Kennel::Models::Dash do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], foo: "bar"]] }).as_json
       end
-      e.message.must_equal "Supported options are: :events"
+      e.message.must_equal "Supported options are: :events, :markers"
     end
 
     it "raises when using nil arguments for definition" do

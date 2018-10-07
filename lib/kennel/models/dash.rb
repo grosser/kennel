@@ -6,7 +6,7 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
-      SUPPORTED_GRAPH_OPTIONS = [:events].freeze
+      SUPPORTED_GRAPH_OPTIONS = [:events, :markers].freeze
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
       defaults(
@@ -96,7 +96,9 @@ module Kennel
 
           requests = Array(queries).map { |q| { q: q, type: type } }
           graph = { title: title, definition: { viz: viz, requests: requests } }
-          graph[:definition][:events] = options[:events] if options[:events]
+          SUPPORTED_GRAPH_OPTIONS.each do |key|
+            graph[:definition][key] = options[key] if options[key]
+          end
           graph
         end + graphs
 
