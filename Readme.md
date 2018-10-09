@@ -13,10 +13,18 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 <!-- NOT IN template/Readme.md  -->
 ## Install
 
- - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo
- - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
- - setup travis build for the repo
+ - create a new private `kennel` repo for your organization (do not fork this repo)
+ - use the template folder as starting point:
+    ```
+    git clone git@github.com:your-org/kennel.git
+    git clone git@github.com:grosser/kennel.git seed
+    mv seed/teamplate/* kennel/
+    cd kennel && git add . && git commit -m 'initial'
+    ```
  - add a basic projects and teams so others can copy-paste to get started
+ - setup travis build for your repo
+ - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
+ - follow `Setup` in your repos Readme.md
 <!-- NOT IN -->
 
 ## Structure
