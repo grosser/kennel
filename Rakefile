@@ -34,8 +34,8 @@ end
 desc "Keep readmes in sync"
 task :readme do
   readme = File.read("Readme.md")
-  raise "Unable to find ADD" unless readme.gsub!(/<!-- ADD.*?\n(.*?)\n-->/m, "\\1")
-  raise "Unable to find REMOVE" unless readme.gsub!(/<!-- REMOVE.*? -->.*?<!-- REMOVE -->\n/m, "")
+  raise "Unable to find ADD" unless readme.gsub!(/<!-- ONLY IN .*?\n(.*?)\n-->/m, "\\1")
+  raise "Unable to find REMOVE" unless readme.gsub!(/<!-- NOT IN .*? -->.*?<!-- NOT IN -->\n/m, "")
   raise "Unable to find images" unless readme.gsub!(/template\//, "")
   File.write("template/Readme.md", readme)
   sh "git diff HEAD --exit-code -- Readme.md"

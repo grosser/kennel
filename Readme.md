@@ -10,14 +10,14 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - Reliable cleanup with automated deletion
 
 ![](template/github/screen.png?raw=true)
-<!-- REMOVE do not make changes to template/Readme.md -->
+<!-- NOT IN template/Readme.md  -->
 ## Install
 
  - create a new private `kennel` repo for your organization, clone this repo, push the contents of the `template` folder into the private repo
  - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
  - setup travis build for the repo
  - add a basic projects and teams so others can copy-paste to get started
-<!-- REMOVE -->
+<!-- NOT IN -->
 
 ## Structure
 
@@ -28,7 +28,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ## Workflows
 
-<!-- ADD do not make changes to template/Readme.md
+<!-- ONLY IN template/Readme.md
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
@@ -196,7 +196,7 @@ class Database < Kennel::Models::Project
   )
 end
 ```
-<!-- REMOVE do not make changes to template/Readme.md -->
+<!-- NOT IN template/Readme.md -->
 
 ### Integration testing
 
@@ -216,4 +216,4 @@ Author
 michael@grosser.it<br/>
 License: MIT<br/>
 [![Build Status](https://travis-ci.org/grosser/kennel.png)](https://travis-ci.org/grosser/kennel)
-<!-- REMOVE -->
+<!-- NOT IN -->
