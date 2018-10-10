@@ -164,7 +164,7 @@ end
 
 ### Skipping validations
 
-Some validations might be too strict for your usecase or just wrong, please open an issue and
+Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
 ### Debugging locally
