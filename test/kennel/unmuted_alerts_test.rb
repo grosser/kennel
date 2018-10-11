@@ -9,6 +9,7 @@ describe Kennel::UnmutedAlerts do
 
   let(:tag) { "team:compute" }
   let(:monitors) { [monitor] }
+  let(:triggered) { (Time.now - 10).to_i }
   let(:monitor) do
     {
       id: 12345,
@@ -16,15 +17,21 @@ describe Kennel::UnmutedAlerts do
       name: "monitor_name",
       state: {
         groups: { # Note: only included in show request
-          "pod:pod10": { status: "Alert", name: "pod:pod10" },
-          "pod:pod11": { status: "OK", name: "pod:pod11" },
-          "pod:pod3": { status: "Foo", name: "pod:pod3" },
-          "pod:pod3,project:foo,team:bar": { status: "Alert", name: "pod:pod3,project:foo,team:bar" }
+          "pod:pod10": { status: "Alert", name: "pod:pod10", last_triggered_ts: triggered },
+          "pod:pod3": { status: "Foo", name: "pod:pod3", last_triggered_ts: triggered },
+          "pod:pod3,project:foo,team:bar": {
+            status: "Alert", name: "pod:pod3,project:foo,team:bar", last_triggered_ts: triggered
+          }
         }
       },
       overall_state: "Alert",
       options: { silenced: { "pod:pod10": nil } }
     }
+  end
+
+  before do
+    time = Time.now
+    Time.stubs(:now).returns(time)
   end
 
   describe "#print" do
@@ -37,10 +44,9 @@ describe Kennel::UnmutedAlerts do
       out.must_equal <<~TEXT
         monitor_name
         /monitors/12345
-        \e[0mFoo\e[0m\tpod:pod3
-        \e[31mAlert\e[0m\tpod:pod3,project:foo,team:bar
-        \e[31mAlert\e[0m\tpod:pod10
-        \e[0mOK\e[0m\tpod:pod11
+        \e[0mFoo\e[0m\tpod:pod3\t00:00:10
+        \e[31mAlert\e[0m\tpod:pod3,project:foo,team:bar\t00:00:10
+        \e[31mAlert\e[0m\tpod:pod10\t00:00:10
 
       TEXT
     end
@@ -57,14 +63,7 @@ describe Kennel::UnmutedAlerts do
   describe "#sort_groups!" do
     it "sorts naturally" do
       sorted = Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
-      sorted.must_equal(
-        [
-          { status: "Foo", name: "pod:pod3" },
-          { status: "Alert", name: "pod:pod3,project:foo,team:bar" },
-          { status: "Alert", name: "pod:pod10" },
-          { status: "OK", name: "pod:pod11" }
-        ]
-      )
+      sorted.map { |g| g[:name] }.must_equal ["pod:pod3", "pod:pod3,project:foo,team:bar", "pod:pod10"]
     end
   end
 
@@ -115,6 +114,27 @@ describe Kennel::UnmutedAlerts do
 
     it "only keeps alerting groups in monitor" do
       result.first[:state][:groups].size.must_equal 2
+    end
+  end
+
+  describe "#time_since" do
+    before do
+      time = Time.now
+      Time.stubs(:now).returns(time)
+    end
+
+    it "builds for 0" do
+      Kennel::UnmutedAlerts.send(:time_since, Time.now.to_i).must_equal "00:00:00"
+    end
+
+    it "builds for full" do
+      diff = 99 * 60 * 60 + 59 * 60 + 59
+      Kennel::UnmutedAlerts.send(:time_since, Time.now.to_i - diff).must_equal "99:59:59"
+    end
+
+    it "can overflow" do
+      diff = 100 * 60 * 60 + 123
+      Kennel::UnmutedAlerts.send(:time_since, Time.now.to_i - diff).must_equal "100:02:03"
     end
   end
 end

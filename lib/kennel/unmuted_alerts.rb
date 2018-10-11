@@ -21,7 +21,8 @@ module Kennel
             puts Utils.path_to_url("/monitors/#{m[:id]}")
             m[:state][:groups].each do |g|
               color = COLORS[g[:status]] || :default
-              puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}"
+              since = "\t#{time_since(g[:last_triggered_ts])}"
+              puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}#{since}"
             end
             puts
           end
@@ -35,6 +36,11 @@ module Kennel
         groups = monitor[:state][:groups].values
         groups.sort_by! { |g| g[:name].to_s.split(",").map { |w| Utils.natural_order(w) } }
         monitor[:state][:groups] = groups
+      end
+
+      def time_since(t)
+        diff = Time.now.to_i - Integer(t)
+        "%02d:%02d:%02d" % [diff / 3600, diff / 60 % 60, diff % 60]
       end
 
       def filtered_monitors(api, tag)
