@@ -53,8 +53,8 @@ module Kennel
         monitors.select! { |m| m[:tags].include? tag }
         raise "No monitors for #{tag} found, check your spelling" if monitors.empty?
 
-        # only keep monitors that are alerting or not silenced
-        monitors.select! { |m| m[:overall_state] != "OK" && !m[:options][:silenced].key?(:*) }
+        # only keep monitors that are not completely silenced
+        monitors.reject! { |m| m[:options][:silenced].key?(:*) }
 
         # get state details to romove silenced alerts
         Progress.progress("Getting monitor details") do

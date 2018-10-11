@@ -80,9 +80,10 @@ describe Kennel::UnmutedAlerts do
       result.size.must_equal 1
     end
 
-    it "removes non-alerting monitors" do
+    # see https://help.datadoghq.com/hc/requests/174099
+    it "does not remove monitors that claim to be OK since it is not reliable for No-Data" do
       monitor[:overall_state] = "OK"
-      result.size.must_equal 0
+      result.size.must_equal 1
     end
 
     it "removes completely muted alerts" do
