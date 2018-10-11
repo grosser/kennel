@@ -29,7 +29,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ### Adding a team
 
-```ruby
+```Ruby
 # teams/my_team.rb
 module Teams
   class MyTeam < Kennel::Models::Team
@@ -127,6 +127,14 @@ end
   end
  ```
 
+### Importing an existing resources
+
+```Bash
+RESOURCE=dash ID=12345 rake kennel:import
+```
+
+Put returned definition into a project of your choice.
+
 ### Adding a new screenboard
  - similar to `dash.rb`
  - add to `parts:` list
@@ -146,7 +154,7 @@ end
 
 ### Skipping validations
 
-Some validations might be too strict for your usecase or just wrong, please open an issue and
+Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
 ### Debugging locally
