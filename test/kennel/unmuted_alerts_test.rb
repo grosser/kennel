@@ -116,5 +116,18 @@ describe Kennel::UnmutedAlerts do
     it "only keeps alerting groups in monitor" do
       result.first[:state][:groups].size.must_equal 2
     end
+
+    describe "when monitor has no grouping" do
+      before { monitor[:state][:groups].clear }
+
+      it "uses a fake group" do
+        result.first[:state][:groups].must_equal [{ name: "default", status: "Alert" }]
+      end
+
+      it "ignores No Data" do
+        monitor[:overall_state] = "No Data"
+        result.size.must_equal 0
+      end
+    end
   end
 end

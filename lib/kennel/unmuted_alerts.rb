@@ -57,6 +57,12 @@ module Kennel
           end
         end
 
+        # add fake group to monitors without groups so filtering below works as expected and we show something
+        monitors.each do |m|
+          next if m[:state][:groups].any? || m[:overall_state] == "No Data"
+          m[:state][:groups][:default] = { name: "default", status: m[:overall_state] }
+        end
+
         # only keep groups that are alerting
         monitors.each { |m| m[:state][:groups].reject! { |_, g| g[:status] == "OK" } }
 
