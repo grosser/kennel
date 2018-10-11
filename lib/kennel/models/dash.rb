@@ -34,7 +34,7 @@ module Kennel
           id: id,
           title: "#{title}#{LOCK}",
           description: description,
-          read_only: false,
+          read_only: false, # TODO: delete it instead
           template_variables: render_template_variables,
           graphs: render_graphs
         }
@@ -102,6 +102,7 @@ module Kennel
           graph
         end + graphs
 
+        # TODO: solve this via ignore-defaults
         all.each do |g|
           g[:definition][:autoscale] = true unless g[:definition].key?(:autoscale)
         end

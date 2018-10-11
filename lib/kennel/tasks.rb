@@ -2,6 +2,7 @@
 require "English"
 require "kennel"
 require "kennel/unmuted_alerts"
+require "kennel/importer"
 
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
@@ -47,6 +48,13 @@ namespace :kennel do
   task alerts: :environment do
     tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
     Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
+  end
+
+  desc "Covert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
+  task import: :environment do
+    resource = ENV["RESOURCE"] || abort("Call with RESOURCE=dash") # TODO: add others
+    id = Integer(ENV["ID"] || abort("Call with ID=1234"))
+    puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
   end
 
   task :environment do

@@ -15,7 +15,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
  - create a new private `kennel` repo for your organization (do not fork this repo)
  - use the template folder as starting point:
-    ```
+    ```Bash
     git clone git@github.com:your-org/kennel.git
     git clone git@github.com:grosser/kennel.git seed
     mv seed/teamplate/* kennel/
@@ -47,7 +47,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
 ### Adding a team
 
-```ruby
+```Ruby
 # teams/my_team.rb
 module Teams
   class MyTeam < Kennel::Models::Team
@@ -145,6 +145,14 @@ end
   end
  ```
 
+### Importing an existing resources
+
+```Bash
+RESOURCE=dash ID=12345 rake kennel:import
+```
+
+Put returned definition into a project of your choice.
+
 ### Adding a new screenboard
  - similar to `dash.rb`
  - add to `parts:` list
@@ -208,7 +216,7 @@ end
 
 ### Integration testing
 
-```
+```Bash
 rake play
 cd template
 rake kennel:plan
