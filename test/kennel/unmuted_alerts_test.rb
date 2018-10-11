@@ -71,7 +71,7 @@ describe Kennel::UnmutedAlerts do
     let(:api) { Kennel::Api.new("app", "api") }
 
     def result
-      stub_datadog_request(:get, "monitor").to_return(body: monitors.to_json)
+      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}").to_return(body: monitors.to_json)
       stub_datadog_request(:get, "monitor/#{monitor[:id]}", "&group_states=all").to_return(body: monitor.to_json)
       Kennel::UnmutedAlerts.send(:filtered_monitors, api, tag)
     end
@@ -96,14 +96,8 @@ describe Kennel::UnmutedAlerts do
       result.size.must_equal 0
     end
 
-    it "removes monitors without tag" do
-      monitors << monitor.dup
-      monitor[:tags] = ["foobar"]
-      result.size.must_equal 1
-    end
-
     it "alerts users when no monitor has selected tag" do
-      monitor[:tags] = ["foobar"]
+      monitors.pop
       e = assert_raises(RuntimeError) { result }
       e.message.must_equal "No monitors for team:compute found, check your spelling"
     end

@@ -44,13 +44,11 @@ module Kennel
       end
 
       def filtered_monitors(api, tag)
-        # Download all monitors
+        # Download all monitors with given tag
         monitors = Progress.progress("Downloading") do
-          api.list("monitor")
+          api.list("monitor", monitor_tags: tag)
         end
 
-        # only keep monitors from selected tag
-        monitors.select! { |m| m[:tags].include? tag }
         raise "No monitors for #{tag} found, check your spelling" if monitors.empty?
 
         # only keep monitors that are not completely silenced
