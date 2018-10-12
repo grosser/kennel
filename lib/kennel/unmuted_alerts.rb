@@ -46,20 +46,13 @@ module Kennel
       def filtered_monitors(api, tag)
         # Download all monitors with given tag
         monitors = Progress.progress("Downloading") do
-          api.list("monitor", monitor_tags: tag)
+          api.list("monitor", monitor_tags: tag, group_states: "all")
         end
 
         raise "No monitors for #{tag} found, check your spelling" if monitors.empty?
 
         # only keep monitors that are not completely silenced
         monitors.reject! { |m| m[:options][:silenced].key?(:*) }
-
-        # get state details to romove silenced alerts
-        Progress.progress("Getting monitor details") do
-          monitors = Utils.parallel(monitors) do |m|
-            api.show("monitor", m.fetch(:id), group_states: "all")
-          end
-        end
 
         # only keep groups that are alerting
         monitors.each { |m| m[:state][:groups].reject! { |_, g| g[:status] == "OK" } }

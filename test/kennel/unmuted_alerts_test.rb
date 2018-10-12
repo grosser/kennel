@@ -16,7 +16,7 @@ describe Kennel::UnmutedAlerts do
       tags: [tag],
       name: "monitor_name",
       state: {
-        groups: { # Note: only included in show request
+        groups: {
           "pod:pod10": { status: "Alert", name: "pod:pod10", last_triggered_ts: triggered },
           "pod:pod3": { status: "Foo", name: "pod:pod3", last_triggered_ts: triggered },
           "pod:pod3,project:foo,team:bar": {
@@ -71,8 +71,7 @@ describe Kennel::UnmutedAlerts do
     let(:api) { Kennel::Api.new("app", "api") }
 
     def result
-      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}").to_return(body: monitors.to_json)
-      stub_datadog_request(:get, "monitor/#{monitor[:id]}", "&group_states=all").to_return(body: monitor.to_json)
+      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}&group_states=all").to_return(body: monitors.to_json)
       Kennel::UnmutedAlerts.send(:filtered_monitors, api, tag)
     end
 
