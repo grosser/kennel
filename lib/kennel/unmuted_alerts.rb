@@ -7,7 +7,8 @@ module Kennel
     COLORS = {
       "Alert" => :red,
       "Warn" => :yellow,
-      "No Data" => :cyan
+      "No Data" => :cyan,
+      "Ignored" => :magenta # resolved but still broken
     }.freeze
 
     class << self

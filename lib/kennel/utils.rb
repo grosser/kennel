@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module Utils
-    COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, default: 0 }.freeze
+    COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, magenta: 35, default: 0 }.freeze
 
     class TeeIO < IO
       def initialize(ios)

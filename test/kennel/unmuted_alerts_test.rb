@@ -34,6 +34,12 @@ describe Kennel::UnmutedAlerts do
     Time.stubs(:now).returns(time)
   end
 
+  it "can display all colors" do
+    Kennel::UnmutedAlerts::COLORS.each do |_, color|
+      Kennel::Utils::COLORS.fetch(color)
+    end
+  end
+
   describe "#print" do
     it "prints alerts" do
       Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
