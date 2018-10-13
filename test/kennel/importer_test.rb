@@ -32,12 +32,6 @@ describe Kennel::Importer do
         Kennel::Models::Dash.new(
           self,
           id: -> { 123 },
-          foo: -> {
-            [
-              1,
-              2
-            ]
-          },
           bar: -> {
             {
               baz: [
@@ -48,6 +42,12 @@ describe Kennel::Importer do
                 }
               ]
             }
+          },
+          foo: -> {
+            [
+              1,
+              2
+            ]
           }
         )
       RUBY
@@ -70,6 +70,72 @@ describe Kennel::Importer do
               }
             ]
           }
+        )
+      RUBY
+    end
+
+    it "can import a screen" do
+      response = { id: 123, board_title: "hello" }
+      stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
+      dash = importer.import("screen", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Screen.new(
+          self,
+          board_title: -> { "hello" },
+          id: -> { 123 }
+        )
+      RUBY
+    end
+
+    it "can import a monitor" do
+      response = { id: 123, name: "hello", options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          escalation_message: -> { nil }
+        )
+      RUBY
+    end
+
+    it "flattens monitor options" do
+      response = {
+        id: 123,
+        name: "hello",
+        options: {
+          notify_audit: true,
+          locked: false,
+          timeout_h: 0,
+          include_tags: true,
+          no_data_timeframe: nil,
+          new_host_delay: 300,
+          require_full_window: false,
+          notify_no_data: false,
+          renotify_interval: 120,
+          escalation_message: nil,
+          thresholds: {
+            critical: 25.0
+          },
+          evaluation_delay: nil
+        }
+      }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          critical: -> { 25.0 },
+          escalation_message: -> { nil },
+          no_data_timeframe: -> { nil },
+          notify_audit: -> { true },
+          notify_no_data: -> { false },
+          renotify_interval: -> { 120 },
+          timeout_h: -> { 0 }
         )
       RUBY
     end

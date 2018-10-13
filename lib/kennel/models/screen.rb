@@ -27,6 +27,7 @@ module Kennel
         :width,
         :showGlobalTimeOnboarding
       ]).freeze
+      SCREEN_DEFAULTS = { template_variables: [] }.freeze
 
       settings :id, :board_title, :description, :widgets, :kennel_id
 
@@ -64,7 +65,7 @@ module Kennel
 
       def self.normalize(expected, actual)
         super
-        actual[:template_variables] ||= []
+
         (actual[:widgets] || []).each do |w|
           # api randomly returns time.live_span or timeframe or empty time hash
           if w.dig(:time, :live_span)
@@ -74,6 +75,7 @@ module Kennel
           COPIED_WIDGET_VALUES.each { |v| w.delete v }
         end
 
+        ignore_default expected, actual, SCREEN_DEFAULTS
         ignore_defaults expected[:widgets], actual[:widgets], WIDGET_DEFAULTS
         ignore_request_defaults expected, actual, :widgets, :tile_def
       end
@@ -99,7 +101,7 @@ module Kennel
         widgets.map do |widget|
           widget = widget_defaults(widget[:type]).merge(widget)
           if tile = widget[:tile_def]
-            tile[:autoscale] = true unless widget[:tile_def].key?(:autoscale)
+            tile[:autoscale] = true unless widget[:tile_def].key?(:autoscale) # TODO: use ignore_default
           end
           widget
         end
