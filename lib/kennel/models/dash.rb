@@ -46,20 +46,20 @@ module Kennel
         @json
       end
 
-      def diff(actual)
+      def self.normalize(expected, actual)
+        super
+
         actual[:template_variables] ||= []
         actual[:graphs].each do |g|
           g[:definition].delete(:status)
         end
-        ignore_request_defaults as_json, actual, :graphs, :definition
+        ignore_request_defaults expected, actual, :graphs, :definition
 
-        (as_json[:graphs] || []).each_with_index do |e_g, i|
+        (expected[:graphs] || []).each_with_index do |e_g, i|
           e_d = e_g[:definition] || {}
           a_d = actual.dig(:graphs, i, :definition) || {}
           ignore_default e_d, a_d, DEFINITION_DEFAULTS
         end
-
-        super
       end
 
       def url(id)

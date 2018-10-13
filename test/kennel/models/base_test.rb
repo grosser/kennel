@@ -104,20 +104,19 @@ describe Kennel::Models::Base do
     end
   end
 
-  describe "#ignore_request_defaults" do
-    let(:base) { TestBase.new }
+  describe ".ignore_request_defaults" do
     let(:valid) { { a: [{ b: { requests: [{ c: 1 }] } }] } }
 
     it "does not change valid" do
       copy = deep_dup(valid)
-      base.send(:ignore_request_defaults, valid, valid, :a, :b)
+      Kennel::Models::Base.send(:ignore_request_defaults, valid, valid, :a, :b)
       valid.must_equal copy
     end
 
     it "removes defaults" do
       copy = deep_dup(valid)
       valid.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = []
-      base.send(:ignore_request_defaults, valid, valid, :a, :b)
+      Kennel::Models::Base.send(:ignore_request_defaults, valid, valid, :a, :b)
       valid.must_equal copy
     end
 
@@ -126,21 +125,21 @@ describe Kennel::Models::Base do
       other = deep_dup(valid)
       copy.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = []
       other.dig(:a, 0, :b, :requests).pop
-      base.send(:ignore_request_defaults, copy, other, :a, :b)
+      Kennel::Models::Base.send(:ignore_request_defaults, copy, other, :a, :b)
       copy.must_equal valid
     end
 
     it "does not remove non-defaults" do
       valid.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = [111]
       copy = deep_dup(valid)
-      base.send(:ignore_request_defaults, valid, valid, :a, :b)
+      Kennel::Models::Base.send(:ignore_request_defaults, valid, valid, :a, :b)
       valid.must_equal copy
     end
 
     it "skips newly added requests" do
       copy = deep_dup(valid)
       copy.dig(:a, 0, :b, :requests).clear
-      base.send(:ignore_request_defaults, valid, copy, :a, :b)
+      Kennel::Models::Base.send(:ignore_request_defaults, valid, copy, :a, :b)
       valid.must_equal a: [{ b: { requests: [c: 1] } }]
       copy.must_equal a: [{ b: { requests: [] } }]
     end

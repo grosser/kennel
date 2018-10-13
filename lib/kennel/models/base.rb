@@ -53,6 +53,38 @@ module Kennel
           supported = @set.map(&:inspect)
           raise ArgumentError, "Unsupported setting #{name.inspect}, supported settings are #{supported.join(", ")}"
         end
+
+        private
+
+        def normalize(_expected, actual)
+          self::READONLY_ATTRIBUTES.each { |k| actual.delete k }
+        end
+
+        # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
+        def ignore_request_defaults(expected, actual, level1, level2)
+          expected[level1].each_with_index do |e_w, wi|
+            e_r = e_w.dig(level2, :requests) || []
+            a_r = actual.dig(level1, wi, level2, :requests) || []
+            ignore_defaults e_r, a_r, REQUEST_DEFAULTS
+          end
+        end
+
+        def ignore_defaults(expected, actual, defaults)
+          expected.each_with_index do |e, i|
+            a = actual[i] || {}
+            ignore_default(e, a, defaults)
+          end
+        end
+
+        def ignore_default(expected, actual, defaults)
+          definitions = [actual, expected]
+          defaults.each do |key, default|
+            if definitions.all? { |r| !r.key?(key) || r[key] == default }
+              actual.delete(key)
+              expected.delete(key)
+            end
+          end
+        end
       end
 
       def initialize(options = {})
@@ -86,7 +118,7 @@ module Kennel
         expected = as_json
         expected.delete(:id)
 
-        self.class::READONLY_ATTRIBUTES.each { |k| actual.delete k }
+        self.class.send(:normalize, expected, actual)
 
         HashDiff.diff(actual, expected, use_lcs: false)
       end
@@ -100,32 +132,6 @@ module Kennel
       end
 
       private
-
-      # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
-      def ignore_request_defaults(expected, actual, level1, level2)
-        expected[level1].each_with_index do |e_w, wi|
-          e_r = e_w.dig(level2, :requests) || []
-          a_r = actual.dig(level1, wi, level2, :requests) || []
-          ignore_defaults e_r, a_r, REQUEST_DEFAULTS
-        end
-      end
-
-      def ignore_defaults(expected, actual, defaults)
-        expected.each_with_index do |e, i|
-          a = actual[i] || {}
-          ignore_default(e, a, defaults)
-        end
-      end
-
-      def ignore_default(expected, actual, defaults)
-        definitions = [actual, expected]
-        defaults.each do |key, default|
-          if definitions.all? { |r| !r.key?(key) || r[key] == default }
-            actual.delete(key)
-            expected.delete(key)
-          end
-        end
-      end
 
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)

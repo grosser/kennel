@@ -62,7 +62,8 @@ module Kennel
         @json
       end
 
-      def diff(actual)
+      def self.normalize(expected, actual)
+        super
         actual[:template_variables] ||= []
         (actual[:widgets] || []).each do |w|
           # api randomly returns time.live_span or timeframe or empty time hash
@@ -73,10 +74,8 @@ module Kennel
           COPIED_WIDGET_VALUES.each { |v| w.delete v }
         end
 
-        ignore_defaults as_json[:widgets], actual[:widgets], WIDGET_DEFAULTS
-        ignore_request_defaults as_json, actual, :widgets, :tile_def
-
-        super
+        ignore_defaults expected[:widgets], actual[:widgets], WIDGET_DEFAULTS
+        ignore_request_defaults expected, actual, :widgets, :tile_def
       end
 
       def url(id)

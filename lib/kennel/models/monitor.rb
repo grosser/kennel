@@ -100,7 +100,8 @@ module Kennel
         Utils.path_to_url "/monitors##{id}/edit"
       end
 
-      def diff(actual)
+      def self.normalize(_expected, actual)
+        super
         options = actual.fetch(:options)
         options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
         options[:escalation_message] ||= nil # unset field is not returned and would break the diff
@@ -125,8 +126,6 @@ module Kennel
 
         # nil or "" are not returned from the api
         options[:evaluation_delay] ||= nil
-
-        super
       end
 
       private
