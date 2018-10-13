@@ -26,7 +26,7 @@ describe Kennel::Models::Dash do
       graphs: [
         {
           title: "TI",
-          definition: { viz: "V", requests: [{ q: "Q", type: "TY", conditional_formats: [] }], autoscale: true }
+          definition: { viz: "V", requests: [{ q: "Q", type: "TY", conditional_formats: [] }] }
         }
       ]
     )
@@ -47,7 +47,7 @@ describe Kennel::Models::Dash do
         graphs: -> { [{ definition: { requests: [{ q: "bar" }] } }] }
       ).as_json.must_equal(
         expected_json.merge(
-          graphs: [{ definition: { requests: [{ q: "bar" }], autoscale: true } }]
+          graphs: [{ definition: { requests: [{ q: "bar" }] } }]
         )
       )
     end
@@ -67,7 +67,7 @@ describe Kennel::Models::Dash do
         graphs: -> { [{ definition: { requests: [{ q: "bar", conditional_formats: [123] }] } }] }
       ).as_json.must_equal(
         expected_json.merge(
-          graphs: [{ definition: { requests: [{ q: "bar", conditional_formats: [123] }], autoscale: true } }]
+          graphs: [{ definition: { requests: [{ q: "bar", conditional_formats: [123] }] } }]
         )
       )
     end
@@ -80,7 +80,7 @@ describe Kennel::Models::Dash do
           graphs: [
             {
               title: "TI",
-              definition: { viz: "V", requests: [{ q: "Q", type: "TY" }], autoscale: true }
+              definition: { viz: "V", requests: [{ q: "Q", type: "TY" }] }
             }
           ]
         )
@@ -98,7 +98,6 @@ describe Kennel::Models::Dash do
               definition: {
                 viz: "V",
                 requests: [{ q: "Q", type: "TY" }],
-                autoscale: true,
                 events: [{ foo: "bar" }]
               }
             }
@@ -118,7 +117,6 @@ describe Kennel::Models::Dash do
               definition: {
                 viz: "V",
                 requests: [{ q: "Q", type: "TY" }],
-                autoscale: true,
                 markers: [{ foo: "bar" }]
               }
             }
@@ -140,8 +138,7 @@ describe Kennel::Models::Dash do
                 requests: [
                   { q: "Q", type: "TY" },
                   { q: "Q2", type: "TY" }
-                ],
-                autoscale: true
+                ]
               }
             }
           ]

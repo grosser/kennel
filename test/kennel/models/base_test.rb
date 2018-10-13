@@ -121,6 +121,15 @@ describe Kennel::Models::Base do
       valid.must_equal copy
     end
 
+    it "removes defaults when only a single side is given" do
+      copy = deep_dup(valid)
+      other = deep_dup(valid)
+      copy.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = []
+      other.dig(:a, 0, :b, :requests).pop
+      base.send(:ignore_request_defaults, copy, other, :a, :b)
+      copy.must_equal valid
+    end
+
     it "does not remove non-defaults" do
       valid.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = [111]
       copy = deep_dup(valid)

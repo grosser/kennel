@@ -8,6 +8,8 @@ module Kennel
       API_LIST_INCOMPLETE = true
       SUPPORTED_GRAPH_OPTIONS = [:events, :markers].freeze
       READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only]).freeze
+      DEFINITION_DEFAULTS = { autoscale: true }.freeze
+
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
       defaults(
@@ -50,6 +52,13 @@ module Kennel
           g[:definition].delete(:status)
         end
         ignore_request_defaults as_json, actual, :graphs, :definition
+
+        (as_json[:graphs] || []).each_with_index do |e_g, i|
+          e_d = e_g[:definition] || {}
+          a_d = actual.dig(:graphs, i, :definition) || {}
+          ignore_default e_d, a_d, DEFINITION_DEFAULTS
+        end
+
         super
       end
 
@@ -84,7 +93,7 @@ module Kennel
       end
 
       def render_graphs
-        all = definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
+        definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
           if ignored || (!title || !viz || !type || !queries || !options.is_a?(Hash))
             raise ArgumentError, "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
           end
@@ -99,11 +108,6 @@ module Kennel
           end
           graph
         end + graphs
-
-        # TODO: solve this via ignore-defaults
-        all.each do |g|
-          g[:definition][:autoscale] = true unless g[:definition].key?(:autoscale)
-        end
       end
     end
   end

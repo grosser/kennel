@@ -112,12 +112,17 @@ module Kennel
 
       def ignore_defaults(expected, actual, defaults)
         expected.each_with_index do |e, i|
-          next unless a = actual[i] # skip newly added
-          defaults.each do |key, default|
-            if [a, e].all? { |r| r[key].nil? || r[key] == default }
-              a.delete(key)
-              e.delete(key)
-            end
+          a = actual[i] || {}
+          ignore_default(e, a, defaults)
+        end
+      end
+
+      def ignore_default(expected, actual, defaults)
+        definitions = [actual, expected]
+        defaults.each do |key, default|
+          if definitions.all? { |r| !r.key?(key) || r[key] == default }
+            actual.delete(key)
+            expected.delete(key)
           end
         end
       end
