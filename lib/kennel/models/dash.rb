@@ -9,6 +9,7 @@ module Kennel
       SUPPORTED_GRAPH_OPTIONS = [:events, :markers].freeze
       READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only]).freeze
       DEFINITION_DEFAULTS = { autoscale: true }.freeze
+      DASH_DEFAULTS = { template_variables: [] }.freeze
 
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
@@ -49,15 +50,15 @@ module Kennel
       def self.normalize(expected, actual)
         super
 
-        actual[:template_variables] ||= []
-        actual[:graphs].each do |g|
+        ignore_default expected, actual, DASH_DEFAULTS
+        (actual[:graphs] || {}).each do |g|
           g[:definition].delete(:status)
         end
         ignore_request_defaults expected, actual, :graphs, :definition
 
-        (expected[:graphs] || []).each_with_index do |e_g, i|
-          e_d = e_g[:definition] || {}
-          a_d = actual.dig(:graphs, i, :definition) || {}
+        (actual[:graphs] || []).each_with_index do |a_g, i|
+          a_d = a_g[:definition] || {}
+          e_d = expected.dig(:graphs, i, :definition) || {}
           ignore_default e_d, a_d, DEFINITION_DEFAULTS
         end
       end
@@ -71,7 +72,7 @@ module Kennel
       def validate_json(data)
         # check for bad variables
         # TODO: do the same check for apm_query and their group_by
-        variables = data.fetch(:template_variables).map { |v| "$#{v.fetch(:name)}" }
+        variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
         queries = data[:graphs].flat_map { |g| g[:definition][:requests].map { |r| r[:q] }.compact }
         bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
         if bad.any?

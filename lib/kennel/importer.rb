@@ -4,9 +4,6 @@ module Kennel
   class Importer
     SORT_ORDER = [:title, :id, :description, :template_variables].freeze
 
-    # TODO: make model diff normalization reusable
-    IGNORED = Models::Base::READONLY_ATTRIBUTES - [:id] + [:created_by, :read_only]
-
     def initialize(api)
       @api = api
     end
@@ -16,7 +13,8 @@ module Kennel
       case resource
       when "dash"
         data = data[:dash]
-        IGNORED.each { |k| data.delete(k) }
+        Kennel::Models::Dash.normalize({}, data)
+        data[:id] = id
         <<~RUBY
           Kennel::Models::Dash.new(
             self,

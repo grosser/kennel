@@ -31,6 +31,7 @@ describe Kennel::Importer do
       dash.must_equal <<~RUBY
         Kennel::Models::Dash.new(
           self,
+          id: -> { 123 },
           foo: -> {
             [
               1,
@@ -47,6 +48,27 @@ describe Kennel::Importer do
                 }
               ]
             }
+          }
+        )
+      RUBY
+    end
+
+    it "removes boring default values" do
+      response = { dash: { id: 123, graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
+      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
+      dash = importer.import("dash", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dash.new(
+          self,
+          id: -> { 123 },
+          graphs: -> {
+            [
+              {
+                definition: {
+                  foo: "bar"
+                }
+              }
+            ]
           }
         )
       RUBY
