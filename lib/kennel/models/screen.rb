@@ -11,6 +11,22 @@ module Kennel
         time: {},
         timeframe: "1h"
       }.freeze
+      READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [
+        :disableCog,
+        :disableEditing,
+        :isIntegration,
+        :isShared,
+        :original_title,
+        :read_only,
+        :resource,
+        :title,
+        :title_edited,
+        :created_by,
+        :board_bgtype,
+        :height,
+        :width,
+        :showGlobalTimeOnboarding
+      ]).freeze
 
       settings :id, :board_title, :description, :widgets, :kennel_id
 
@@ -47,20 +63,6 @@ module Kennel
       end
 
       def diff(actual)
-        actual.delete(:disableCog)
-        actual.delete(:disableEditing)
-        actual.delete(:isIntegration)
-        actual.delete(:isShared)
-        actual.delete(:original_title)
-        actual.delete(:read_only)
-        actual.delete(:resource)
-        actual.delete(:title)
-        actual.delete(:title_edited)
-        actual.delete(:created_by)
-        actual.delete(:board_bgtype)
-        actual.delete(:height)
-        actual.delete(:width)
-        actual.delete(:showGlobalTimeOnboarding)
         actual[:template_variables] ||= []
         (actual[:widgets] || []).each do |w|
           # api randomly returns time.live_span or timeframe or empty time hash

@@ -7,6 +7,7 @@ module Kennel
 
       API_LIST_INCOMPLETE = true
       SUPPORTED_GRAPH_OPTIONS = [:events, :markers].freeze
+      READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only]).freeze
       settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
 
       defaults(
@@ -34,7 +35,6 @@ module Kennel
           id: id,
           title: "#{title}#{LOCK}",
           description: description,
-          read_only: false, # TODO: delete it instead
           template_variables: render_template_variables,
           graphs: render_graphs
         }
@@ -45,8 +45,6 @@ module Kennel
       end
 
       def diff(actual)
-        actual.delete :resource
-        actual.delete :created_by
         actual[:template_variables] ||= []
         actual[:graphs].each do |g|
           g[:definition].delete(:status)

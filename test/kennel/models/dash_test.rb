@@ -17,7 +17,6 @@ describe Kennel::Models::Dash do
       id: nil,
       title: "Hello🔒",
       description: "",
-      read_only: false,
       template_variables: [],
       graphs: []
     }

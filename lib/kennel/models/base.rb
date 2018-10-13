@@ -86,7 +86,7 @@ module Kennel
         expected = as_json
         expected.delete(:id)
 
-        READONLY_ATTRIBUTES.each { |k| actual.delete k }
+        self.class::READONLY_ATTRIBUTES.each { |k| actual.delete k }
 
         HashDiff.diff(actual, expected, use_lcs: false)
       end
