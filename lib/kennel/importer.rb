@@ -46,6 +46,7 @@ module Kennel
           pretty = JSON.pretty_generate(v)
             .gsub(/(^\s*)"(.*?)":/, "\\1\\2:") # "foo": 1 -> foo: 1
             .gsub(/^/, "    ") # indent
+            .gsub(": null", ": nil")
           "  #{k}: -> {\n#{pretty}\n  }"
         else
           "  #{k}: -> { #{v.inspect} }"
