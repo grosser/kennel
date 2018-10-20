@@ -2,7 +2,7 @@
 
 module Kennel
   class Importer
-    SORT_ORDER = [:title, :name, :board_title, :id, :query, :message, :description, :template_variables].freeze
+    SORT_ORDER = [:title, :name, :board_title, :id, :kennel_id, :query, :message, :description, :template_variables].freeze
 
     def initialize(api)
       @api = api
@@ -20,6 +20,7 @@ module Kennel
       data = data[resource.to_sym] || data
       model.normalize({}, data)
       data[:id] = id
+      data[:kennel_id] = "pick_something_descriptive"
 
       # flatten monitor options so they are all on the base
       if resource == "monitor"

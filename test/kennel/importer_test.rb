@@ -16,7 +16,8 @@ describe Kennel::Importer do
         Kennel::Models::Dash.new(
           self,
           title: -> { "hello" },
-          id: -> { 123 }
+          id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" }
         )
       RUBY
       code = "TestProject.new(parts: -> {[#{dash}]})"
@@ -32,6 +33,7 @@ describe Kennel::Importer do
         Kennel::Models::Dash.new(
           self,
           id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" },
           bar: -> {
             {
               baz: [
@@ -61,6 +63,7 @@ describe Kennel::Importer do
         Kennel::Models::Dash.new(
           self,
           id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" },
           bar: -> {
             {
               baz: nil
@@ -78,6 +81,7 @@ describe Kennel::Importer do
         Kennel::Models::Dash.new(
           self,
           id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" },
           graphs: -> {
             [
               {
@@ -99,7 +103,8 @@ describe Kennel::Importer do
         Kennel::Models::Screen.new(
           self,
           board_title: -> { "hello" },
-          id: -> { 123 }
+          id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" }
         )
       RUBY
     end
@@ -113,6 +118,7 @@ describe Kennel::Importer do
           self,
           name: -> { "hello" },
           id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" },
           escalation_message: -> { nil }
         )
       RUBY
@@ -146,6 +152,7 @@ describe Kennel::Importer do
           self,
           name: -> { "hello" },
           id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" },
           critical: -> { 25.0 },
           escalation_message: -> { nil },
           no_data_timeframe: -> { nil },
