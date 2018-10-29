@@ -58,7 +58,7 @@ describe Kennel::Syncer do
       board_title: -> { "x" },
       description: -> { "x" },
       kennel_id: -> { cid },
-      id: -> { extra[:id].to_s }
+      id: -> { extra[:id] ? extra[:id].to_s : nil }
     )
     screen.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
     screen.as_json.merge!(extra)
@@ -80,7 +80,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("screen", anything).returns(screenboards: screens)
   end
 
-  capture_all
+  capture_all # TODO: pass an IO to syncer so we don't have to capture all output
 
   describe "#plan" do
     let(:output) do
@@ -241,6 +241,14 @@ describe Kennel::Syncer do
         }
         api.expects(:show).with("screen", 123).returns({})
         output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "links tracking ids" do
+        s = screen("a", "c", widgets: [{ type: "uptime", monitor: { id: "a:b" } }])
+        monitors << component("a", "b", id: 124)
+        expected << s
+        syncer.send(:calculate_diff)
+        s.as_json.dig(:widgets, 0, :monitor, :id).must_equal 124
       end
     end
 

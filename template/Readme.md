@@ -157,6 +157,10 @@ Put returned definition into a project of your choice.
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
+### Linking with kennel_ids
+
+Screens `uptime` widgets can use `monitor: {id: "foo:bar"}` to link to existing monitors via their kennel_id
+
 ### Debugging locally
 
  - make sure to be on update `master` to not undo other changes

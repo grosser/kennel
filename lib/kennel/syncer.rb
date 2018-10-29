@@ -56,7 +56,10 @@ module Kennel
     def calculate_diff
       @update = []
       @delete = []
+
       actual = Progress.progress("Downloading definitions") { download_definitions }
+
+      resolve_linked_tracking_ids actual
 
       Progress.progress "Diffing" do
         filter_by_project! actual
@@ -175,6 +178,11 @@ module Kennel
         Updates with PROJECT= filter should not update #{TRACKING_FIELDS.join("/")} of resources with a set `id:`, since this makes them get deleted by a full update.
         Remove the `id:` to test them out, which will result in a copy being created and later deleted.
       TEXT
+    end
+
+    def resolve_linked_tracking_ids(actual)
+      map = actual.each_with_object({}) { |a, lookup| lookup[tracking_id(a)] = a.fetch(:id) }
+      @expected.each { |e| e.resolve_linked_tracking_ids(map) }
     end
 
     def filter_by_project!(definitions)

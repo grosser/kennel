@@ -218,6 +218,46 @@ describe Kennel::Models::Screen do
     end
   end
 
+  describe "#resolve_linked_tracking_ids" do
+    let(:widget_screen) { screen(timeseries_widget) }
+
+    def resolved
+      widget_screen.as_json[:widgets][0]
+    end
+
+    before { timeseries_widgets[0][:type] = "uptime" }
+
+    it "does not change normal widgets" do
+      timeseries_widgets[0][:type] = "foo"
+      widget_screen.resolve_linked_tracking_ids({})
+      refute resolved.key?(:monitor)
+    end
+
+    it "does not change uptime widget without monitor" do
+      widget_screen.resolve_linked_tracking_ids({})
+      refute resolved.key?(:monitor)
+    end
+
+    it "does not change uptime widget with id" do
+      timeseries_widgets[0][:monitor] = { id: 123 }
+      widget_screen.resolve_linked_tracking_ids({})
+      resolved[:monitor].must_equal id: 123
+    end
+
+    it "resolves uptime widget with full id" do
+      timeseries_widgets[0][:monitor] = { id: "#{project.kennel_id}:b" }
+      widget_screen.resolve_linked_tracking_ids("a:c" => 1, "#{project.kennel_id}:b" => 123)
+      resolved[:monitor].must_equal id: 123
+    end
+
+    it "does not fail hard when id is missing to not break when adding new monitors" do
+      timeseries_widgets[0][:monitor] = { id: "a:b" }
+      err = Kennel::Utils.capture_stderr { widget_screen.resolve_linked_tracking_ids({}) }
+      err.must_include "Unable to find a:b in existing monitors"
+      resolved[:monitor].must_equal id: nil
+    end
+  end
+
   describe ".api_resource" do
     it "is screen" do
       Kennel::Models::Screen.api_resource.must_equal "screen"

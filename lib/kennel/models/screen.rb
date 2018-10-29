@@ -84,6 +84,16 @@ module Kennel
         Utils.path_to_url "/screen/#{id}"
       end
 
+      def resolve_linked_tracking_ids(id_map)
+        uptime_widgets = as_json[:widgets].select { |w| w[:type] == "uptime" && w.dig(:monitor, :id).is_a?(String) }
+        uptime_widgets.each do |uptime_widget|
+          tracking = uptime_widget[:monitor][:id]
+          uptime_widget[:monitor][:id] =
+            id_map[tracking] ||
+            warn("Unable to find #{tracking} in existing monitors (they need to be created first to link them)")
+        end
+      end
+
       private
 
       def validate_json(data)

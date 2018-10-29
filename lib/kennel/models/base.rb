@@ -131,6 +131,9 @@ module Kennel
         raise NotImplementedError, "Use as_json"
       end
 
+      def resolve_linked_tracking_ids(*)
+      end
+
       private
 
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
