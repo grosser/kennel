@@ -39,6 +39,18 @@ describe Kennel::GithubReporter do
       assert_requested request
     end
 
+    it "truncates long comments" do
+      msg = "a" * 2 * Kennel::GithubReporter::MAX_COMMENT_SIZE
+      body = nil
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
+        .with { |r| body = JSON.parse(r.body).fetch("body") }
+        .to_return(status: 201)
+      Kennel::Utils.capture_stdout { reporter.report { puts msg } }
+      assert_requested request
+      body.bytesize.must_equal Kennel::GithubReporter::MAX_COMMENT_SIZE
+      body.must_match(/\A```.*#{Regexp.escape(Kennel::GithubReporter::TRUNCATED_MSG)}\z/m)
+    end
+
     it "can parse https remote" do
       remote_response.replace("origin	https://github.com/foo/bar.git (fetch)")
       reporter.instance_variable_get(:@repo_part).must_equal "foo/bar"
