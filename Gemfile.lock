@@ -13,6 +13,7 @@ GEM
     ast (2.4.0)
     bump (0.6.0)
     byebug (10.0.2)
+    coderay (1.1.2)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     faraday (0.15.3)
@@ -23,6 +24,7 @@ GEM
     maxitest (3.0.1)
       minitest (>= 5.0.0, < 5.12.0)
     metaclass (0.0.4)
+    method_source (0.9.0)
     minitest (5.11.3)
     mocha (1.5.0)
       metaclass (~> 0.0.1)
@@ -33,6 +35,12 @@ GEM
     parser (2.5.1.0)
       ast (~> 2.4.0)
     powerpack (0.1.1)
+    pry (0.11.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.9.0)
+    pry-byebug (3.6.0)
+      byebug (~> 10.0)
+      pry (~> 0.10)
     public_suffix (3.0.2)
     rainbow (3.0.0)
     rake (12.3.1)
@@ -57,11 +65,11 @@ PLATFORMS
 
 DEPENDENCIES
   bump
-  byebug
   forking_test_runner
   kennel!
   maxitest
   mocha
+  pry-byebug
   rake
   rubocop
   single_cov
@@ -71,4 +79,4 @@ RUBY VERSION
    ruby 2.5.1p57
 
 BUNDLED WITH
-   1.16.1
+   1.16.4
