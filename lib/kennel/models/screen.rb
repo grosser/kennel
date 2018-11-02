@@ -89,6 +89,8 @@ module Kennel
           case widget[:type]
           when "uptime"
             resolve_link(widget, [:monitor, :id], id_map)
+          when "alert_graph"
+            resolve_link(widget, [:alert_id], id_map)
           end
         end
       end
