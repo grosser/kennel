@@ -150,25 +150,18 @@ module Kennel
       end
 
       def resolve_link(widget, key, id_map)
-        tracking_id = widget.dig(*key)
-
-        return unless link_widget?(tracking_id)
+        id = widget.dig(*key)
+        return unless tracking_id?(id)
 
         *id_path, id_key = key
-
-        monitor_path = id_path.empty? ? widget : widget.dig(*id_path)
-
+        monitor_path = (id_path.empty? ? widget : widget.dig(*id_path))
         monitor_path[id_key] =
-          id_map[tracking_id] ||
-          warn("Unable to find #{tracking_id} in existing monitors (they need to be created first to link them)")
+          id_map[id] ||
+          warn("Unable to find #{id} in existing monitors (they need to be created first to link them)")
       end
 
-      def link_widget?(tracking_id)
-        tracking_id.is_a?(String) && !string_encoded_id?(tracking_id)
-      end
-
-      def string_encoded_id?(string)
-        string.to_i.to_s == string
+      def tracking_id?(id)
+        id.is_a?(String) && !id.match?(/\A\d+\z/)
       end
     end
   end
