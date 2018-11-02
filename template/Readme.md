@@ -159,7 +159,10 @@ to unblock use the `validate: -> { false }` option.
 
 ### Linking with kennel_ids
 
-Screens `uptime` widgets can use `monitor: {id: "foo:bar"}` to link to existing monitors via their kennel_id
+To link to existing monitors via their kennel_id
+
+ - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
+ - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
 
 ### Debugging locally
 
