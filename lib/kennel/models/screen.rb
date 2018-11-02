@@ -85,12 +85,13 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids(id_map)
-        uptime_widgets = as_json[:widgets].select { |w| w[:type] == "uptime" && w.dig(:monitor, :id).is_a?(String) }
-        uptime_widgets.each do |uptime_widget|
-          tracking = uptime_widget[:monitor][:id]
-          uptime_widget[:monitor][:id] =
-            id_map[tracking] ||
-            warn("Unable to find #{tracking} in existing monitors (they need to be created first to link them)")
+        as_json[:widgets].each do |widget|
+          case widget[:type]
+          when "uptime"
+            resolve_link(widget, [:monitor, :id], id_map)
+          when "alert_graph"
+            resolve_link(widget, [:alert_id], id_map)
+          end
         end
       end
 
@@ -146,6 +147,28 @@ module Kennel
           end
 
         basics.merge(custom)
+      end
+
+      def resolve_link(widget, key, id_map)
+        tracking_id = widget.dig(*key)
+
+        return unless link_widget?(tracking_id)
+
+        *id_path, id_key = key
+
+        monitor_path = id_path.empty? ? widget : widget.dig(*id_path)
+
+        monitor_path[id_key] =
+          id_map[tracking_id] ||
+          warn("Unable to find #{tracking_id} in existing monitors (they need to be created first to link them)")
+      end
+
+      def link_widget?(tracking_id)
+        tracking_id.is_a?(String) && !string_encoded_id?(tracking_id)
+      end
+
+      def string_encoded_id?(string)
+        string.to_i.to_s == string
       end
     end
   end

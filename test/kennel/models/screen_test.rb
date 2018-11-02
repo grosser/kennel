@@ -256,6 +256,35 @@ describe Kennel::Models::Screen do
       err.must_include "Unable to find a:b in existing monitors"
       resolved[:monitor].must_equal id: nil
     end
+
+    describe "when the widget is an `alert_graph`" do
+      before { timeseries_widgets[0][:type] = "alert_graph" }
+
+      it "does not change the alert widget without monitor" do
+        widget_screen.resolve_linked_tracking_ids({})
+        refute resolved.key?(:alert_id)
+      end
+
+      it "does not change the alert widget with a string encoded id" do
+        timeseries_widgets[0][:alert_id] = "123"
+        widget_screen.resolve_linked_tracking_ids({})
+        resolved[:alert_id].must_equal "123"
+      end
+
+      it "resolves the alert widget with full id" do
+        timeseries_widgets[0][:alert_id] = "#{project.kennel_id}:b"
+        widget_screen.resolve_linked_tracking_ids("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        resolved[:alert_id].must_equal 123
+      end
+
+      it "does not fail hard when id is missing to not break when adding new monitors" do
+        timeseries_widgets[0][:type] = "alert_graph"
+        timeseries_widgets[0][:alert_id] = "a:b"
+        err = Kennel::Utils.capture_stderr { widget_screen.resolve_linked_tracking_ids({}) }
+        err.must_include "Unable to find a:b in existing monitors"
+        resolved[:alert_id].must_be_nil
+      end
+    end
   end
 
   describe ".api_resource" do
