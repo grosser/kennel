@@ -91,6 +91,11 @@ describe Kennel::UnmutedAlerts do
       result.size.must_equal 1
     end
 
+    it "removes monitors that are Ignored since that just means recovered" do
+      monitor[:state][:groups].values.each { |v| v[:status] = "Ignored" }
+      result.size.must_equal 0
+    end
+
     it "removes completely muted alerts" do
       monitor[:options] = { silenced: { "*": "foo" } }
       result.size.must_equal 0

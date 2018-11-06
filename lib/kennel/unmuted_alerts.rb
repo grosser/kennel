@@ -7,8 +7,7 @@ module Kennel
     COLORS = {
       "Alert" => :red,
       "Warn" => :yellow,
-      "No Data" => :cyan,
-      "Ignored" => :magenta # resolved but still broken
+      "No Data" => :cyan
     }.freeze
 
     class << self
@@ -56,7 +55,7 @@ module Kennel
         monitors.reject! { |m| m[:options][:silenced].key?(:*) }
 
         # only keep groups that are alerting
-        monitors.each { |m| m[:state][:groups].reject! { |_, g| g[:status] == "OK" } }
+        monitors.each { |m| m[:state][:groups].reject! { |_, g| g[:status] == "OK" || g[:status] == "Ignored" } }
 
         # only keep alerting groups that are not silenced
         monitors.each do |m|
