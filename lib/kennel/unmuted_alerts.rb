@@ -46,7 +46,7 @@ module Kennel
       def filtered_monitors(api, tag)
         # Download all monitors with given tag
         monitors = Progress.progress("Downloading") do
-          api.list("monitor", monitor_tags: tag, group_states: "all")
+          api.list("monitor", monitor_tags: tag, group_states: "all", with_downtimes: "true")
         end
 
         raise "No monitors for #{tag} found, check your spelling" if monitors.empty?
@@ -63,6 +63,15 @@ module Kennel
           m[:state][:groups].select! do |k, _|
             scope = k.to_s.split(",")
             silenced.none? { |s| (s - scope).empty? }
+          end
+        end
+
+        # only keep monitors that are not covered by a downtime
+        monitors.each do |m|
+          next unless m[:matching_downtimes]
+          downtime_groups = m[:matching_downtimes].select { |d| d[:active] }.flat_map { |d| d[:groups] }
+          m[:state][:groups].reject! do |k, _|
+            downtime_groups.include?(k.to_s)
           end
         end
 
