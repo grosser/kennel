@@ -53,12 +53,12 @@ Minitest::Test.class_eval do
     let(:stderr) { StringIO.new }
 
     around do |t|
-      $stdout = stdout
-      $stderr = stderr
+      Kennel.out = stdout
+      Kennel.err = stderr
       t.call
     ensure
-      $stdout = STDOUT
-      $stderr = STDERR
+      Kennel.out = STDOUT
+      Kennel.err = STDERR
     end
   end
 

@@ -157,7 +157,7 @@ module Kennel
         monitor_path = (id_path.empty? ? widget : widget.dig(*id_path))
         monitor_path[id_key] =
           id_map[id] ||
-          warn("Unable to find #{id} in existing monitors (they need to be created first to link them)")
+          Kennel.err.puts("Unable to find #{id} in existing monitors (they need to be created first to link them)")
       end
 
       def tracking_id?(id)

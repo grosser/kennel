@@ -14,17 +14,17 @@ module Kennel
       def print(api, tag)
         monitors = filtered_monitors(api, tag)
         if monitors.empty?
-          puts "No unmuted alerts found"
+          Kennel.out.puts "No unmuted alerts found"
         else
           monitors.each do |m|
-            puts m[:name]
-            puts Utils.path_to_url("/monitors/#{m[:id]}")
+            Kennel.out.puts m[:name]
+            Kennel.out.puts Utils.path_to_url("/monitors/#{m[:id]}")
             m[:state][:groups].each do |g|
               color = COLORS[g[:status]] || :default
               since = "\t#{time_since(g[:last_triggered_ts])}"
-              puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}#{since}"
+              Kennel.out.puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}#{since}"
             end
-            puts
+            Kennel.out.puts
           end
         end
       end
