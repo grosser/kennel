@@ -77,7 +77,7 @@ describe Kennel::UnmutedAlerts do
     let(:api) { Kennel::Api.new("app", "api") }
 
     def result
-      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}&group_states=all").to_return(body: monitors.to_json)
+      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}&group_states=all&with_downtimes=true").to_return(body: monitors.to_json)
       Kennel::UnmutedAlerts.send(:filtered_monitors, api, tag)
     end
 
@@ -103,6 +103,15 @@ describe Kennel::UnmutedAlerts do
 
     it "removes monitors that are silenced via partial silences" do
       monitor[:options] = { silenced: { "pod:pod10": "foo", "pod:pod3": "foo" } }
+      result.size.must_equal 0
+    end
+
+    it "removes monitors that are covered by matching downtimes" do
+      groups = ["pod:pod3", "pod:pod3,project:foo,team:bar"]
+      monitor[:matching_downtimes] = [
+        { end: nil, start: triggered - 10, groups: groups, active: true, scope: ["pod:pod3"] },
+        { end: nil, start: triggered - 10, groups: [], active: true, scope: ["pod:pod7"] }
+      ]
       result.size.must_equal 0
     end
 
