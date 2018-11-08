@@ -14,9 +14,9 @@ module Kennel
     end
 
     def plan
-      puts "Plan:"
+      Kennel.out.puts "Plan:"
       if noop?
-        puts Utils.color(:green, "Nothing to do")
+        Kennel.out.puts Utils.color(:green, "Nothing to do")
       else
         print_plan "Create", @create, :green
         print_plan "Update", @update, :yellow
@@ -32,18 +32,18 @@ module Kennel
       @create.each do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
         reply = unnest(e.class.api_resource, reply)
-        puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
+        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
       end
 
       block_irreversible_partial_updates
       @update.each do |id, e|
         @api.update e.class.api_resource, id, e.as_json
-        puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
+        Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
       @delete.each do |id, _, a|
         @api.delete a.fetch(:api_resource), id
-        puts "Deleted #{a.fetch(:api_resource)} #{tracking_id(a)} #{id}"
+        Kennel.out.puts "Deleted #{a.fetch(:api_resource)} #{tracking_id(a)} #{id}"
       end
     end
 
@@ -145,7 +145,7 @@ module Kennel
     def print_plan(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
-        puts Utils.color(color, "#{step} #{tracking_id(e&.as_json || a)}")
+        Kennel.out.puts Utils.color(color, "#{step} #{tracking_id(e&.as_json || a)}")
         print_diff(diff) if diff # only for update
       end
     end
@@ -162,11 +162,11 @@ module Kennel
         end
 
         if (old + new).size > 100
-          puts "  #{type}#{field}"
-          puts "    #{old} ->"
-          puts "    #{new}"
+          Kennel.out.puts "  #{type}#{field}"
+          Kennel.out.puts "    #{old} ->"
+          Kennel.out.puts "    #{new}"
         else
-          puts "  #{type}#{field} #{old} -> #{new}"
+          Kennel.out.puts "  #{type}#{field} #{old} -> #{new}"
         end
       end
     end

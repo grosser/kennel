@@ -27,7 +27,12 @@ require "kennel/models/project"
 require "kennel/models/team"
 
 module Kennel
+  @out = $stdout
+  @err = $stderr
+
   class << self
+    attr_accessor :out, :err
+
     def generate
       FileUtils.rm_rf("generated")
       generated.each do |part|

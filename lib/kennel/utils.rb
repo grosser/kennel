@@ -26,11 +26,11 @@ module Kennel
       end
 
       def ask(question)
-        $stderr.printf color(:red, "#{question} -  press 'y' to continue: ")
+        Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ")
         begin
           STDIN.gets.chomp == "y"
         rescue Interrupt # do not show a backtrace if user decides to Ctrl+C here
-          $stderr.print "\n"
+          Kennel.err.print "\n"
           exit 1
         end
       end
@@ -44,34 +44,34 @@ module Kennel
       end
 
       def capture_stdout
-        old = $stdout
-        $stdout = StringIO.new
+        old = Kennel.out
+        Kennel.out = StringIO.new
         yield
-        $stdout.string
+        Kennel.out.string
       ensure
-        $stdout = old
+        Kennel.out = old
       end
 
       def capture_stderr
-        old = $stderr
-        $stderr = StringIO.new
+        old = Kennel.err
+        Kennel.err = StringIO.new
         yield
-        $stderr.string
+        Kennel.err.string
       ensure
-        $stderr = old
+        Kennel.err = old
       end
 
       def tee_output
-        old_stdout = $stdout
-        old_stderr = $stderr
+        old_stdout = Kennel.out
+        old_stderr = Kennel.err
         capture = StringIO.new
-        $stdout = TeeIO.new([capture, $stdout])
-        $stderr = TeeIO.new([capture, $stderr])
+        Kennel.out = TeeIO.new([capture, Kennel.out])
+        Kennel.err = TeeIO.new([capture, Kennel.err])
         yield
         capture.string
       ensure
-        $stderr = old_stderr
-        $stdout = old_stdout
+        Kennel.out = old_stdout
+        Kennel.err = old_stderr
       end
 
       def capture_sh(command)
