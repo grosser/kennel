@@ -170,4 +170,22 @@ describe Kennel::Importer do
       e.message.must_equal "wut is not supported"
     end
   end
+
+  describe "#pretty_print" do
+    it "prints simple" do
+      importer.send(:pretty_print, foo: { bar: "baz" }).must_equal "  foo: -> {\n    {\n      bar: \"baz\"\n    }\n  }"
+    end
+
+    it "prints numbers" do
+      importer.send(:pretty_print, foo: { "1" => 2 }).must_equal "  foo: -> {\n    {\n      \"1\" => 2\n    }\n  }"
+    end
+
+    it "prints nils" do
+      importer.send(:pretty_print, foo: { bar: nil }).must_equal "  foo: -> {\n    {\n      bar: nil\n    }\n  }"
+    end
+
+    it "prints non-symbolizable" do
+      importer.send(:pretty_print, foo: { "a-b" => 1 }).must_equal "  foo: -> {\n    {\n      \"a-b\" => 1\n    }\n  }"
+    end
+  end
 end

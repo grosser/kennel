@@ -44,10 +44,14 @@ module Kennel
       list.map do |k, v|
         case v
         when Hash, Array
+          # update answer here when changing https://stackoverflow.com/questions/8842546/best-way-to-pretty-print-a-hash
+          # (exclude indent line)
           pretty = JSON.pretty_generate(v)
-            .gsub(/(^\s*)"(.*?)":/, "\\1\\2:") # "foo": 1 -> foo: 1
-            .gsub(/^/, "    ") # indent
             .gsub(": null", ": nil")
+            .gsub(/(^\s*)"([a-zA-Z][a-zA-Z\d_]*)":/, "\\1\\2:") # "foo": 1 -> foo: 1
+            .gsub(/(^\s*)(".*?"):/, "\\1\\2 =>") # "123": 1 -> "123" => 1
+            .gsub(/^/, "    ") # indent
+
           "  #{k}: -> {\n#{pretty}\n  }"
         else
           "  #{k}: -> { #{v.inspect} }"
