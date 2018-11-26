@@ -25,7 +25,9 @@ module Kennel
         :board_bgtype,
         :height,
         :width,
-        :showGlobalTimeOnboarding
+        :showGlobalTimeOnboarding,
+        :originalHeight,
+        :originalWidth
       ]).freeze
       SCREEN_DEFAULTS = { template_variables: [] }.freeze
 
