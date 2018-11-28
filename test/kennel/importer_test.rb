@@ -119,7 +119,8 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "pick_something_descriptive" },
-          escalation_message: -> { nil }
+          escalation_message: -> { nil },
+          evaluation_delay: -> { nil }
         )
       RUBY
     end
@@ -155,6 +156,7 @@ describe Kennel::Importer do
           kennel_id: -> { "pick_something_descriptive" },
           critical: -> { 25.0 },
           escalation_message: -> { nil },
+          evaluation_delay: -> { nil },
           no_data_timeframe: -> { nil },
           notify_audit: -> { true },
           notify_no_data: -> { false },

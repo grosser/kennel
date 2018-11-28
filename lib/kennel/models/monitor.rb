@@ -11,7 +11,7 @@ module Kennel
       NON_MULTI_TYPES = ["query alert", "log alert"].freeze # NOTE: event alerts don't seem to return their multi setting
 
       settings(
-        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h,
+        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
       )
       defaults(
@@ -27,7 +27,8 @@ module Kennel
         notify_audit: -> { true },
         tags: -> { @project.tags },
         timeout_h: -> { 0 },
-        multi: ->  { !NON_MULTI_TYPES.include?(type) || query.include?(" by ") },
+        evaluation_delay: -> { nil },
+        multi: -> { !NON_MULTI_TYPES.include?(type) || query.include?(" by ") },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil }
       )
@@ -57,7 +58,7 @@ module Kennel
             new_host_delay: 300,
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
-            evaluation_delay: nil,
+            evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
             renotify_interval: renotify_interval || 0,
             thresholds: {
@@ -124,7 +125,7 @@ module Kennel
           end
         end
 
-        # nil or "" are not returned from the api
+        # nil / "" / 0 are not returned from the api when set via the UI
         options[:evaluation_delay] ||= nil
       end
 
