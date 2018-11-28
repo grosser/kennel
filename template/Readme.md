@@ -23,7 +23,8 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
- - go to [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
+ - `cp .env.example .env`
+ - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
  - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
  - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
 
