@@ -193,6 +193,10 @@ describe Kennel::Models::Monitor do
       monitor(evaluation_delay: -> { 20 }).as_json.dig(:options, :evaluation_delay).must_equal 20
     end
 
+    it "can set threshold_windows" do
+      monitor(threshold_windows: -> { 20 }).as_json.dig(:options, :threshold_windows).must_equal 20
+    end
+
     # happens when project/team have the same tags and they double up
     it "only sets tags once to avoid perma-diff when datadog unqiues them" do
       monitor(tags: -> { ["a", "b", "a"] }).as_json[:tags].must_equal ["a", "b"]

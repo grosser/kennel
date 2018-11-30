@@ -12,7 +12,8 @@ module Kennel
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
-        :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window
+        :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :multi, :critical_recovery, :warning_recovery, :require_full_window,
+        :threshold_windows
       )
       defaults(
         message: -> { "\n\n@slack-#{project.slack}" },
@@ -30,7 +31,8 @@ module Kennel
         evaluation_delay: -> { nil },
         multi: -> { !NON_MULTI_TYPES.include?(type) || query.include?(" by ") },
         critical_recovery: -> { nil },
-        warning_recovery: -> { nil }
+        warning_recovery: -> { nil },
+        threshold_windows: -> { nil }
       )
 
       attr_reader :project
@@ -86,6 +88,10 @@ module Kennel
         when "query alert"
           # metric and query values are stored as float by datadog
           thresholds.each { |k, v| thresholds[k] = Float(v) }
+        end
+
+        if windows = threshold_windows
+          options[:threshold_windows] = windows
         end
 
         validate_json(data) if validate
