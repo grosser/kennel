@@ -9,6 +9,11 @@ module Kennel
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       NON_MULTI_TYPES = ["query alert", "log alert", "composite"].freeze # NOTE: event alerts don't seem to return their multi setting
+      MONITOR_DEFAULTS = {
+        escalation_message: nil,
+        evaluation_delay: nil,
+        no_data_timeframe: nil
+      }.freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -107,7 +112,7 @@ module Kennel
         Utils.path_to_url "/monitors##{id}/edit"
       end
 
-      def self.normalize(_expected, actual)
+      def self.normalize(expected, actual)
         super
         options = actual.fetch(:options)
         options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
@@ -133,6 +138,8 @@ module Kennel
 
         # nil / "" / 0 are not returned from the api when set via the UI
         options[:evaluation_delay] ||= nil
+
+        ignore_default(expected[:options] || {}, options, MONITOR_DEFAULTS)
       end
 
       private

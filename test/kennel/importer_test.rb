@@ -118,9 +118,7 @@ describe Kennel::Importer do
           self,
           name: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" },
-          escalation_message: -> { nil },
-          evaluation_delay: -> { nil }
+          kennel_id: -> { "pick_something_descriptive" }
         )
       RUBY
     end
@@ -139,11 +137,9 @@ describe Kennel::Importer do
           require_full_window: false,
           notify_no_data: false,
           renotify_interval: 120,
-          escalation_message: nil,
           thresholds: {
             critical: 25.0
-          },
-          evaluation_delay: nil
+          }
         }
       }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
@@ -155,9 +151,6 @@ describe Kennel::Importer do
           id: -> { 123 },
           kennel_id: -> { "pick_something_descriptive" },
           critical: -> { 25.0 },
-          escalation_message: -> { nil },
-          evaluation_delay: -> { nil },
-          no_data_timeframe: -> { nil },
           notify_audit: -> { true },
           notify_no_data: -> { false },
           renotify_interval: -> { 120 },
