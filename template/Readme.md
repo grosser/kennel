@@ -44,7 +44,8 @@ end
 
 ### Adding a new monitor
  - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
- - get the `id` from the url, click "Export Monitor" on the monitors edit tab to get the `query` and `type`
+ - get the `id` from the url
+ - `RESOURCE=monitor ID=12345 bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing monitor
@@ -59,7 +60,7 @@ end
         [
           Kennel::Models::Monitor.new(
             self,
-            id: -> { 123456 }, # id from datadog url
+            id: -> { 123456 }, # id from datadog url, not necessary when creating a new monitor
             type: -> { "query alert" },
             kennel_id: -> { "load-too-high" }, # make up a unique name
             name: -> { "Foobar Load too high" }, # nice descriptive name that will show up in alerts and emails
@@ -88,6 +89,7 @@ end
 ### Adding a new dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dash/list) and click on _New Dashboard_ to create a dashboard
  - get the `id` from the url
+ - `RESOURCE=dash ID=12345 bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing dashboard
@@ -101,7 +103,7 @@ end
         [
           Kennel::Models::Dash.new(
             self,
-            id: -> { 123457 }, # id from datadog url
+            id: -> { 123457 }, # id from datadog url, not needed when creating a new dashboard
             title: -> { "My Dashboard" },
             description: -> { "Overview of foobar" },
             template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
@@ -127,14 +129,6 @@ end
     )
   end
  ```
-
-### Importing an existing resources
-
-```Bash
-RESOURCE=dash ID=12345 rake kennel:import
-```
-
-Put returned definition into a project of your choice.
 
 ### Adding a new screenboard
  - similar to `dash.rb`
