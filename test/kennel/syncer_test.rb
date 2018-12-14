@@ -65,6 +65,11 @@ describe Kennel::Syncer do
     screen
   end
 
+  def add_identical
+    expected << monitor("a", "b")
+    monitors << component("a", "b")
+  end
+
   let(:api) { stub("Api") }
   let(:monitors) { [] }
   let(:dashes) { [] }
@@ -99,8 +104,7 @@ describe Kennel::Syncer do
     end
 
     it "ignores identical" do
-      expected << monitor("a", "b")
-      monitors << component("a", "b")
+      add_identical
       output.must_equal "Plan:\nNothing to do\n"
     end
 
@@ -194,21 +198,34 @@ describe Kennel::Syncer do
     end
 
     describe "filter" do
-      let(:syncer) { Kennel::Syncer.new(api, expected, project: "foo") }
+      let(:syncer) { Kennel::Syncer.new(api, expected, project: "a") }
 
       it "does nothing when ignores changes" do
-        expected << monitor("a", "b")
+        add_identical
+        expected << monitor("b", "c")
         output.must_equal "Plan:\nNothing to do\n"
       end
 
       it "does something when filtered changes" do
-        expected << monitor("foo", "b")
-        output.must_equal "Plan:\nCreate foo:b\n"
+        expected << monitor("a", "c")
+        output.must_equal "Plan:\nCreate a:c\n"
       end
 
       it "leaves unmanaged alone" do
+        add_identical
         monitors << { id: 123, message: "foo", tags: [] }
         output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "shows correct values when using invalid name" do
+        expected << monitor("b", "a")
+        expected << monitor("c", "a")
+        e = assert_raises(RuntimeError) { output }
+        e.message.must_equal <<~ERROR.strip
+          a does not match any projects, try any of these:
+          b
+          c
+        ERROR
       end
     end
 

@@ -8,7 +8,14 @@ module Kennel
       @api = api
       @project_filter = project
       @expected = expected
-      @expected = @expected.select { |e| e.project.kennel_id == @project_filter } if @project_filter
+      if @project_filter
+        original = @expected
+        @expected = @expected.select { |e| e.project.kennel_id == @project_filter }
+        if @expected.empty?
+          possible = original.map { |e| e.project.kennel_id }.uniq.sort
+          raise "#{@project_filter} does not match any projects, try any of these:\n#{possible.join("\n")}"
+        end
+      end
       @expected.each { |e| add_tracking_id e }
       calculate_diff
     end
