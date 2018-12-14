@@ -101,6 +101,7 @@ module Kennel
                 begin
                   yield item
                 rescue StandardError => e
+                  work.clear
                   e
                 end
             end

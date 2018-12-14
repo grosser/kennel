@@ -143,6 +143,18 @@ describe Kennel::Utils do
         end
       end
     end
+
+    it "finishes fast when exception happens" do
+      called = []
+      all = [1, 2, 3, 4, 5]
+      assert_raises ArgumentError do
+        Kennel::Utils.parallel(all, max: 2) do |i|
+          called << i
+          raise ArgumentError
+        end
+      end
+      called.size.must_be :<, all.size
+    end
   end
 
   describe ".natural_order" do
