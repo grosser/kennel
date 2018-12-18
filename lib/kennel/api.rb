@@ -33,13 +33,18 @@ module Kennel
       params = params.merge(application_key: @app_key, api_key: @api_key)
       query = Faraday::FlatParamsEncoder.encode(params)
       response = nil
+      tries = 2
 
-      2.times do |i|
-        response = @client.send(method, "#{path}?#{query}") do |request|
-          request.body = JSON.generate(body) if body
-          request.headers["Content-type"] = "application/json"
+      tries.times do |i|
+        response = Utils.retry Faraday::ConnectionFailed, times: 2 do
+          @client.send(method, "#{path}?#{query}") do |request|
+            request.body = JSON.generate(body) if body
+            request.headers["Content-type"] = "application/json"
+          end
         end
-        break if i == 1 || method != :get || response.status < 500
+
+        break if i == tries - 1 || method != :get || response.status < 500
+        Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
       end
 
       unless response.success?

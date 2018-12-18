@@ -98,6 +98,8 @@ describe Kennel::Api do
   end
 
   describe "retries" do
+    capture_all
+
     it "does not retry successful" do
       request = stub_request(:get, "monitor/1234").to_return(body: { bar: "foo" }.to_json)
       api.show("monitor", 1234).must_equal bar: "foo"
@@ -125,18 +127,24 @@ describe Kennel::Api do
       )
       api.show("monitor", 1234).must_equal foo: "bar"
       assert_requested request, times: 2
+      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
+    end
+
+    it "retries on timeout" do
+      request = stub_request(:get, "monitor/1234").to_timeout
+      assert_raises Faraday::ConnectionFailed do
+        api.show("monitor", 1234).must_equal foo: "bar"
+      end
+      assert_requested request, times: 3
+      stderr.string.must_equal "Error execution expired, 1 retries left\nError execution expired, 0 retries left\n"
     end
 
     it "fails on repeated errors" do
-      request = stub_request(:get, "monitor/1234").to_return(
-        [
-          { status: 500 },
-          { status: 500 },
-          { status: 200, body: { foo: "bar" }.to_json }
-        ]
-      )
-      assert_raises(RuntimeError) { api.show("monitor", 1234) }
+      request = stub_request(:get, "monitor/1234").to_return(status: 500)
+      e = assert_raises(RuntimeError) { api.show("monitor", 1234) }
+      e.message.must_equal "Error 500 during GET /api/v1/monitor/1234\n"
       assert_requested request, times: 2
+      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
     end
   end
 end

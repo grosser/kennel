@@ -174,4 +174,33 @@ describe Kennel::Utils do
       sort(["bb", "ab", "aa", "a", "b"]).must_equal ["a", "aa", "ab", "b", "bb"]
     end
   end
+
+  describe ".retry" do
+    it "succeeds" do
+      Kennel.err.expects(:puts).never
+      Kennel::Utils.retry(RuntimeError, times: 2) { :a }.must_equal :a
+    end
+
+    it "retries and raises on persistent error" do
+      Kennel.err.expects(:puts).times(2)
+      call = []
+      assert_raises(RuntimeError) do
+        Kennel::Utils.retry(RuntimeError, times: 2) do
+          call << :a
+          raise
+        end
+      end
+      call.must_equal [:a, :a, :a]
+    end
+
+    it "can succeed after retrying" do
+      Kennel.err.expects(:puts).times(2)
+      call = []
+      Kennel::Utils.retry(RuntimeError, times: 2) do
+        call << :a
+        raise if call.size <= 2
+        call
+      end.must_equal [:a, :a, :a]
+    end
+  end
 end

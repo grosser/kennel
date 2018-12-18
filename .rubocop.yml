@@ -84,3 +84,9 @@ Naming/UncommunicativeMethodParamName:
 
 Style/RegexpLiteral:
   Enabled: false
+
+Style/NumericPredicate:
+  EnforcedStyle: comparison
+
+Style/SpecialGlobalVars:
+  Enabled: false

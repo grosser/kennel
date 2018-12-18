@@ -114,6 +114,15 @@ module Kennel
       def natural_order(name)
         name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
       end
+
+      def retry(*errors, times:)
+        yield
+      rescue *errors => e
+        times -= 1
+        raise if times < 0
+        Kennel.err.puts "Error #{e}, #{times} retries left"
+        retry
+      end
     end
   end
 end
