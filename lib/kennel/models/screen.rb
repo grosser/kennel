@@ -100,6 +100,8 @@ module Kennel
       private
 
       def validate_json(data)
+        super
+
         # check for fields that are unsettable
         data[:widgets].each do |w|
           COPIED_WIDGET_VALUES.each do |ignored|

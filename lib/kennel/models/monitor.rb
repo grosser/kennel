@@ -151,6 +151,8 @@ module Kennel
       end
 
       def validate_json(data)
+        super
+
         type = data.fetch(:type)
 
         # do not allow deprecated type that will be coverted by datadog and then produce a diff

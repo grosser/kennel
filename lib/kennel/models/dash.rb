@@ -70,6 +70,8 @@ module Kennel
       private
 
       def validate_json(data)
+        super
+
         # check for bad variables
         # TODO: do the same check for apm_query and their group_by
         variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
