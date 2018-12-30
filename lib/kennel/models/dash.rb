@@ -50,7 +50,9 @@ module Kennel
       def self.normalize(expected, actual)
         super
 
+        actual[:template_variables] ||= [] # is nil when it never had template variables
         ignore_default expected, actual, DASH_DEFAULTS
+
         (actual[:graphs] || {}).each do |g|
           g[:definition].delete(:status)
         end
@@ -90,7 +92,7 @@ module Kennel
       end
 
       def render_template_variables
-        template_variables.map do |v|
+        (template_variables || []).map do |v|
           v.is_a?(String) ? { default: "*", prefix: v, name: v } : v
         end
       end
