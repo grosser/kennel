@@ -166,6 +166,10 @@ describe Kennel::Models::Dash do
       )
     end
 
+    it "ignores when user copied the nil for template_variables that datadog api returns" do
+      dash(template_variables: -> { nil }).as_json.must_equal(expected_json)
+    end
+
     it "supports apm_queries" do
       dash(
         graphs: -> {
@@ -271,6 +275,11 @@ describe Kennel::Models::Dash do
 
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
+      dash.diff(expected_json).must_equal []
+    end
+
+    it "does not compare nil template_variables" do
+      expected_json[:template_variables] = nil
       dash.diff(expected_json).must_equal []
     end
   end
