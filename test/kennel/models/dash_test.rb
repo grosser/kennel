@@ -222,9 +222,14 @@ describe Kennel::Models::Dash do
 
     it "raises when using nil arguments for definition" do
       e = assert_raises ArgumentError do
-        dash(definitions: -> { [["TI", "V", nil, ["Q", "Q2"]]] }).as_json
+        dash(definitions: -> { [["TI", nil, "TY", ["Q", "Q2"]]] }).as_json
       end
       e.message.must_equal "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
+    end
+
+    it "does not add type when nil to make toplists work" do
+      dash(definitions: -> { [["TI", "V", nil, ["Q", "Q2"]]] })
+        .as_json[:graphs][0][:definition][:requests].must_equal [{ q: "Q" }, { q: "Q2" }]
     end
 
     describe "with invalid dash" do

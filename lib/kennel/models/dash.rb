@@ -99,14 +99,18 @@ module Kennel
 
       def render_graphs
         definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
-          if ignored || (!title || !viz || !type || !queries || !options.is_a?(Hash))
+          if ignored || (!title || !viz || !queries || !options.is_a?(Hash))
             raise ArgumentError, "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
           end
           if options.each_key.any? { |k| !SUPPORTED_GRAPH_OPTIONS.include?(k) }
             raise ArgumentError, "Supported options are: #{SUPPORTED_GRAPH_OPTIONS.map(&:inspect).join(", ")}"
           end
 
-          requests = Array(queries).map { |q| { q: q, type: type } }
+          requests = Array(queries).map do |q|
+            request = { q: q }
+            request[:type] = type if type
+            request
+          end
           graph = { title: title, definition: { viz: viz, requests: requests } }
           SUPPORTED_GRAPH_OPTIONS.each do |key|
             graph[:definition][key] = options[key] if options[key]
