@@ -6,7 +6,7 @@ module Kennel
       include OptionalValidations
 
       API_LIST_INCOMPLETE = true
-      SUPPORTED_GRAPH_OPTIONS = [:events, :markers].freeze
+      SUPPORTED_GRAPH_OPTIONS = [:events, :markers, :precision].freeze
       READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only]).freeze
       DEFINITION_DEFAULTS = { autoscale: true }.freeze
       DASH_DEFAULTS = { template_variables: [] }.freeze
