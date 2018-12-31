@@ -199,6 +199,27 @@ describe Kennel::Models::Dash do
       ).as_json
     end
 
+    it "sets precision for query_value" do
+      dash(
+        definitions: -> { [["TI", "V", "query_value", "Q"]] }
+      ).as_json.must_equal(
+        expected_json.merge(
+          graphs: [
+            {
+              title: "TI",
+              definition: {
+                viz: "V",
+                requests: [
+                  { q: "Q", type: "query_value" }
+                ],
+                precision: 2
+              }
+            }
+          ]
+        )
+      )
+    end
+
     it "raises when using too many arguments for definition" do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], "Whoops"]] }).as_json
@@ -217,7 +238,7 @@ describe Kennel::Models::Dash do
       e = assert_raises ArgumentError do
         dash(definitions: -> { [["TI", "V", "TY", ["Q", "Q2"], foo: "bar"]] }).as_json
       end
-      e.message.must_equal "Supported options are: :events, :markers"
+      e.message.must_equal "Supported options are: :events, :markers, :precision"
     end
 
     it "raises when using nil arguments for definition" do

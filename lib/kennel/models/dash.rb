@@ -99,6 +99,7 @@ module Kennel
 
       def render_graphs
         definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
+          # validate inputs
           if ignored || (!title || !viz || !queries || !options.is_a?(Hash))
             raise ArgumentError, "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
           end
@@ -106,15 +107,25 @@ module Kennel
             raise ArgumentError, "Supported options are: #{SUPPORTED_GRAPH_OPTIONS.map(&:inspect).join(", ")}"
           end
 
+          # build graph
           requests = Array(queries).map do |q|
             request = { q: q }
             request[:type] = type if type
             request
           end
+
           graph = { title: title, definition: { viz: viz, requests: requests } }
+
+          # whitelist options that can be passed in, so we are flexible in the future
           SUPPORTED_GRAPH_OPTIONS.each do |key|
             graph[:definition][key] = options[key] if options[key]
           end
+
+          # set default values so users do not have to pass them all the time
+          if type == "query_value"
+            graph[:definition][:precision] ||= 2
+          end
+
           graph
         end + graphs
       end
