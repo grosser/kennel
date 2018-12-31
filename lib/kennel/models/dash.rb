@@ -122,7 +122,7 @@ module Kennel
           end
 
           # set default values so users do not have to pass them all the time
-          if type == "query_value"
+          if viz == "query_value"
             graph[:definition][:precision] ||= 2
           end
 

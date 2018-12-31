@@ -201,16 +201,16 @@ describe Kennel::Models::Dash do
 
     it "sets precision for query_value" do
       dash(
-        definitions: -> { [["TI", "V", "query_value", "Q"]] }
+        definitions: -> { [["TI", "query_value", nil, "Q"]] }
       ).as_json.must_equal(
         expected_json.merge(
           graphs: [
             {
               title: "TI",
               definition: {
-                viz: "V",
+                viz: "query_value",
                 requests: [
-                  { q: "Q", type: "query_value" }
+                  { q: "Q" }
                 ],
                 precision: 2
               }
