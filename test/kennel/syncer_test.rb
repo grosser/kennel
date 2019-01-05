@@ -24,6 +24,7 @@ describe Kennel::Syncer do
       project(pid),
       query: -> { "avg(last_5m) > #{critical}" },
       kennel_id: -> { cid },
+      type: -> { "query alert" },
       critical: -> { 1.0 },
       id: -> { extra[:id] }
     )

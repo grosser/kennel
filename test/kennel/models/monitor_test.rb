@@ -16,6 +16,7 @@ describe Kennel::Models::Monitor do
     Kennel::Models::Monitor.new(
       options.delete(:project) || project,
       {
+        type: -> { "query alert" },
         kennel_id: -> { "m1" },
         query: -> { "avg(last_5m) > #{critical}" },
         critical: -> { 123.0 }

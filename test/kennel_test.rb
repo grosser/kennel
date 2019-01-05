@@ -20,6 +20,7 @@ describe Kennel do
           parts: -> { [
             Kennel::Models::Monitor.new(
               self,
+              type: -> { "query alert" },
               kennel_id: -> { 'foo' },
               query: -> { "avg(last_5m) > \#{critical}" },
               critical: -> { 1 }
