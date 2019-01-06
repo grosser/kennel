@@ -23,7 +23,6 @@ module Kennel
       defaults(
         message: -> { "\n\n@slack-#{project.slack}" },
         escalation_message: -> { "" },
-        type: -> { "query alert" },
         renotify_interval: -> { 120 },
         warning: -> { nil },
         ok: ->  { nil },

@@ -198,6 +198,7 @@ module Monitors
     defaults(
       name: -> { "#{project.name} load too high" },
       message: -> { "Shut it down!" },
+      type: -> { "query alert" },
       query: -> { "avg(last_5m):avg:system.load.5{hostgroup:#{project.kennel_id}} by {pod} > #{critical}" }
     )
   end

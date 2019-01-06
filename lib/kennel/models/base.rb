@@ -31,7 +31,8 @@ module Kennel
           names.each do |name|
             next if method_defined?(name)
             define_method name do
-              raise ArgumentError, "Trying to call #{name} for #{self.class} but it was never set or passed as option"
+              message = "Trying to call #{name} for #{self.class} but it was never set or passed as option"
+              raise_with_location ArgumentError, message
             end
           end
         end
@@ -96,16 +97,18 @@ module Kennel
         end
 
         # need expand_path so it works wih rake and when run individually
-        @invocation_location = caller.detect { |l| File.expand_path(l).start_with?(Dir.pwd) }
+        pwd = /^#{Regexp.escape(Dir.pwd)}\//
+        @invocation_location = caller.detect do |l|
+          if found = File.expand_path(l).sub!(pwd, "")
+            break found
+          end
+        end
       end
 
       def kennel_id
         name = self.class.name
         if name.start_with?("Kennel::")
-          message = +"Set :kennel_id"
-          message << " for project #{project.kennel_id}" if defined?(project)
-          message << " on #{@invocation_location}" if @invocation_location
-          raise ArgumentError, message
+          raise_with_location ArgumentError, "Set :kennel_id"
         end
         @kennel_id ||= Utils.snake_case name
       end
@@ -139,6 +142,13 @@ module Kennel
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)
         raise ValidationError, "#{tracking_id} #{message}"
+      end
+
+      def raise_with_location(error, message)
+        message = message.dup
+        message << " for project #{project.kennel_id}" if defined?(project)
+        message << " on #{@invocation_location}" if @invocation_location
+        raise error, message
       end
 
       def validate_options(options)

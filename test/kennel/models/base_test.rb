@@ -44,6 +44,24 @@ describe Kennel::Models::Base do
       e = assert_raises(ArgumentError) { TestBase.new(id: 12345) }
       e.message.must_equal "Expected TestBase.new option :id to be Proc, for example `id: -> { 12 }`"
     end
+
+    it "stores invocation_location" do
+      model = Kennel::Models::Monitor.new(TestProject.new)
+      location = model.instance_variable_get(:@invocation_location).sub(/:\d+/, ":123")
+      location.must_equal "lib/kennel/models/monitor.rb:123:in `initialize'"
+    end
+
+    it "stores invocation_location from first outside project line" do
+      Kennel::Models::Monitor.any_instance.expects(:caller).returns(
+        [
+          "/foo/bar.rb",
+          "#{Dir.pwd}/baz.rb"
+        ]
+      )
+      model = Kennel::Models::Monitor.new(TestProject.new)
+      location = model.instance_variable_get(:@invocation_location).sub(/:\d+/, ":123")
+      location.must_equal "baz.rb"
+    end
   end
 
   describe "#kennel_id" do
@@ -56,7 +74,7 @@ describe Kennel::Models::Base do
         Kennel::Models::Monitor.new(TestProject.new).kennel_id
       end
       message = e.message
-      assert message.sub!(/ \/\S+?:\d+/, " file.rb:123")
+      assert message.sub!(/ \S+?:\d+/, " file.rb:123")
       message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `initialize'"
     end
 
@@ -65,7 +83,7 @@ describe Kennel::Models::Base do
         Kennel::Models::Project.new.kennel_id
       end
       message = e.message
-      assert message.sub!(/[\.\/]+\S+?:\d+/, "file.rb:123")
+      assert message.sub!(/\S+?:\d+/, "file.rb:123")
       message.must_equal "Set :kennel_id on file.rb:123:in `new'"
     end
 
@@ -84,7 +102,7 @@ describe Kennel::Models::Base do
         Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }).kennel_id
       end
       message = e.message
-      assert message.sub!(/ \/\S+?:\d+/, " file.rb:123")
+      assert message.sub!(/ \S+?:\d+/, " file.rb:123")
       message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `initialize'"
     end
   end
