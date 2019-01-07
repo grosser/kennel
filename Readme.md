@@ -177,9 +177,9 @@ To link to existing monitors via their kennel_id
  - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
  - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
 
-### Debugging locally
+### Debugging changes locally
 
- - make sure to be on update `master` to not undo other changes
+ - rebase on updated `master` to not undo other changes
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
 
 ### Listing umuted alerts
