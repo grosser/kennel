@@ -156,7 +156,7 @@ module Kennel
 
         # do not allow deprecated type that will be coverted by datadog and then produce a diff
         if type == "metric alert"
-          invalid! "type 'metric alert' is deprecated, do not set type to use the default 'query alert'"
+          invalid! "type 'metric alert' is deprecated, please set to a different type (e.g. 'query alert')"
         end
 
         # verify service checks use interger thresholds to avoid diff
