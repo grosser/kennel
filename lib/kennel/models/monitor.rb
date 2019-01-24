@@ -159,11 +159,6 @@ module Kennel
           invalid! "type 'metric alert' is deprecated, please set to a different type (e.g. 'query alert')"
         end
 
-        # verify service checks use interger thresholds to avoid diff
-        if type == "service check" && [ok, warning, critical].compact.map(&:class).uniq != [Integer]
-          invalid! ":ok, :warning and :critical must be integers for service check type"
-        end
-
         # verify query includes critical value
         if query_value = data.fetch(:query)[/\s*[<>]\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
