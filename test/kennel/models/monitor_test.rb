@@ -128,11 +128,6 @@ describe Kennel::Models::Monitor do
       json.dig(:options, :thresholds, :warning).must_equal 1
     end
 
-    it "fails when using invalid type for service type thresholds" do
-      e = assert_raises(RuntimeError) { monitor(critical: -> { 234.1 }, type: -> { "service check" }).as_json }
-      e.message.must_equal "test_project:m1 :ok, :warning and :critical must be integers for service check type"
-    end
-
     it "fails when using invalid interval for query alert type" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 234.1 }, query: -> { "avg(last_20m).count() < #{critical}" }).as_json }
       e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d"
