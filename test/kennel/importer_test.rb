@@ -26,7 +26,7 @@ describe Kennel::Importer do
     end
 
     it "prints complex elements" do
-      response = { dash: { foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
+      response = { dash: { id: 123, foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
       stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
       dash = importer.import("dash", 123)
       dash.must_equal <<~RUBY
@@ -56,7 +56,7 @@ describe Kennel::Importer do
     end
 
     it "prints null as nil" do
-      response = { dash: { bar: { baz: nil } } }
+      response = { dash: { id: 123, bar: { baz: nil } } }
       stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
       dash = importer.import("dash", 123)
       dash.must_equal <<~RUBY
@@ -155,6 +155,19 @@ describe Kennel::Importer do
           notify_no_data: -> { false },
           renotify_interval: -> { 120 },
           timeout_h: -> { 0 }
+        )
+      RUBY
+    end
+
+    it "can import with new alphanumeric ids" do
+      response = { dash: { id: 123 } }
+      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
+      dash = importer.import("dash", "abc-def")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dash.new(
+          self,
+          id: -> { 123 },
+          kennel_id: -> { "pick_something_descriptive" }
         )
       RUBY
     end

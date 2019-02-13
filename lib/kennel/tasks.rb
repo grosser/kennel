@@ -53,7 +53,8 @@ namespace :kennel do
   desc "Covert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
   task import: :environment do
     resource = ENV["RESOURCE"] || abort("Call with RESOURCE=dash") # TODO: add others
-    id = Integer(ENV["ID"] || abort("Call with ID=1234"))
+    id = ENV["ID"] || abort("Call with ID=1234")
+    id = Integer(id) if id =~ /^\d+$/ # dashboards can have alphanumeric ids
     puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
   end
 

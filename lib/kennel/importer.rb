@@ -18,6 +18,7 @@ module Kennel
 
       data = @api.show(model.api_resource, id)
       data = data[resource.to_sym] || data
+      id = data.fetch(:id) # store numerical id returned from the api
       model.normalize({}, data)
       data[:id] = id
       data[:kennel_id] = "pick_something_descriptive"
