@@ -7,7 +7,7 @@ module Kennel
 
       API_LIST_INCOMPLETE = true
       SUPPORTED_GRAPH_OPTIONS = [:events, :markers, :precision].freeze
-      READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only]).freeze
+      READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only, :new_id]).freeze
       DEFINITION_DEFAULTS = { autoscale: true }.freeze
       DASH_DEFAULTS = { template_variables: [] }.freeze
 

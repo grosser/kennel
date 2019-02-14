@@ -299,6 +299,11 @@ describe Kennel::Models::Dash do
       dash(definitions: -> { [["TI", "V", "TY", "Q"]] }).diff(expected_json_with_graphs).must_equal []
     end
 
+    it "does not compare unsettable new_id" do
+      expected_json[:new_id] = "abc"
+      dash.diff(expected_json).must_equal []
+    end
+
     it "does not compare missing template_variables" do
       expected_json.delete(:template_variables)
       dash.diff(expected_json).must_equal []
