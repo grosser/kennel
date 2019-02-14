@@ -406,6 +406,13 @@ describe Kennel::Syncer do
         api.expects(:update)
         output
       end
+
+      it "allows partial updates on monitors with ids when it does not modify tracking id" do
+        expected << monitor("a", "b", foo: "bar", id: 123)
+        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel a:b")
+        api.expects(:update)
+        output
+      end
     end
 
     describe "dashes" do

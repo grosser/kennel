@@ -180,9 +180,14 @@ module Kennel
 
     def block_irreversible_partial_updates
       return unless @project_filter
-      return if @update.none? { |_, e, _, diff| e.id && diff.any? { |_, field| TRACKING_FIELDS.include?(field.to_sym) } }
+      return if @update.none? do |_, e, _, diff|
+        e.id && diff.any? do |_, field, old, new = nil|
+          TRACKING_FIELDS.include?(field.to_sym) && tracking_value(old) != tracking_value(new)
+        end
+      end
       raise <<~TEXT
-        Updates with PROJECT= filter should not update #{TRACKING_FIELDS.join("/")} of resources with a set `id:`, since this makes them get deleted by a full update.
+        Updates with PROJECT= filter should not update tracking id in #{TRACKING_FIELDS.join("/")} of resources with a set `id:`,
+        since this makes them get deleted by a full update.
         Remove the `id:` to test them out, which will result in a copy being created and later deleted.
       TEXT
     end
@@ -207,7 +212,11 @@ module Kennel
     end
 
     def tracking_id(a)
-      a[tracking_field(a)].to_s[/-- Managed by kennel (\S+:\S+)/, 1]
+      tracking_value a[tracking_field(a)]
+    end
+
+    def tracking_value(content)
+      content.to_s[/-- Managed by kennel (\S+:\S+)/, 1]
     end
 
     def tracking_field(a)
