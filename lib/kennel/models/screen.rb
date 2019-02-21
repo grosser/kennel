@@ -27,7 +27,8 @@ module Kennel
         :width,
         :showGlobalTimeOnboarding,
         :originalHeight,
-        :originalWidth
+        :originalWidth,
+        :new_id
       ]).freeze
       SCREEN_DEFAULTS = { template_variables: [] }.freeze
 
