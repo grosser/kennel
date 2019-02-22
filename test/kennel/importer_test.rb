@@ -17,7 +17,7 @@ describe Kennel::Importer do
           self,
           title: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" }
+          kennel_id: -> { "hello" }
         )
       RUBY
       code = "TestProject.new(parts: -> {[#{dash}]})"
@@ -26,14 +26,15 @@ describe Kennel::Importer do
     end
 
     it "prints complex elements" do
-      response = { dash: { id: 123, foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
+      response = { dash: { id: 123, board_title: "a", foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
       stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
       dash = importer.import("dash", 123)
       dash.must_equal <<~RUBY
         Kennel::Models::Dash.new(
           self,
+          board_title: -> { "a" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" },
+          kennel_id: -> { "a" },
           bar: -> {
             {
               baz: [
@@ -56,14 +57,15 @@ describe Kennel::Importer do
     end
 
     it "prints null as nil" do
-      response = { dash: { id: 123, bar: { baz: nil } } }
+      response = { dash: { id: 123, title: "a", bar: { baz: nil } } }
       stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
       dash = importer.import("dash", 123)
       dash.must_equal <<~RUBY
         Kennel::Models::Dash.new(
           self,
+          title: -> { "a" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" },
+          kennel_id: -> { "a" },
           bar: -> {
             {
               baz: nil
@@ -74,14 +76,15 @@ describe Kennel::Importer do
     end
 
     it "removes boring default values" do
-      response = { dash: { id: 123, graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
+      response = { dash: { id: 123, title: "a", graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
       stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
       dash = importer.import("dash", 123)
       dash.must_equal <<~RUBY
         Kennel::Models::Dash.new(
           self,
+          title: -> { "a" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" },
+          kennel_id: -> { "a" },
           graphs: -> {
             [
               {
@@ -104,7 +107,7 @@ describe Kennel::Importer do
           self,
           board_title: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" }
+          kennel_id: -> { "hello" }
         )
       RUBY
     end
@@ -118,7 +121,7 @@ describe Kennel::Importer do
           self,
           name: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" }
+          kennel_id: -> { "hello" }
         )
       RUBY
     end
@@ -149,25 +152,92 @@ describe Kennel::Importer do
           self,
           name: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" },
+          kennel_id: -> { "hello" },
           critical: -> { 25.0 },
-          notify_audit: -> { true },
-          notify_no_data: -> { false },
-          renotify_interval: -> { 120 },
-          timeout_h: -> { 0 }
+          notify_no_data: -> { false }
         )
       RUBY
     end
 
     it "can import with new alphanumeric ids" do
-      response = { dash: { id: 123 } }
+      response = { dash: { title: "a", id: 123 } }
       stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
       dash = importer.import("dash", "abc-def")
       dash.must_equal <<~RUBY
         Kennel::Models::Dash.new(
           self,
+          title: -> { "a" },
           id: -> { 123 },
-          kennel_id: -> { "pick_something_descriptive" }
+          kennel_id: -> { "a" }
+        )
+      RUBY
+    end
+
+    it "adds critical replacement" do
+      response = { id: 123, name: "hello", query: "foo = 5", options: { critical: 5 } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          query: -> { "foo = \#{critical}" },
+          critical: -> { 5 }
+        )
+      RUBY
+    end
+
+    it "adds critical replacement for different type" do
+      response = { id: 123, name: "hello", query: "foo = 5", options: { critical: 5.0 } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          query: -> { "foo = \#{critical}" },
+          critical: -> { 5.0 }
+        )
+      RUBY
+    end
+
+    it "prints simple arrays in a single line" do
+      response = { id: 123, name: "hello", tags: ["a", "b", "c"], options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          tags: -> { ["a", "b", "c"] }
+        )
+      RUBY
+    end
+
+    it "prints message nicely" do
+      response = { id: 123, name: "hello", message: "hello\n\n\nworld", options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          message: -> {
+            <<~TEXT
+              hello
+
+
+              world
+            TEXT
+          }
         )
       RUBY
     end

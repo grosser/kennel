@@ -14,6 +14,20 @@ describe Kennel::Utils do
     end
   end
 
+  describe ".parameterize" do
+    {
+      "--" => "",
+      "aøb" => "a-b",
+      "" => "",
+      "a1_Bc" => "a1_bc",
+      "øabcøødefø" => "abc-def"
+    }.each do |from, to|
+      it "coverts #{from} to #{to}" do
+        Kennel::Utils.parameterize(from).must_equal to
+      end
+    end
+  end
+
   describe ".presence" do
     it "returns regular values" do
       Kennel::Utils.presence("a").must_equal "a"

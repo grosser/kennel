@@ -225,11 +225,6 @@ describe Kennel::Models::Monitor do
       diff_resource({}, options: { silenced: true }).must_equal []
     end
 
-    it "ignores missing escalation_message" do
-      expected_basic_json[:options].delete(:escalation_message)
-      diff_resource({}, {}).must_equal []
-    end
-
     it "ignores missing evaluation_delay" do
       expected_basic_json[:options].delete(:evaluation_delay)
       diff_resource({}, {}).must_equal []
@@ -269,6 +264,23 @@ describe Kennel::Models::Monitor do
     it "ignores type diff between metric and query since datadog uses both randomly" do
       diff_resource({ type: -> { "query alert" } }, {}).must_equal []
     end
+
+    describe "#escalation_message" do
+      it "ignores missing escalation_message" do
+        expected_basic_json[:options].delete(:escalation_message)
+        diff_resource({}, {}).must_equal []
+      end
+
+      it "ignores blank escalation_message" do
+        expected_basic_json[:options][:escalation_message] = ""
+        diff_resource({}, {}).must_equal []
+      end
+
+      it "keeps existing escalation_message" do
+        expected_basic_json[:options][:escalation_message] = "keep me"
+        diff_resource({}, {}).must_equal [["~", "options.escalation_message", "keep me", nil]]
+      end
+    end
   end
 
   describe "#url" do
@@ -286,6 +298,20 @@ describe Kennel::Models::Monitor do
   describe ".api_resource" do
     it "is set" do
       Kennel::Models::Monitor.api_resource.must_equal "monitor"
+    end
+  end
+
+  describe ".normalize" do
+    it "works with empty" do
+      Kennel::Models::Monitor.normalize({}, options: {})
+    end
+
+    it "ignores defaults" do
+      actual = { options: { notify_audit: true } }
+      expected = { options: { notify_audit: true } }
+      Kennel::Models::Monitor.normalize(expected, actual)
+      expected.must_equal(options: {})
+      actual.must_equal(options: {})
     end
   end
 
