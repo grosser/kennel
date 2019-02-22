@@ -32,7 +32,6 @@ describe Kennel::Models::Monitor do
       query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",
       tags: ["service:test_project", "team:test_team"],
-      multi: false,
       options: {
         timeout_h: 0,
         notify_no_data: true,
@@ -96,14 +95,6 @@ describe Kennel::Models::Monitor do
 
     it "sets 0 when re-notify is disabled" do
       monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
-    end
-
-    it "sets multi true on multi query alerts" do
-      monitor(query: -> { "(last_5m) by foo > 123.0" }).as_json[:multi].must_equal true
-    end
-
-    it "sets multi false for log alerts" do
-      monitor(type: -> { "log alert" }).as_json[:multi].must_equal false
     end
 
     it "can set require_full_window" do
