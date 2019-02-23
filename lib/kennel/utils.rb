@@ -15,10 +15,20 @@ module Kennel
 
     class << self
       def snake_case(string)
-        string.gsub(/::/, "_") # Foo::Bar -> foo_bar
+        string
+          .gsub(/::/, "_") # Foo::Bar -> foo_bar
           .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2') # FOOBar -> foo_bar
           .gsub(/([a-z\d])([A-Z])/, '\1_\2') # fooBar -> foo_bar
           .downcase
+      end
+
+      # simplified version of https://apidock.com/rails/ActiveSupport/Inflector/parameterize
+      def parameterize(string)
+        string
+          .downcase
+          .gsub(/[^a-z0-9\-_]+/, "-") # remove unsupported
+          .gsub(/-{2,}/, "-") # remove duplicates
+          .gsub(/^-|-$/, "") # remove leading/trailing
       end
 
       def presence(value)

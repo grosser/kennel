@@ -198,6 +198,14 @@ describe Kennel::Syncer do
       stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal "Downloading definitions ... 0.0s\nDiffing ... 0.0s\n"
     end
 
+    it "fails when user copy-pasted existing message with kennel id since that would lead to bad updates" do
+      expected << monitor("a", "b", id: 234, foo: "bar", message: "foo\n-- Managed by kennel foo:bar in foo.rb")
+      monitors << component("a", "b", id: 234)
+      assert_raises(RuntimeError) { output }.message.must_equal(
+        "remove \"-- Managed by kennel\" line it from message to copy a resource"
+      )
+    end
+
     describe "filter" do
       let(:syncer) { Kennel::Syncer.new(api, expected, project: "a") }
 
@@ -287,26 +295,26 @@ describe Kennel::Syncer do
       end
 
       it "can update renamed components" do
-        expected.last.as_json[:message] = "-- Managed by kennel foo:bar in foo.rb"
+        monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
         output.must_equal <<~TEXT
           Plan:
-          Update foo:bar
+          Update a:b
             ~message
-              \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\" ->
-              \"-- Managed by kennel foo:bar in foo.rb\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+              "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
+              "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
             +foo nil -> \"bar\"
         TEXT
       end
 
       it "can update renamed components without other diff" do
         expected.last.as_json.delete(:foo)
-        expected.last.as_json[:message] = "-- Managed by kennel foo:bar in foo.rb"
+        monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
         output.must_equal <<~TEXT
           Plan:
-          Update foo:bar
+          Update a:b
             ~message
-              \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\" ->
-              \"-- Managed by kennel foo:bar in foo.rb\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+              "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
+              "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
         TEXT
       end
 

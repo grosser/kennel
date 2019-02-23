@@ -9,30 +9,35 @@ module Kennel
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = Base::READONLY_ATTRIBUTES + [:multi]
-      MONITOR_DEFAULTS = {
-        escalation_message: nil,
+      MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
-        no_data_timeframe: nil
+        timeout_h: 0,
+        renotify_interval: 120,
+        notify_audit: true,
+        notify_no_data: true,
+        no_data_timeframe: nil # this works out ok since if notify_no_data is on, it would never be nil
       }.freeze
+      DEFAULT_ESCALATION_MESAGE = ["", nil].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
         :threshold_windows
       )
+
       defaults(
         message: -> { "\n\n@slack-#{project.slack}" },
-        escalation_message: -> { "" },
-        renotify_interval: -> { 120 },
+        escalation_message: -> { DEFAULT_ESCALATION_MESAGE.first },
+        renotify_interval: -> { MONITOR_OPTION_DEFAULTS.fetch(:renotify_interval) },
         warning: -> { nil },
         ok: ->  { nil },
         id: ->  { nil },
-        notify_no_data: -> { true },
+        notify_no_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_no_data) },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
-        notify_audit: -> { true },
+        notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         tags: -> { @project.tags },
-        timeout_h: -> { 0 },
-        evaluation_delay: -> { nil },
+        timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
+        evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
         threshold_windows: -> { nil }
@@ -113,7 +118,6 @@ module Kennel
         super
         options = actual.fetch(:options)
         options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
-        options[:escalation_message] ||= nil # unset field is not returned and would break the diff
 
         # fields are not returned when set to true
         if ["service check", "event alert"].include?(actual[:type])
@@ -136,7 +140,12 @@ module Kennel
         # nil / "" / 0 are not returned from the api when set via the UI
         options[:evaluation_delay] ||= nil
 
-        ignore_default(expected[:options] || {}, options, MONITOR_DEFAULTS)
+        expected_options = expected[:options] || {}
+        ignore_default(expected_options, options, MONITOR_OPTION_DEFAULTS)
+        if DEFAULT_ESCALATION_MESAGE.include?(options[:escalation_message])
+          options.delete(:escalation_message)
+          expected_options.delete(:escalation_message)
+        end
       end
 
       private

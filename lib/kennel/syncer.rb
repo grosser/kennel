@@ -208,6 +208,7 @@ module Kennel
     def add_tracking_id(e)
       json = e.as_json
       field = tracking_field(json)
+      raise "remove \"-- Managed by kennel\" line it from #{field} to copy a resource" if tracking_value(json[field])
       json[field] = "#{json[field]}\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually".lstrip
     end
 
