@@ -10,14 +10,23 @@ module Kennel
     end
 
     def import(resource, id)
-      model =
-        begin
-          Kennel::Models.const_get(resource.capitalize)
-        rescue NameError
-          raise ArgumentError, "#{resource} is not supported"
-        end
+      model = data = nil
+      begin
+        model =
+          begin
+            Kennel::Models.const_get(resource.capitalize)
+          rescue NameError
+            raise ArgumentError, "#{resource} is not supported"
+          end
+        data = @api.show(model.api_resource, id)
+      rescue StandardError => e
+        retried ||= 0
+        retried += 1
+        raise e if retried != 1 || resource != "dash" || !e.message.match?(/No \S+ matches that/)
+        resource = "screen"
+        retry
+      end
 
-      data = @api.show(model.api_resource, id)
       data = data[resource.to_sym] || data
       id = data.fetch(:id) # store numerical id returned from the api
       model.normalize({}, data)
