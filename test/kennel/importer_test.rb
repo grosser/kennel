@@ -112,6 +112,30 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "can import a screen when user thinks it is a dash" do
+      response = { id: 123, board_title: "hello" }
+      stub_datadog_request(:get, "dash/123")
+        .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
+      stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
+      dash = importer.import("dash", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Screen.new(
+          self,
+          board_title: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" }
+        )
+      RUBY
+    end
+
+    it "does not loop forever when dash does not exist" do
+      stub_datadog_request(:get, "dash/123")
+        .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
+      stub_datadog_request(:get, "screen/123")
+        .to_return(body: { errors: ["No screen matches that dash_id."] }.to_json, status: 404)
+      assert_raises(RuntimeError) { importer.import("screen", 123) }
+    end
+
     it "can import a monitor" do
       response = { id: 123, name: "hello", options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
