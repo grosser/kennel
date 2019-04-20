@@ -10,7 +10,6 @@ module Kennel
     end
 
     def import(resource, id)
-      model = data = nil
       begin
         model =
           begin
