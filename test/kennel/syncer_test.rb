@@ -170,8 +170,15 @@ describe Kennel::Syncer do
       TEXT
     end
 
-    it "deletes deleted" do
+    it "deletes when removed from code" do
       monitors << component("a", "b")
+      output.must_equal "Plan:\nDelete a:b\n"
+    end
+
+    it "deletes newest when existing monitor was copied" do
+      expected << monitor("a", "b")
+      monitors << component("a", "b")
+      monitors << component("a", "b", tags: ["old"])
       output.must_equal "Plan:\nDelete a:b\n"
     end
 
