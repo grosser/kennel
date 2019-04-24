@@ -279,7 +279,7 @@ describe Kennel::Importer do
     end
 
     it "prints numbers" do
-      importer.send(:pretty_print, foo: { "1" => 2 }).must_equal "  foo: -> {\n    {\n      \"1\" => 2\n    }\n  }"
+      importer.send(:pretty_print, foo: { "1" => 2 }).must_equal "  foo: -> {\n    {\n      \"1\": 2\n    }\n  }"
     end
 
     it "prints nils" do
@@ -287,7 +287,7 @@ describe Kennel::Importer do
     end
 
     it "prints non-symbolizable" do
-      importer.send(:pretty_print, foo: { "a-b" => 1 }).must_equal "  foo: -> {\n    {\n      \"a-b\" => 1\n    }\n  }"
+      importer.send(:pretty_print, foo: { "a-b" => 1 }).must_equal "  foo: -> {\n    {\n      \"a-b\": 1\n    }\n  }"
     end
   end
 end

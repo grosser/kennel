@@ -67,7 +67,6 @@ module Kennel
             pretty = JSON.pretty_generate(v)
               .gsub(": null", ": nil")
               .gsub(/(^\s*)"([a-zA-Z][a-zA-Z\d_]*)":/, "\\1\\2:") # "foo": 1 -> foo: 1
-              .gsub(/(^\s*)(".*?"):/, "\\1\\2 =>") # "123": 1 -> "123" => 1
               .gsub(/^/, "    ") # indent
 
             "\n#{pretty}\n  "
