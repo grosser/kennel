@@ -36,7 +36,12 @@ describe Kennel::OptionalValidations do
       e = assert_raises Kennel::Models::Base::ValidationError do
         TestVariables.new(project: -> { TestProject.new }).send(:validate_json, 0 => 1, b: [{ "c" => 1, d: 2 }])
       end
-      e.message.must_equal "test_project:test_variables only use Symbols to avoid permanent diffs (0, \"c\")"
+      e.message.must_equal(
+        "test_project:test_variables Only use Symbols as hash keys to avoid permanent diffs when updating.\n" \
+        "Change these keys to be symbols (usually 'foo' => 1 --> 'foo': 1)\n" \
+        "0\n" \
+        "\"c\""
+      )
     end
   end
 end
