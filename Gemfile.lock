@@ -4,6 +4,7 @@ PATH
     kennel (1.34.0)
       faraday
       hashdiff
+      net-http-persistent-retry
 
 GEM
   remote: https://rubygems.org/
@@ -14,6 +15,7 @@ GEM
     bump (0.6.0)
     byebug (10.0.2)
     coderay (1.1.2)
+    connection_pool (2.2.2)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     faraday (0.15.4)
@@ -28,7 +30,9 @@ GEM
     minitest (5.11.3)
     mocha (1.5.0)
       metaclass (~> 0.0.1)
-    multipart-post (2.0.0)
+    multipart-post (2.1.1)
+    net-http-persistent-retry (3.0.1)
+      connection_pool (~> 2.2)
     parallel (1.12.1)
     parallel_tests (2.21.3)
       parallel

@@ -136,7 +136,7 @@ describe Kennel::Api do
         api.show("monitor", 1234).must_equal foo: "bar"
       end
       assert_requested request, times: 3
-      stderr.string.must_equal "Error execution expired, 1 retries left\nError execution expired, 0 retries left\n"
+      stderr.string.scan(/\d retries left/).must_equal ["1 retries left", "0 retries left"]
     end
 
     it "fails on repeated errors" do
