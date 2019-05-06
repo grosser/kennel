@@ -36,6 +36,7 @@ module Kennel
         # flatten monitor options so they are all on the base
         data.merge!(data.delete(:options))
         data.merge!(data.delete(:thresholds) || {})
+        [:notify_no_data, :notify_audit].each { |k| data.delete(k) if data[k] } # monitor uses true by default
         data = data.slice(*model.instance_methods)
 
         # make query use critical method if it matches
