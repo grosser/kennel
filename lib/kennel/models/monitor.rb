@@ -9,15 +9,15 @@ module Kennel
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = Base::READONLY_ATTRIBUTES + [:multi]
+
+      # defaults that datadog uses when options are not sent, so safe to leave out if our values match their defaults
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
         timeout_h: 0,
         renotify_interval: 120,
-        notify_audit: true,
-        notify_no_data: true,
         no_data_timeframe: nil # this works out ok since if notify_no_data is on, it would never be nil
       }.freeze
-      DEFAULT_ESCALATION_MESAGE = ["", nil].freeze
+      DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -27,14 +27,14 @@ module Kennel
 
       defaults(
         message: -> { "\n\n@slack-#{project.slack}" },
-        escalation_message: -> { DEFAULT_ESCALATION_MESAGE.first },
+        escalation_message: -> { DEFAULT_ESCALATION_MESSAGE.first },
         renotify_interval: -> { MONITOR_OPTION_DEFAULTS.fetch(:renotify_interval) },
         warning: -> { nil },
-        ok: ->  { nil },
-        id: ->  { nil },
-        notify_no_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_no_data) },
+        ok: -> { nil },
+        id: -> { nil },
+        notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
-        notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
+        notify_audit: -> { true },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -142,7 +142,7 @@ module Kennel
 
         expected_options = expected[:options] || {}
         ignore_default(expected_options, options, MONITOR_OPTION_DEFAULTS)
-        if DEFAULT_ESCALATION_MESAGE.include?(options[:escalation_message])
+        if DEFAULT_ESCALATION_MESSAGE.include?(options[:escalation_message])
           options.delete(:escalation_message)
           expected_options.delete(:escalation_message)
         end

@@ -98,6 +98,35 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "removes monitor default" do
+      response = { id: 123, name: "hello", options: { notify_audit: true } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" }
+        )
+      RUBY
+    end
+
+    it "keeps monitor values that are not the default" do
+      response = { id: 123, name: "hello", options: { notify_audit: false } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          notify_audit: -> { false }
+        )
+      RUBY
+    end
+
     it "can import a screen" do
       response = { id: 123, board_title: "hello" }
       stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
