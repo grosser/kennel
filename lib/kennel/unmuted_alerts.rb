@@ -51,6 +51,9 @@ module Kennel
 
         raise "No monitors for #{tag} found, check your spelling" if monitors.empty?
 
+        # only keep monitors that are alerting
+        monitors.reject! { |m| m[:overall_state] == "OK" }
+
         # only keep monitors that are not completely silenced
         monitors.reject! { |m| m[:options][:silenced].key?(:*) }
 
