@@ -86,9 +86,10 @@ describe Kennel::UnmutedAlerts do
     end
 
     # see https://help.datadoghq.com/hc/requests/174099
-    it "does not remove monitors that claim to be OK since it is not reliable for No-Data" do
+    # overall_state is not reliable, but the only tool we have to shut datadog up, so we have to use it :(
+    it "removes monitors that claim to be OK since even though it is not reliable for No-Data" do
       monitor[:overall_state] = "OK"
-      result.size.must_equal 1
+      result.size.must_equal 0
     end
 
     it "removes monitors that are Ignored since that just means recovered" do
