@@ -4,7 +4,7 @@ module Kennel
     def initialize(app_key, api_key)
       @app_key = app_key
       @api_key = api_key
-      @client = Faraday.new(url: "https://app.datadoghq.com")
+      @client = Faraday.new(url: "https://app.datadoghq.com") { |c| c.adapter :net_http_persistent }
     end
 
     def show(api_resource, id, params = {})
@@ -36,7 +36,7 @@ module Kennel
       tries = 2
 
       tries.times do |i|
-        response = Utils.retry Faraday::ConnectionFailed, times: 2 do
+        response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
           @client.send(method, "#{path}?#{query}") do |request|
             request.body = JSON.generate(body) if body
             request.headers["Content-type"] = "application/json"
