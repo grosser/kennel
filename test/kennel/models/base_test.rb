@@ -205,6 +205,11 @@ describe Kennel::Models::Base do
     it "does not override defined methods" do
       DefaultTestBase.new.name.must_equal "DefaultTestBase"
     end
+
+    it "does not allow overwriting base methods" do
+      e = assert_raises(ArgumentError) { DefaultTestBase.settings(:diff) }
+      e.message.must_equal "Settings :diff are already used as methods"
+    end
   end
 
   describe ".diff" do
