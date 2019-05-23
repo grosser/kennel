@@ -14,6 +14,7 @@ module Kennel
         conditional_formats: [],
         aggregator: "avg"
       }.freeze
+      OVERRIDABLE_METHODS = [:name, :kennel_id].freeze
 
       class ValidationError < RuntimeError
       end
@@ -25,6 +26,11 @@ module Kennel
           duplicates = (@set & names)
           if duplicates.any?
             raise ArgumentError, "Settings #{duplicates.map(&:inspect).join(", ")} are already defined"
+          end
+
+          overrides = ((instance_methods - OVERRIDABLE_METHODS) & names)
+          if overrides.any?
+            raise ArgumentError, "Settings #{overrides.map(&:inspect).join(", ")} are already used as methods"
           end
 
           @set.concat names
