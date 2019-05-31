@@ -134,6 +134,11 @@ describe Kennel::Models::Monitor do
       e.message.must_equal "test_project:m1 critical and value used in query must match"
     end
 
+    it "does not allow mismatching query and critical with >=" do
+      e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }).as_json }
+      e.message.must_equal "test_project:m1 critical and value used in query must match"
+    end
+
     it "does not break on queries that are unparseable for critical" do
       monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }).as_json
     end

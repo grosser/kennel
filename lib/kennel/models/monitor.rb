@@ -166,7 +166,7 @@ module Kennel
         end
 
         # verify query includes critical value
-        if query_value = data.fetch(:query)[/\s*[<>]\s*(\d+(\.\d+)?)\s*$/, 1]
+        if query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
             invalid! "critical and value used in query must match"
           end
