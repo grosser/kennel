@@ -70,14 +70,13 @@ module Kennel
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
             renotify_interval: renotify_interval || 0,
-            thresholds: {
-              critical: critical
-            }
+            thresholds: {}
           }
         }
 
         options = data[:options]
         thresholds = options[:thresholds]
+        thresholds[:critical] = critical unless type == "composite"
 
         data[:id] = id if id
 

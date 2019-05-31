@@ -113,6 +113,11 @@ describe Kennel::Models::Monitor do
       end
     end
 
+    it "does not set thresholds for composite monitors" do
+      monitor(critical: -> { raise }, query: -> { "1 || 2" }, type: -> { "composite" }).as_json
+        .dig(:options, :thresholds).must_equal({})
+    end
+
     it "fills default values for service check ok/warning" do
       json = monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
       json.dig(:options, :thresholds, :ok).must_equal 1
