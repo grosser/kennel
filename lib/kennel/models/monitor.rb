@@ -73,11 +73,11 @@ module Kennel
           }
         }
 
+        data[:id] = id if id
+
         options = data[:options]
         if data.fetch(:type) != "composite"
           thresholds = (options[:thresholds] = { critical: critical })
-
-          data[:id] = id if id
 
           # warning, ok, critical_recovery, and warning_recovery are optional
           [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
