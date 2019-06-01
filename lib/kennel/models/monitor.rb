@@ -69,31 +69,32 @@ module Kennel
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
-            renotify_interval: renotify_interval || 0,
-            thresholds: {}
+            renotify_interval: renotify_interval || 0
           }
         }
 
         options = data[:options]
-        thresholds = options[:thresholds]
-        thresholds[:critical] = critical unless type == "composite"
+        if data.fetch(:type) != "composite"
+          thresholds = (options[:thresholds] = { critical: critical })
 
-        data[:id] = id if id
+          data[:id] = id if id
 
-        # warning, ok, critical_recovery, and warning_recovery are optional
-        [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
-          if value = send(key)
-            thresholds[key] = value
+          # warning, ok, critical_recovery, and warning_recovery are optional
+          [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
+            if value = send(key)
+              thresholds[key] = value
+            end
           end
-        end
 
-        case data.fetch(:type)
-        when "service check"
-          # avoid diff for default values of 1
-          OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
-        when "query alert"
-          # metric and query values are stored as float by datadog
-          thresholds.each { |k, v| thresholds[k] = Float(v) }
+          thresholds[:critical] = critical unless
+          case data.fetch(:type)
+          when "service check"
+            # avoid diff for default values of 1
+            OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
+          when "query alert"
+            # metric and query values are stored as float by datadog
+            thresholds.each { |k, v| thresholds[k] = Float(v) }
+          end
         end
 
         if windows = threshold_windows
