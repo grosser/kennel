@@ -36,7 +36,7 @@ module Kennel
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         notify_audit: -> { true },
-        new_host_delay: -> { 300 },
+        new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
