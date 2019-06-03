@@ -190,6 +190,10 @@ describe Kennel::Models::Monitor do
       monitor(evaluation_delay: -> { 20 }).as_json.dig(:options, :evaluation_delay).must_equal 20
     end
 
+    it "can set new_host_delay" do
+      monitor(new_host_delay: -> { 300 }).as_json.dig(:options, :new_host_delay).must_equal 300
+    end
+
     it "can set threshold_windows" do
       monitor(threshold_windows: -> { 20 }).as_json.dig(:options, :threshold_windows).must_equal 20
     end

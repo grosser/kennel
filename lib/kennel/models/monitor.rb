@@ -13,6 +13,7 @@ module Kennel
       # defaults that datadog uses when options are not sent, so safe to leave out if our values match their defaults
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
+        new_host_delay: 300,
         timeout_h: 0,
         renotify_interval: 120,
         no_data_timeframe: nil # this works out ok since if notify_no_data is on, it would never be nil
@@ -22,7 +23,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows
+        :threshold_windows, :new_host_delay
       )
 
       defaults(
@@ -35,6 +36,7 @@ module Kennel
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         notify_audit: -> { true },
+        new_host_delay: -> { 300 },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -64,7 +66,7 @@ module Kennel
             no_data_timeframe: no_data_timeframe,
             notify_audit: notify_audit,
             require_full_window: require_full_window,
-            new_host_delay: 300,
+            new_host_delay: new_host_delay,
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
