@@ -229,8 +229,8 @@ describe Kennel::Importer do
     it "adds critical replacement" do
       response = { id: 123, name: "hello", query: "foo = 5", options: { critical: 5 } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
+      monitor = importer.import("monitor", 123)
+      monitor.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -245,8 +245,8 @@ describe Kennel::Importer do
     it "adds critical replacement for different type" do
       response = { id: 123, name: "hello", query: "foo = 5", options: { critical: 5.0 } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
+      monitor = importer.import("monitor", 123)
+      monitor.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -261,8 +261,8 @@ describe Kennel::Importer do
     it "prints simple arrays in a single line" do
       response = { id: 123, name: "hello", tags: ["a", "b", "c"], options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
+      monitor = importer.import("monitor", 123)
+      monitor.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -276,8 +276,8 @@ describe Kennel::Importer do
     it "prints message nicely" do
       response = { id: 123, name: "hello", message: "hello\n\n\nworld", options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
+      monitor = importer.import("monitor", 123)
+      monitor.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -299,6 +299,28 @@ describe Kennel::Importer do
       stub_datadog_request(:get, "wut/123").to_return(body: "{}")
       e = assert_raises(ArgumentError) { importer.import("wut", 123) }
       e.message.must_equal "wut is not supported"
+    end
+
+    it "simplifies template_variables" do
+      response = { dash: { id: 123, title: "hello", template_variables: [{ default: "*", name: "pod", prefix: "pod" }, { nope: true }] } }
+      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
+      dash = importer.import("dash", "abc-def")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dash.new(
+          self,
+          title: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          template_variables: -> {
+            [
+              "pod",
+              {
+                nope: true
+              }
+            ]
+          }
+        )
+      RUBY
     end
   end
 

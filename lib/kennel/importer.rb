@@ -47,6 +47,11 @@ module Kennel
         end
       end
 
+      # simplify template_variables to array of string when possible
+      if vars = data[:template_variables]
+        vars.map! { |v| v[:default] == "*" && v[:prefix] == v[:name] ? v[:name] : v }
+      end
+
       pretty = pretty_print(data).lstrip.gsub("\\#", "#")
       <<~RUBY
         #{model.name}.new(
