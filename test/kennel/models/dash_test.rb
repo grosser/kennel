@@ -253,6 +253,10 @@ describe Kennel::Models::Dash do
         .as_json[:graphs][0][:definition][:requests].must_equal [{ q: "Q" }, { q: "Q2" }]
     end
 
+    it "does not fail without requests" do
+      dash(graphs: -> { [{ definition: { viz: "uptime" } }] }).as_json
+    end
+
     describe "with invalid dash" do
       let(:invalid) do
         {
