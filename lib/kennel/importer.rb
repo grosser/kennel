@@ -47,6 +47,10 @@ module Kennel
         end
       end
 
+      if resource == "dashboard"
+        data[:widgets].each { |w| w.delete :id }
+      end
+
       # simplify template_variables to array of string when possible
       if vars = data[:template_variables]
         vars.map! { |v| v[:default] == "*" && v[:prefix] == v[:name] ? v[:name] : v }
