@@ -53,13 +53,14 @@ module Kennel
         actual[:template_variables] ||= [] # is nil when it never had template variables
         ignore_default expected, actual, DASH_DEFAULTS
 
-        (actual[:graphs] || {}).each do |g|
-          g[:definition].delete(:status)
-        end
+        graphs = actual[:graphs] || []
+
+        graphs.each { |g| g[:definition].delete(:status) }
+
         ignore_request_defaults expected, actual, :graphs, :definition
 
-        (actual[:graphs] || []).each_with_index do |a_g, i|
-          a_d = a_g[:definition] || {}
+        graphs.each_with_index do |a_g, i|
+          a_d = a_g[:definition]
           e_d = expected.dig(:graphs, i, :definition) || {}
           ignore_default e_d, a_d, DEFINITION_DEFAULTS
         end
