@@ -77,7 +77,8 @@ module Kennel
         end
 
         def ignore_defaults(expected, actual, defaults)
-          (expected || []).each_with_index do |e, i|
+          [expected&.size.to_i, actual&.size.to_i].max.times do |i|
+            e = expected[i] || {}
             a = actual[i] || {}
             ignore_default(e, a, defaults)
           end

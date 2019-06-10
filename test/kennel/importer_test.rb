@@ -322,6 +322,33 @@ describe Kennel::Importer do
         )
       RUBY
     end
+
+    it "simplifies styles" do
+      response = { dash: { id: 123, title: "hello", graphs: [{ definition: { requests: [{ foo: "bar", style: { width: "normal", palette: "dog_classic", type: "solid" } }] } }] } }
+      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
+      dash = importer.import("dash", "abc-def")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dash.new(
+          self,
+          title: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          graphs: -> {
+            [
+              {
+                definition: {
+                  requests: [
+                    {
+                      foo: \"bar\"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        )
+      RUBY
+    end
   end
 
   describe "#pretty_print" do
