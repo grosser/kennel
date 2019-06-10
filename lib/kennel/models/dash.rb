@@ -11,7 +11,7 @@ module Kennel
       DEFINITION_DEFAULTS = { autoscale: true }.freeze
       DASH_DEFAULTS = { template_variables: [] }.freeze
 
-      settings :id, :title, :description, :graphs, :kennel_id, :graphs, :definitions
+      settings :id, :title, :description, :graphs, :kennel_id, :definitions
 
       defaults(
         id: -> { nil },
