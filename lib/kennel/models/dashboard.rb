@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 #
+# TODO: resolve monitor-ids for uptime screen
 module Kennel
   module Models
     class Dashboard < Base
@@ -9,7 +10,7 @@ module Kennel
       API_LIST_INCOMPLETE = true
       READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:url, :notify_list, :modified_at, :is_read_only, :author_name, :author_handle]).freeze
       READONLY_WIDGET_ATTRIBUTES = [:id].freeze
-      DEFINITION_DEFAULTS = { autoscale: true }.freeze
+      DEFINITION_DEFAULTS = { autoscale: true, title_align: "left", title_size: "16" }.freeze
       DASH_DEFAULTS = { description: "", template_variables: [].freeze }.freeze
       SUPPORTED_WIDGET_OPTIONS = [:events, :markers, :precision].freeze
 
@@ -53,6 +54,13 @@ module Kennel
       def self.normalize(expected, actual)
         super
 
+        # path = [:widgets, 7]
+        # # path = []
+        # puts "ACTUAL #{expected[:description][/kennel (\S+)/, 1]} -- #{expected[:title]}"
+        # pp(path.any? ? actual.dig(*path) : actual)
+        # puts "Expected #{self < Models::Screen ? "Screen" : "Dash"}"
+        # pp(path.any? ? expected.dig(*path) : expected)
+
         actual[:template_variables] ||= [] # is nil when it never had template variables
         ignore_default expected, actual, DASH_DEFAULTS
 
@@ -75,25 +83,44 @@ module Kennel
         Utils.path_to_url "/dashboard/#{id}"
       end
 
+      def resolve_linked_tracking_ids(id_map)
+        as_json[:widgets].each do |widget|
+          case widget[:definition][:type]
+          when "uptime"
+            widget[:definition][:monitor_ids].map! { |id| resolve_link(id, id_map) }
+          when "alert_graph"
+            widget[:definition][:alert_id] = resolve_link(widget[:definition][:alert_id], id_map).to_s
+            widget[:definition][:time] ||= {} # maybe ignore
+          end
+        end
+      end
+
       private
 
       def validate_json(data)
         super
 
-        # check for bad variables
-        # TODO: do the same check for apm_query and their group_by
+        validate_template_variables(data)
+        validate_not_setting_unsettable(data)
+      end
+
+      # check for fields that are unsettable
+      def validate_not_setting_unsettable(data)
+        data[:widgets].each do |w|
+          if w[:definition].key?(:status)
+            invalid! "remove definition status, it is unsettable and will always produce a diff"
+          end
+        end
+      end
+
+      # check for bad variables
+      # TODO: do the same check for apm_query and their group_by
+      def validate_template_variables(data)
         variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
         queries = data[:widgets].flat_map { |g| (g[:definition][:requests] || []).map { |r| r[:q] }.compact }
         bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
         if bad.any?
           invalid! "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
-        end
-
-        # check for fields that are unsettable TODO: we might not need that anymore
-        data[:widgets].each do |w|
-          if w[:definition].key?(:status)
-            invalid! "remove definition status, it is unsettable and will always produce a diff"
-          end
         end
       end
 
@@ -134,6 +161,12 @@ module Kennel
 
           widget
         end + widgets
+      end
+
+      def resolve_link(id, id_map)
+        return id if id.is_a?(Integer)
+        id_map[id] ||
+          Kennel.err.puts("Unable to find #{id} in existing monitors (they need to be created first to link them)")
       end
     end
   end

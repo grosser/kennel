@@ -9,8 +9,9 @@ module Kennel
         :deleted, :matching_downtimes, :id, :created, :created_at, :creator, :org_id, :modified,
         :overall_state_modified, :overall_state, :api_resource
       ].freeze
+      # TODO: move into dashboard
       REQUEST_DEFAULTS = {
-        style: { width: "normal", palette: "dog_classic", type: "solid" },
+        style: { line_width: "normal", palette: "dog_classic", line_type: "solid" },
         conditional_formats: [],
         aggregator: "avg"
       }.freeze
@@ -67,6 +68,7 @@ module Kennel
           self::READONLY_ATTRIBUTES.each { |k| actual.delete k }
         end
 
+        # TODO: move into dashboard
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
         def ignore_request_defaults(expected, actual, level1, level2)
           actual = actual[level1] || {}
