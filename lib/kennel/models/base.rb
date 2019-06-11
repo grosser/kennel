@@ -69,9 +69,11 @@ module Kennel
 
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
         def ignore_request_defaults(expected, actual, level1, level2)
-          (actual[level1] || []).each_with_index do |a_w, wi|
-            a_r = a_w.dig(level2, :requests) || []
-            e_r = expected.dig(level1, wi, level2, :requests) || []
+          actual = actual[level1] || {}
+          expected = expected[level1] || {}
+          [expected.size.to_i, actual.size.to_i].max.times do |i|
+            a_r = actual.dig(i, level2, :requests) || []
+            e_r = expected.dig(i, level2, :requests) || []
             ignore_defaults e_r, a_r, REQUEST_DEFAULTS
           end
         end
