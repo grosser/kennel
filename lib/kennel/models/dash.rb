@@ -1,15 +1,33 @@
 # frozen_string_literal: true
 #
-# TODO: delete
+# Reuses dashboard by translating old definitions, migrate all customers and then remove this
 module Kennel
   module Models
     class Dash < Dashboard
-      READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:resource, :created_by, :read_only, :new_id]).freeze
       settings :graphs
 
       defaults(
         graphs: -> { [] }
       )
+
+      def layout_type
+        "ordered"
+      end
+
+      def widgets
+        graphs
+      end
+
+      def render_widgets
+        widgets = super
+        widgets.each do |w|
+          w[:definition][:title] ||= w.delete(:title)
+          w[:definition][:type] ||= w[:definition].delete(:viz)
+          w[:definition][:requests].each do |r|
+            r[:display_type] ||= r.delete(:type)
+          end
+        end
+      end
     end
   end
 end

@@ -10,7 +10,7 @@ module Kennel
     end
 
     def import(resource, id)
-      raise "Use dashboard and not dash" if resource == "dash"
+      raise "Use dashboard and not dash/screen" if ["dash", "screen"].include?(resource)
 
       begin
         model =

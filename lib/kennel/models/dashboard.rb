@@ -10,7 +10,8 @@ module Kennel
       READONLY_ATTRIBUTES = (Base::READONLY_ATTRIBUTES + [:url, :notify_list, :modified_at, :is_read_only, :author_name, :author_handle]).freeze
       READONLY_WIDGET_ATTRIBUTES = [:id].freeze
       DEFINITION_DEFAULTS = { autoscale: true }.freeze
-      DASH_DEFAULTS = { description: "", template_variables: [].freeze, layout_type: "ordered" }.freeze
+      DASH_DEFAULTS = { description: "", template_variables: [].freeze }.freeze
+      SUPPORTED_WIDGET_OPTIONS = [:events, :markers, :precision].freeze
 
       settings :id, :title, :description, :kennel_id, :widgets, :layout_type, :definitions
 
@@ -19,7 +20,6 @@ module Kennel
         description: -> { DASH_DEFAULTS.fetch(:description) },
         template_variables: -> { DASH_DEFAULTS.fetch(:template_variables) },
         widgets: -> { [] },
-        layout_type: -> { DASH_DEFAULTS.fetch(:layout_type) },
         definitions: -> { [] }
       )
 
@@ -41,7 +41,8 @@ module Kennel
           title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
-          widgets: render_widgets
+          widgets: render_widgets,
+          layout_type: layout_type
         }
 
         validate_json(@json) if validate
@@ -57,6 +58,8 @@ module Kennel
 
         widgets = actual[:widgets] || []
 
+        widgets.each { |w| w.delete(:id) }
+
         widgets.each { |g| g[:definition].delete(:status) }
 
         ignore_request_defaults expected, actual, :widgets, :definition
@@ -64,7 +67,6 @@ module Kennel
         widgets.each_with_index do |a_g, i|
           a_d = a_g[:definition]
           e_d = expected.dig(:widgets, i, :definition) || {}
-          puts "IG #{e_d} -- #{a_d} -- #{DEFINITION_DEFAULTS}"
           ignore_default e_d, a_d, DEFINITION_DEFAULTS
         end
       end
@@ -107,8 +109,8 @@ module Kennel
           if ignored || (!title || !viz || !queries || !options.is_a?(Hash))
             raise ArgumentError, "Expected exactly 5 arguments for each definition (title, viz, type, queries, options)"
           end
-          if options.each_key.any? { |k| !SUPPORTED_GRAPH_OPTIONS.include?(k) }
-            raise ArgumentError, "Supported options are: #{SUPPORTED_GRAPH_OPTIONS.map(&:inspect).join(", ")}"
+          if options.each_key.any? { |k| !SUPPORTED_WIDGET_OPTIONS.include?(k) }
+            raise ArgumentError, "Supported options are: #{SUPPORTED_WIDGET_OPTIONS.map(&:inspect).join(", ")}"
           end
 
           # build graph
@@ -121,7 +123,7 @@ module Kennel
           widget = { title: title, definition: { viz: viz, requests: requests } }
 
           # whitelist options that can be passed in, so we are flexible in the future
-          SUPPORTED_GRAPH_OPTIONS.each do |key|
+          SUPPORTED_WIDGET_OPTIONS.each do |key|
             widget[:definition][key] = options[key] if options[key]
           end
 

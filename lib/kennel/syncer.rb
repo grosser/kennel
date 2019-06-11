@@ -94,7 +94,8 @@ module Kennel
     def fill_details(a, cache)
       resource = a.fetch(:api_resource)
       args = [resource, a.fetch(:id)]
-      full = cache.fetch(args, a.fetch(:modified)) do
+      modified = a[:modified] || a.fetch(:modified_at) # most have modified, dashboard has modified_at
+      full = cache.fetch(args, modified) do
         unnest(resource, @api.show(*args))
       end
       a.merge!(full)
@@ -117,13 +118,9 @@ module Kennel
       end
 
       Utils.parallel(api_resources.compact.uniq) do |api_resource|
-        # lookup monitors without adding unnecessary downtime information
-        results = @api.list(api_resource, with_downtimes: false)
-        if results.is_a?(Hash)
-          results = results[results.keys.first]
-          results.each { |r| r[:id] = Integer(r.fetch(:id)) }
-        end
-        results.each { |c| c[:api_resource] = api_resource }
+        results = @api.list(api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+        results = results[results.keys.first] if results.is_a?(Hash) # screen is nested in `screen`
+        results.each { |c| c[:api_resource] = api_resource } # allow later updating
       end.flatten(1)
     end
 
