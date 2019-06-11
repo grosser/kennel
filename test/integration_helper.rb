@@ -44,7 +44,7 @@ module IntegrationHelper
                 self,
                 type: -> { "query alert" },
                 kennel_id: -> { "load-too-high" }, # make up a unique name
-                name: -> { "Foobar Load too high" }, # nice descriptive name that will show up in alerts and emails
+                name: -> { "My Kennel Test Monitor" }, # nice descriptive name that will show up in alerts and emails
                 message: -> {
                   <<~TEXT
                     Foobar will be slow and that could cause Barfoo to go down.
@@ -57,7 +57,7 @@ module IntegrationHelper
               ),
               Kennel::Models::Dash.new(
                 self,
-                title: -> { "My Dashboard" },
+                title: -> { "My Kennel Test Dash" },
                 description: -> { "Overview of foobar" },
                 template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
                 kennel_id: -> { "overview-dashboard" }, # make up a unique name
@@ -79,7 +79,7 @@ module IntegrationHelper
               ),
               Kennel::Models::Screen.new(
                 self,
-                board_title: -> { "test-board" },
+                board_title: -> { "My Kennel Test Screen" },
                 kennel_id: -> { "test-screen" },
                 widgets: -> {
                   [
