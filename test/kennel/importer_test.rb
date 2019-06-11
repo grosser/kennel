@@ -9,11 +9,11 @@ describe Kennel::Importer do
 
   describe "#import" do
     it "prints simple valid code" do
-      response = { dash: { id: 123, title: "hello", created_by: "me", deleted: "yes" } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { dashboard: { id: 123, title: "hello", author_name: "me", deleted: "yes" } }
+      stub_datadog_request(:get, "dashboard/123").to_return(body: response.to_json)
+      dash = importer.import("dashboard", 123)
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
           id: -> { 123 },
@@ -26,11 +26,11 @@ describe Kennel::Importer do
     end
 
     it "prints complex elements" do
-      response = { dash: { id: 123, board_title: "a", foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { dashboard: { id: 123, board_title: "a", foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
+      stub_datadog_request(:get, "dashboard/123").to_return(body: response.to_json)
+      dash = importer.import("dashboard", 123)
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           board_title: -> { "a" },
           id: -> { 123 },
@@ -57,11 +57,11 @@ describe Kennel::Importer do
     end
 
     it "prints null as nil" do
-      response = { dash: { id: 123, title: "a", bar: { baz: nil } } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { dashboard: { id: 123, title: "a", bar: { baz: nil } } }
+      stub_datadog_request(:get, "dashboard/123").to_return(body: response.to_json)
+      dash = importer.import("dashboard", 123)
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "a" },
           id: -> { 123 },
@@ -76,11 +76,11 @@ describe Kennel::Importer do
     end
 
     it "removes boring default values" do
-      response = { dash: { id: 123, title: "a", graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { dashboard: { id: 123, title: "a", graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
+      stub_datadog_request(:get, "dashboard/123").to_return(body: response.to_json)
+      dash = importer.import("dashboard", 123)
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "a" },
           id: -> { 123 },
@@ -143,10 +143,10 @@ describe Kennel::Importer do
 
     it "can import a screen when user thinks it is a dash" do
       response = { id: 123, board_title: "hello" }
-      stub_datadog_request(:get, "dash/123")
+      stub_datadog_request(:get, "dashboard/123")
         .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
       stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      dash = importer.import("dashboard", 123)
       dash.must_equal <<~RUBY
         Kennel::Models::Screen.new(
           self,
@@ -158,7 +158,7 @@ describe Kennel::Importer do
     end
 
     it "does not loop forever when dash does not exist" do
-      stub_datadog_request(:get, "dash/123")
+      stub_datadog_request(:get, "dashboard/123")
         .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
       stub_datadog_request(:get, "screen/123")
         .to_return(body: { errors: ["No screen matches that dash_id."] }.to_json, status: 404)
@@ -213,11 +213,11 @@ describe Kennel::Importer do
     end
 
     it "can import with new alphanumeric ids" do
-      response = { dash: { title: "a", id: 123 } }
+      response = { dashboard: { title: "a", id: 123 } }
       stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
+      dash = importer.import("dashboard", "abc-def")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "a" },
           id: -> { 123 },
@@ -302,11 +302,11 @@ describe Kennel::Importer do
     end
 
     it "simplifies template_variables" do
-      response = { dash: { id: 123, title: "hello", template_variables: [{ default: "*", name: "pod", prefix: "pod" }, { nope: true }] } }
+      response = { dashboard: { id: 123, title: "hello", template_variables: [{ default: "*", name: "pod", prefix: "pod" }, { nope: true }] } }
       stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
+      dash = importer.import("dashboard", "abc-def")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
           id: -> { 123 },
@@ -324,11 +324,11 @@ describe Kennel::Importer do
     end
 
     it "simplifies styles" do
-      response = { dash: { id: 123, title: "hello", graphs: [{ definition: { requests: [{ foo: "bar", style: { width: "normal", palette: "dog_classic", type: "solid" } }] } }] } }
+      response = { dashboard: { id: 123, title: "hello", graphs: [{ definition: { requests: [{ foo: "bar", style: { width: "normal", palette: "dog_classic", type: "solid" } }] } }] } }
       stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
+      dash = importer.import("dashboard", "abc-def")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
           id: -> { 123 },

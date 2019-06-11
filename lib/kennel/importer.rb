@@ -10,6 +10,8 @@ module Kennel
     end
 
     def import(resource, id)
+      raise "Use dashboard and not dash" if resource == "dash"
+
       begin
         model =
           begin
@@ -48,7 +50,7 @@ module Kennel
       end
 
       if resource == "dashboard"
-        data[:widgets].each { |w| w.delete :id }
+        data[:widgets]&.each { |w| w.delete :id }
       end
 
       # simplify template_variables to array of string when possible
