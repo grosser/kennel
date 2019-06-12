@@ -92,12 +92,6 @@ module Kennel
         end
       end
 
-      def render_template_variables
-        (template_variables || []).map do |v|
-          v.is_a?(String) ? { default: "*", prefix: v, name: v } : v
-        end
-      end
-
       def render_graphs
         definitions.map do |title, viz, type, queries, options = {}, ignored = nil|
           # validate inputs

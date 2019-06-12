@@ -9,7 +9,7 @@ module Kennel
     private
 
     def render_template_variables
-      template_variables.map do |v|
+      (template_variables || []).map do |v|
         v.is_a?(String) ? { default: "*", prefix: v, name: v } : v
       end
     end
