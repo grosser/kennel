@@ -267,7 +267,7 @@ describe Kennel::Syncer do
       it "can plan for screens" do
         expected << screen("a", "b", id: 123)
         screens << {
-          id: 123,
+          id: "123",
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
           modified: "2015-12-17T23:12:26.726234+00:00",
           widgets: []
@@ -277,8 +277,8 @@ describe Kennel::Syncer do
       end
 
       it "links tracking ids" do
-        s = screen("a", "c", widgets: [{ type: "uptime", monitor: { id: "a:b" } }])
         monitors << component("a", "b", id: 124)
+        s = screen("a", "c", widgets: [{ type: "uptime", monitor: { id: "a:b" } }])
         expected << s
         syncer.send(:calculate_diff)
         s.as_json.dig(:widgets, 0, :monitor, :id).must_equal 124
