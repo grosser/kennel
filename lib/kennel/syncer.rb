@@ -74,12 +74,16 @@ module Kennel
         details_cache do |cache|
           actual.each do |a|
             id = a.fetch(:id)
+            e = matching_expected(a)
 
-            if e = delete_matching_expected(a)
+            # check correct class, since we will have multiple actuals for each flavor (dash/screen/dashboard)
+            next if e && e.class.api_resource != a[:api_resource]
+
+            if e && @expected.delete(e)
               fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
               diff = e.diff(a)
               @update << [id, e, a, diff] if diff.any?
-            elsif tracking_id(a) && !@lookup_map[tracking_id(a)] # was previously managed (need to check lookup map in case of dashboards)
+            elsif tracking_id(a) # was previously managed
               @delete << [id, nil, a]
             end
           end
@@ -131,7 +135,7 @@ module Kennel
       end
     end
 
-    def delete_matching_expected(a)
+    def matching_expected(a)
       # index list by all the thing we look up by: tracking id and actual id
       @lookup_map ||= @expected.each_with_object({}) do |e, all|
         keys = [tracking_id(e.as_json)]
@@ -142,9 +146,7 @@ module Kennel
         end
       end
 
-      e = @lookup_map["#{a.fetch(:api_resource)}:#{a.fetch(:id)}"] || @lookup_map[tracking_id(a)]
-      return if e && a[:api_resource] != e.class.api_resource
-      @expected.delete(e) if e
+      @lookup_map["#{a.fetch(:api_resource)}:#{a.fetch(:id)}"] || @lookup_map[tracking_id(a)]
     end
 
     def print_plan(step, list, color)

@@ -74,7 +74,7 @@ module Kennel
           [expected.size.to_i, actual.size.to_i].max.times do |i|
             a_r = actual.dig(i, level2, :requests) || []
             e_r = expected.dig(i, level2, :requests) || []
-            ignore_defaults e_r, a_r, REQUEST_DEFAULTS
+            ignore_defaults e_r, a_r, self::REQUEST_DEFAULTS
           end
         end
 

@@ -53,13 +53,27 @@ describe Kennel::Syncer do
     dash
   end
 
+  def dashboard(pid, cid, extra = {})
+    dash = Kennel::Models::Dashboard.new(
+      project(pid),
+      title: -> { "x" },
+      description: -> { "x" },
+      layout_type: -> { "ordered" },
+      kennel_id: -> { cid },
+      id: -> { extra[:id]&.to_s }
+    )
+    dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
+    dash.as_json.merge!(extra)
+    dash
+  end
+
   def screen(pid, cid, extra)
     screen = Kennel::Models::Screen.new(
       project(pid),
       board_title: -> { "x" },
       description: -> { "x" },
       kennel_id: -> { cid },
-      id: -> { extra[:id] ? extra[:id].to_s : nil }
+      id: -> { extra[:id]&.to_s }
     )
     screen.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
     screen.as_json.merge!(extra)
@@ -75,6 +89,7 @@ describe Kennel::Syncer do
   let(:monitors) { [] }
   let(:dashes) { [] }
   let(:screens) { [] }
+  let(:dashboards) { [] } # TODO: individual dashboards use modified_at
   let(:expected) { [] }
   let(:project_filter) { nil }
   let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter) }
@@ -84,6 +99,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("dash", anything).returns(dashes: dashes)
     api.stubs(:list).with("screen", anything).returns(screenboards: screens)
+    api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
   end
 
   capture_all # TODO: pass an IO to syncer so we don't have to capture all output
@@ -282,6 +298,51 @@ describe Kennel::Syncer do
         expected << s
         syncer.send(:calculate_diff)
         s.as_json.dig(:widgets, 0, :monitor, :id).must_equal 124
+      end
+    end
+
+    describe "dashboards" do
+      in_temp_dir # uses file-cache
+
+      it "can plan for dashboards" do
+        expected << dashboard("a", "b", id: "abc")
+        dashboards << {
+          id: "abc",
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified_at: "2015-12-17T23:12:26.726234+00:00"
+        }
+        api.expects(:show).with("dashboard", "abc").returns(dashboard: { widgets: [] })
+        output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "can plan for dashes and dashboards" do
+        expected << dash("a", "b", id: 123) # abc
+        expected << dashboard("a", "c", id: "bcd") # old_id is fake
+        dashboards << {
+          id: "abc", # should be ignored
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified_at: "2015-12-17T23:12:26.726234+00:00"
+        }
+        dashboards << {
+          id: "bcd", # should be used
+          description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
+          modified_at: "2015-12-17T23:12:26.726234+00:00"
+        }
+        dashes << {
+          id: 123, # should be used
+          new_id: "abc",
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified: "2015-12-17T23:12:26.726234+00:00"
+        }
+        dashes << {
+          id: 234, # should be ignored
+          new_id: "bcd",
+          description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
+          modified_at: "2015-12-17T23:12:26.726234+00:00"
+        }
+        api.expects(:show).with("dash", 123).returns(dash: { graphs: [] })
+        api.expects(:show).with("dashboard", "bcd").returns(dashboard: { widgets: [] })
+        output.must_equal "Plan:\nNothing to do\n"
       end
     end
 

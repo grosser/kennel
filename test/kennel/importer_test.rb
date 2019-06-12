@@ -349,6 +349,76 @@ describe Kennel::Importer do
         )
       RUBY
     end
+
+    it "can import a dashboard" do
+      response = { id: "abc", title: "hello" }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "hello" },
+          id: -> { "abc" },
+          kennel_id: -> { "hello" }
+        )
+      RUBY
+    end
+
+    it "can sorts important widgets fields to the top" do
+      response = { id: "abc", title: "hello", widgets: [{ definition: { requests: [], title: "T", display_type: "x" } }] }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "hello" },
+          id: -> { "abc" },
+          kennel_id: -> { "hello" },
+          widgets: -> {
+            [
+              {
+                definition: {
+                  title: \"T\",
+                  display_type: \"x\",
+                  requests: []
+                }
+              }
+            ]
+          }
+        )
+      RUBY
+    end
+
+    it "can sorts important nested widgets fields to the top" do
+      response = { id: "abc", title: "hello", widgets: [{ definition: { widgets: [{ definition: { requests: [], title: "T", display_type: "x" } }] } }] }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "hello" },
+          id: -> { "abc" },
+          kennel_id: -> { "hello" },
+          widgets: -> {
+            [
+              {
+                definition: {
+                  widgets: [
+                    {
+                      definition: {
+                        title: \"T\",
+                        display_type: \"x\",
+                        requests: []
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        )
+      RUBY
+    end
   end
 
   describe "#pretty_print" do

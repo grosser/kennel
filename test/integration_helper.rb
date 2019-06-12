@@ -21,8 +21,7 @@ module IntegrationHelper
 
   def with_local_kennel
     old = File.read("Gemfile")
-    local = old.sub('"kennel"', "'kennel', path: '#{File.dirname(__dir__)}'")
-    raise ".sub failed" if old == local
+    local = old.sub!('"kennel"', "'kennel', path: '#{File.dirname(__dir__)}'") || raise(".sub! failed")
     example = "projects/example.rb"
     File.write("Gemfile", local)
     File.write(example, <<~RUBY)
@@ -58,7 +57,7 @@ module IntegrationHelper
               Kennel::Models::Dash.new(
                 self,
                 title: -> { "My Kennel Test Dash" },
-                description: -> { "Overview of foobar" },
+                description: -> { "Overview of foo" },
                 template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
                 kennel_id: -> { "overview-dashboard" }, # make up a unique name
                 definitions: -> {
@@ -85,6 +84,30 @@ module IntegrationHelper
                   [
                     {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
                     {title_text: "Test", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:test.metric{*}.as_count()", type: "line"}]}}
+                  ]
+                }
+              ),
+              Kennel::Models::Dashboard.new(
+                self,
+                title: -> { "My Kennel Test Dashboard" },
+                kennel_id: -> { "another-dashboard" }, # make up a unique name
+                description: -> { "Overview of bar" },
+                template_variables: -> { ["environment"] },
+                layout_type: -> { "ordered" },
+                widgets: -> {
+                  [
+                    {
+                      definition: {
+                        title: "Graph name",
+                        type: "timeseries",
+                        requests: [
+                          {
+                            q: "sum:mystats.foobar{$environment}",
+                            display_type: "area"
+                          }
+                        ]
+                      }
+                    }
                   ]
                 }
               )
