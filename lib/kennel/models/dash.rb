@@ -75,14 +75,7 @@ module Kennel
       def validate_json(data)
         super
 
-        # check for bad variables
-        # TODO: do the same check for apm_query and their group_by
-        variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
-        queries = data[:graphs].flat_map { |g| (g[:definition][:requests] || []).map { |r| r[:q] }.compact }
-        bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
-        if bad.any?
-          invalid! "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
-        end
+        validate_template_variables data, :graphs
 
         # check for fields that are unsettable
         data[:graphs].each do |g|

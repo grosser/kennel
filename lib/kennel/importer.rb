@@ -64,8 +64,9 @@ module Kennel
     private
 
     def pretty_print(hash)
-      list = hash.sort_by { |k, _| [SORT_ORDER.index(k) || 999, k] } # important to the front and rest deterministic
-      list.map do |k, v|
+      sort_widgets hash
+
+      sort_hash(hash).map do |k, v|
         pretty_value =
           if v.is_a?(Hash) || (v.is_a?(Array) && !v.all? { |e| e.is_a?(String) })
             # update answer here when changing https://stackoverflow.com/questions/8842546/best-way-to-pretty-print-a-hash
@@ -84,6 +85,20 @@ module Kennel
           end
         "  #{k}: -> {#{pretty_value}}"
       end.join(",\n")
+    end
+
+    # sort dashboard widgets + nesting
+    def sort_widgets(outer)
+      outer[:widgets]&.each do |widgets|
+        definition = widgets[:definition]
+        definition.replace sort_hash(definition)
+        sort_widgets definition
+      end
+    end
+
+    # important to the front and rest deterministic
+    def sort_hash(hash)
+      Hash[hash.sort_by { |k, _| [SORT_ORDER.index(k) || 999, k] }]
     end
   end
 end
