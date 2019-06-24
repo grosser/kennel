@@ -23,7 +23,7 @@ describe Kennel::Models::Dashboard do
   end
   let(:dashboard_with_requests) do
     dashboard(
-      widgets: -> { [{ definition: { requests: [{ q: "foo", display_type: "area" }], display_type: "timeseries", title: "bar" } }] }
+      widgets: -> { [{ definition: { requests: [{ q: "foo", display_type: "area" }], type: "timeseries", title: "bar" } }] }
     )
   end
   let(:expected_json_with_requests) do
@@ -32,7 +32,7 @@ describe Kennel::Models::Dashboard do
         {
           definition: {
             requests: [{ q: "foo", display_type: "area" }],
-            display_type: "timeseries",
+            type: "timeseries",
             title: "bar"
           }
         }
@@ -60,6 +60,41 @@ describe Kennel::Models::Dashboard do
 
     it "adds ID when given" do
       dashboard(id: -> { "abc" }).as_json.must_equal expected_json.merge(id: "abc")
+    end
+
+    describe "definitions" do
+      it "can add definitions" do
+        dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests
+      end
+
+      it "can add toplists" do
+        json = dashboard(definitions: -> { [["bar", "toplist", nil, "foo"]] }).as_json
+        json[:widgets][0][:definition][:requests][0].must_equal q: "foo"
+      end
+
+      it "fails with too little args" do
+        assert_raises ArgumentError do
+          dashboard(definitions: -> { [["bar", "timeseries", "area"]] }).as_json
+        end
+      end
+
+      it "fails with many args" do
+        assert_raises ArgumentError do
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", {}, 1]] }).as_json
+        end
+      end
+
+      it "fails with non-hash options" do
+        assert_raises ArgumentError do
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", 1]] }).as_json
+        end
+      end
+
+      it "fails with unknown options" do
+        assert_raises ArgumentError do
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", { a: 1 }]] }).as_json
+        end
+      end
     end
   end
 

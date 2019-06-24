@@ -13,16 +13,22 @@ module Kennel
       REQUEST_DEFAULTS = {
         style: { line_width: "normal", palette: "dog_classic", line_type: "solid" }
       }.freeze
+      SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
-      settings :id, :title, :description, :widgets, :kennel_id, :layout_type
+      settings :id, :title, :description, :definitions, :widgets, :kennel_id, :layout_type
 
       defaults(
         description: -> { "" },
+        definitions: -> { [] },
         widgets: -> { [] },
         id: -> { nil }
       )
 
       class << self
+        def api_resource
+          "dashboard"
+        end
+
         def normalize(expected, actual)
           super
 
@@ -56,10 +62,6 @@ module Kennel
         super(*args)
       end
 
-      def self.api_resource
-        "dashboard"
-      end
-
       def as_json
         return @json if @json
         @json = {
@@ -67,7 +69,7 @@ module Kennel
           title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
-          widgets: widgets
+          widgets: render_definitions + widgets
         }
 
         @json[:id] = id if id
@@ -87,6 +89,26 @@ module Kennel
         super
 
         validate_template_variables data, :widgets
+      end
+
+      def render_definitions
+        definitions.map do |title, type, display_type, queries, options = {}, ignored = nil|
+          # validate inputs
+          if ignored || (!title || !type || !queries || !options.is_a?(Hash))
+            raise ArgumentError, "Expected exactly 5 arguments for each definition (title, type, display_type, queries, options)"
+          end
+          if (SUPPORTED_DEFINITION_OPTIONS | options.keys) != SUPPORTED_DEFINITION_OPTIONS
+            raise ArgumentError, "Supported options are: #{SUPPORTED_DEFINITION_OPTIONS.map(&:inspect).join(", ")}"
+          end
+
+          # build definition
+          requests = Array(queries).map do |q|
+            request = { q: q }
+            request[:display_type] = display_type if display_type
+            request
+          end
+          { definition: { title: title, type: type, requests: requests, **options } }
+        end
       end
     end
   end
