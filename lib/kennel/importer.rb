@@ -2,7 +2,7 @@
 
 module Kennel
   class Importer
-    TITLES = [:name, :title, :board_title].freeze
+    TITLES = [:name, :title].freeze
     SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, :message, :description, :template_variables].freeze
 
     def initialize(api)
@@ -10,26 +10,22 @@ module Kennel
     end
 
     def import(resource, id)
-      begin
-        model =
-          begin
-            Kennel::Models.const_get(resource.capitalize)
-          rescue NameError
-            raise ArgumentError, "#{resource} is not supported"
-          end
-        data = @api.show(model.api_resource, id)
-      rescue StandardError => e
-        retried ||= 0
-        retried += 1
-        raise e if retried != 1 || resource != "dash" || !e.message.match?(/No \S+ matches that/)
-        resource = "screen"
-        retry
+      if ["screen", "dash"].include?(resource)
+        raise ArgumentError, "resource 'screen' and 'dash' are deprecated, use 'dashboard'"
       end
 
-      data = data[resource.to_sym] || data
-      id = data.fetch(:id) # store numerical id returned from the api
-      model.normalize({}, data)
+      model =
+        begin
+          Kennel::Models.const_get(resource.capitalize)
+        rescue NameError
+          raise ArgumentError, "#{resource} is not supported"
+        end
+
+      data = @api.show(model.api_resource, id)
+      id = data.fetch(:id) # keep native value
+      model.normalize({}, data) # removes id
       data[:id] = id
+
       data[:kennel_id] = Kennel::Utils.parameterize(data.fetch(TITLES.detect { |t| data[t] }))
 
       if resource == "monitor"

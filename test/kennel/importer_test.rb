@@ -9,14 +9,14 @@ describe Kennel::Importer do
 
   describe "#import" do
     it "prints simple valid code" do
-      response = { dash: { id: 123, title: "hello", created_by: "me", deleted: "yes" } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { id: "abc", title: "hello" }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
-          id: -> { 123 },
+          id: -> { "abc" },
           kennel_id: -> { "hello" }
         )
       RUBY
@@ -25,15 +25,27 @@ describe Kennel::Importer do
       project.parts.size.must_equal 1
     end
 
+    it "refuses to import deprected screen" do
+      assert_raises ArgumentError do
+        importer.import("dash", "abc")
+      end
+    end
+
+    it "refuses to import deprected dash" do
+      assert_raises ArgumentError do
+        importer.import("screen", "abc")
+      end
+    end
+
     it "prints complex elements" do
-      response = { dash: { id: 123, board_title: "a", foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { id: "abc", title: "a", foo: [1, 2], bar: { baz: ["123", "foo", { a: 1 }] } }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
-          board_title: -> { "a" },
-          id: -> { 123 },
+          title: -> { "a" },
+          id: -> { "abc" },
           kennel_id: -> { "a" },
           bar: -> {
             {
@@ -57,14 +69,14 @@ describe Kennel::Importer do
     end
 
     it "prints null as nil" do
-      response = { dash: { id: 123, title: "a", bar: { baz: nil } } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+      response = { id: "abc", title: "a", bar: { baz: nil } }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "a" },
-          id: -> { 123 },
+          id: -> { "abc" },
           kennel_id: -> { "a" },
           bar: -> {
             {
@@ -75,25 +87,16 @@ describe Kennel::Importer do
       RUBY
     end
 
-    it "removes boring default values" do
-      response = { dash: { id: 123, title: "a", graphs: [{ definition: { foo: "bar", autoscale: true } }] } }
-      stub_datadog_request(:get, "dash/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
+    it "can import a monitor" do
+      response = { id: 123, name: "hello", options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Monitor.new(
           self,
-          title: -> { "a" },
+          name: -> { "hello" },
           id: -> { 123 },
-          kennel_id: -> { "a" },
-          graphs: -> {
-            [
-              {
-                definition: {
-                  foo: "bar"
-                }
-              }
-            ]
-          }
+          kennel_id: -> { "hello" }
         )
       RUBY
     end
@@ -101,7 +104,7 @@ describe Kennel::Importer do
     it "removes monitor default" do
       response = { id: 123, name: "hello", options: { notify_audit: true } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
+      dash = importer.import("monitor", "123")
       dash.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
@@ -115,7 +118,7 @@ describe Kennel::Importer do
     it "keeps monitor values that are not the default" do
       response = { id: 123, name: "hello", options: { notify_audit: false } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
+      dash = importer.import("monitor", "123")
       dash.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
@@ -123,58 +126,6 @@ describe Kennel::Importer do
           id: -> { 123 },
           kennel_id: -> { "hello" },
           notify_audit: -> { false }
-        )
-      RUBY
-    end
-
-    it "can import a screen" do
-      response = { id: 123, board_title: "hello" }
-      stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
-      dash = importer.import("screen", 123)
-      dash.must_equal <<~RUBY
-        Kennel::Models::Screen.new(
-          self,
-          board_title: -> { "hello" },
-          id: -> { 123 },
-          kennel_id: -> { "hello" }
-        )
-      RUBY
-    end
-
-    it "can import a screen when user thinks it is a dash" do
-      response = { id: 123, board_title: "hello" }
-      stub_datadog_request(:get, "dash/123")
-        .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
-      stub_datadog_request(:get, "screen/123").to_return(body: response.to_json)
-      dash = importer.import("dash", 123)
-      dash.must_equal <<~RUBY
-        Kennel::Models::Screen.new(
-          self,
-          board_title: -> { "hello" },
-          id: -> { 123 },
-          kennel_id: -> { "hello" }
-        )
-      RUBY
-    end
-
-    it "does not loop forever when dash does not exist" do
-      stub_datadog_request(:get, "dash/123")
-        .to_return(body: { errors: ["No dashboard matches that dash_id."] }.to_json, status: 404)
-      stub_datadog_request(:get, "screen/123")
-        .to_return(body: { errors: ["No screen matches that dash_id."] }.to_json, status: 404)
-      assert_raises(RuntimeError) { importer.import("screen", 123) }
-    end
-
-    it "can import a monitor" do
-      response = { id: 123, name: "hello", options: {} }
-      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
-        Kennel::Models::Monitor.new(
-          self,
-          name: -> { "hello" },
-          id: -> { 123 },
-          kennel_id: -> { "hello" }
         )
       RUBY
     end
@@ -208,20 +159,6 @@ describe Kennel::Importer do
           kennel_id: -> { "hello" },
           critical: -> { 25.0 },
           notify_no_data: -> { false }
-        )
-      RUBY
-    end
-
-    it "can import with new alphanumeric ids" do
-      response = { dash: { title: "a", id: 123 } }
-      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
-      dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
-          self,
-          title: -> { "a" },
-          id: -> { 123 },
-          kennel_id: -> { "a" }
         )
       RUBY
     end
@@ -302,14 +239,14 @@ describe Kennel::Importer do
     end
 
     it "simplifies template_variables" do
-      response = { dash: { id: 123, title: "hello", template_variables: [{ default: "*", name: "pod", prefix: "pod" }, { nope: true }] } }
-      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
+      response = { id: "abc", title: "hello", template_variables: [{ default: "*", name: "pod", prefix: "pod" }, { nope: true }] }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
       dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
+        Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
-          id: -> { 123 },
+          id: -> { "abc" },
           kennel_id: -> { "hello" },
           template_variables: -> {
             [
@@ -324,34 +261,17 @@ describe Kennel::Importer do
     end
 
     it "simplifies styles" do
-      response = { dash: { id: 123, title: "hello", graphs: [{ definition: { requests: [{ foo: "bar", style: { width: "normal", palette: "dog_classic", type: "solid" } }] } }] } }
-      stub_datadog_request(:get, "dash/abc-def").to_return(body: response.to_json)
-      dash = importer.import("dash", "abc-def")
-      dash.must_equal <<~RUBY
-        Kennel::Models::Dash.new(
-          self,
-          title: -> { "hello" },
-          id: -> { 123 },
-          kennel_id: -> { "hello" },
-          graphs: -> {
-            [
-              {
-                definition: {
-                  requests: [
-                    {
-                      foo: \"bar\"
-                    }
-                  ]
-                }
-              }
-            ]
+      response = {
+        id: "abc",
+        title: "hello",
+        widgets: [
+          {
+            definition: {
+              requests: [{ foo: "bar", style: { line_width: "normal", palette: "dog_classic", line_type: "solid" } }]
+            }
           }
-        )
-      RUBY
-    end
-
-    it "can import a dashboard" do
-      response = { id: "abc", title: "hello" }
+        ]
+      }
       stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
       dash = importer.import("dashboard", "abc")
       dash.must_equal <<~RUBY
@@ -359,7 +279,20 @@ describe Kennel::Importer do
           self,
           title: -> { "hello" },
           id: -> { "abc" },
-          kennel_id: -> { "hello" }
+          kennel_id: -> { "hello" },
+          widgets: -> {
+            [
+              {
+                definition: {
+                  requests: [
+                    {
+                      foo: "bar"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
         )
       RUBY
     end
@@ -378,8 +311,8 @@ describe Kennel::Importer do
             [
               {
                 definition: {
-                  title: \"T\",
-                  display_type: \"x\",
+                  title: "T",
+                  display_type: "x",
                   requests: []
                 }
               }
@@ -406,8 +339,8 @@ describe Kennel::Importer do
                   widgets: [
                     {
                       definition: {
-                        title: \"T\",
-                        display_type: \"x\",
+                        title: "T",
+                        display_type: "x",
                         requests: []
                       }
                     }
