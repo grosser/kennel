@@ -22,6 +22,7 @@ require "kennel/models/monitor"
 require "kennel/models/dash"
 require "kennel/models/dashboard"
 require "kennel/models/screen"
+require "kennel/models/logs_index"
 
 # settings
 require "kennel/models/project"
