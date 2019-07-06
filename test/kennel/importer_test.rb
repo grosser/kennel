@@ -11,8 +11,8 @@ describe Kennel::Importer do
     it "prints simple valid code" do
       response = { id: "abc", title: "hello" }
       stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
-      dash = importer.import("dashboard", "abc")
-      dash.must_equal <<~RUBY
+      code = importer.import("dashboard", "abc")
+      code.must_equal <<~RUBY
         Kennel::Models::Dashboard.new(
           self,
           title: -> { "hello" },
@@ -20,7 +20,7 @@ describe Kennel::Importer do
           kennel_id: -> { "hello" }
         )
       RUBY
-      code = "TestProject.new(parts: -> {[#{dash}]})"
+      code = "TestProject.new(parts: -> {[#{code}]})"
       project = eval(code, binding, __FILE__, __LINE__) # rubocop:disable Security/Eval
       project.parts.size.must_equal 1
     end
@@ -101,11 +101,18 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "removes lock so we do not double it" do
+      response = { id: 123, name: "hello#{Kennel::Models::Base::LOCK}", options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      code = importer.import("monitor", 123)
+      code.must_include 'name: -> { "hello" }'
+    end
+
     it "removes monitor default" do
       response = { id: 123, name: "hello", options: { notify_audit: true } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", "123")
-      dash.must_equal <<~RUBY
+      code = importer.import("monitor", "123")
+      code.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -118,8 +125,8 @@ describe Kennel::Importer do
     it "keeps monitor values that are not the default" do
       response = { id: 123, name: "hello", options: { notify_audit: false } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", "123")
-      dash.must_equal <<~RUBY
+      code = importer.import("monitor", "123")
+      code.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },
@@ -150,8 +157,8 @@ describe Kennel::Importer do
         }
       }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
-      dash = importer.import("monitor", 123)
-      dash.must_equal <<~RUBY
+      code = importer.import("monitor", 123)
+      code.must_equal <<~RUBY
         Kennel::Models::Monitor.new(
           self,
           name: -> { "hello" },

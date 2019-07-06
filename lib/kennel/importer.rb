@@ -26,7 +26,10 @@ module Kennel
       model.normalize({}, data) # removes id
       data[:id] = id
 
-      data[:kennel_id] = Kennel::Utils.parameterize(data.fetch(TITLES.detect { |t| data[t] }))
+      title_field = TITLES.detect { |t| data[t] }
+      title = data.fetch(title_field)
+      title.tr!(Kennel::Models::Base::LOCK, "") # avoid double lock icon
+      data[:kennel_id] = Kennel::Utils.parameterize(title)
 
       if resource == "monitor"
         # flatten monitor options so they are all on the base
