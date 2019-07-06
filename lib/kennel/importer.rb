@@ -3,7 +3,7 @@
 module Kennel
   class Importer
     TITLES = [:name, :title].freeze
-    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, :message, :description, :template_variables].freeze
+    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, *Syncer::TRACKING_FIELDS, :template_variables].freeze
 
     def initialize(api)
       @api = api
@@ -26,10 +26,19 @@ module Kennel
       model.normalize({}, data) # removes id
       data[:id] = id
 
-      title_field = TITLES.detect { |t| data[t] }
+      title_field = TITLES.detect { |f| data[f] }
       title = data.fetch(title_field)
       title.tr!(Kennel::Models::Base::LOCK, "") # avoid double lock icon
-      data[:kennel_id] = Kennel::Utils.parameterize(title)
+
+      # calculate or reuse kennel_id
+      # TODO: this is copy-pasted from syncer, need to find a nice way to reuse it
+      tracking_field = Syncer::TRACKING_FIELDS.detect { |f| data[f] }
+      data[:kennel_id] =
+        if tracking_field && data[tracking_field].sub!(/\n?-- Managed by kennel (\S+:\S+).*/, "")
+          $1.split(":").last
+        else
+          Kennel::Utils.parameterize(title)
+        end
 
       if resource == "monitor"
         # flatten monitor options so they are all on the base

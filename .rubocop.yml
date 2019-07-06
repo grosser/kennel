@@ -90,3 +90,6 @@ Style/NumericPredicate:
 
 Style/SpecialGlobalVars:
   Enabled: false
+
+Style/PerlBackrefs:
+  Enabled: false

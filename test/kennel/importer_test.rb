@@ -108,6 +108,32 @@ describe Kennel::Importer do
       code.must_include 'name: -> { "hello" }'
     end
 
+    it "reuses tracking id" do
+      response = {
+        id: 123,
+        name: "hello",
+        message: "Heyho\n-- Managed by kennel foo:bar in foo.rb, do not modify manually",
+        options: {}
+      }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      code = importer.import("monitor", 123)
+      code.must_include 'kennel_id: -> { "bar" }'
+      code.must_include "<<~TEXT\n      Heyho\n    TEXT"
+    end
+
+    it "can pick up tracking id without text" do
+      response = {
+        id: 123,
+        name: "hello",
+        message: "-- Managed by kennel foo:bar in foo.rb, do not modify manually",
+        options: {}
+      }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      code = importer.import("monitor", 123)
+      code.must_include 'kennel_id: -> { "bar" }'
+      code.must_include "<<~TEXT\n\n    TEXT"
+    end
+
     it "removes monitor default" do
       response = { id: 123, name: "hello", options: { notify_audit: true } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
