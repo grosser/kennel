@@ -7,6 +7,21 @@ module Kennel
 
       API_LIST_INCOMPLETE = true
       DASHBOARD_DEFAULTS = { template_variables: [] }.freeze
+      DEFINITION_DEFAULTS = {
+        # general
+        title_align: "left",
+        title_size: "16",
+
+        # free text
+        color: "#4d4d4d",
+        text_align: "left",
+
+        # note
+        show_tick: false,
+        tick_pos: "50%",
+        tick_edge: "left",
+        background_color: "white"
+      }.freeze
       READONLY_ATTRIBUTES = Base::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list
       ]
@@ -35,6 +50,13 @@ module Kennel
           ignore_default expected, actual, DASHBOARD_DEFAULTS
 
           base_pairs(expected, actual).each do |pair|
+            if pair.all? { |d| d[:widgets] }
+              max = pair.map { |d| d[:widgets].size }.max
+              max.times do |i|
+                ignore_default *pair.map { |d| d.dig(:widgets, i, :definition) || {} }, DEFINITION_DEFAULTS
+              end
+            end
+
             ignore_request_defaults(*pair, :widgets, :definition)
             pair.each { |dash| dash[:widgets]&.each { |w| w.delete(:id) } }
           end
