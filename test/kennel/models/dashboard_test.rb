@@ -98,6 +98,83 @@ describe Kennel::Models::Dashboard do
     end
   end
 
+  describe "#resolve_linked_tracking_ids" do
+    let(:definition) { dashboard_with_requests.as_json[:widgets][0][:definition] }
+
+    def resolve(map = {})
+      dashboard_with_requests.resolve_linked_tracking_ids(map)
+      dashboard_with_requests.as_json[:widgets][0][:definition]
+    end
+
+    it "does nothing for regular widgets" do
+      resolve.keys.must_equal [:requests, :type, :title]
+    end
+
+    it "ignores widgets without definition" do
+      dashboard_with_requests.as_json[:widgets][0].delete :definition
+      resolve.must_be_nil
+    end
+
+    describe "uptime" do
+      before { definition[:type] = "uptime" }
+
+      it "does not change without monitor" do
+        refute resolve.key?(:monitor_ids)
+      end
+
+      it "does not change with id" do
+        definition[:monitor_ids] = [123]
+        resolve[:monitor_ids].must_equal [123]
+      end
+
+      it "resolves full id" do
+        definition[:monitor_ids] = ["#{project.kennel_id}:b"]
+        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        resolved[:monitor_ids].must_equal [123]
+      end
+
+      it "does not fail hard when id is missing to not break when adding new monitors" do
+        definition[:monitor_ids] = ["missing:the_id"]
+        err = Kennel::Utils.capture_stderr do
+          resolve[:monitor_ids].must_equal [nil]
+        end
+        err.must_include "Unable to find missing:the_id in existing monitors"
+      end
+    end
+
+    describe "alert_graph" do
+      before { definition[:type] = "alert_graph" }
+
+      it "does not change the alert widget without monitor" do
+        refute resolve.key?(:alert_id)
+      end
+
+      it "converts integer to string" do
+        definition[:alert_id] = 123
+        resolve[:alert_id].must_equal "123"
+      end
+
+      it "does not change the alert widget with a string encoded id" do
+        definition[:alert_id] = "123"
+        resolve[:alert_id].must_equal "123"
+      end
+
+      it "resolves the alert widget with full id" do
+        definition[:alert_id] = "#{project.kennel_id}:b"
+        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        resolved[:alert_id].must_equal "123"
+      end
+
+      it "does not fail hard when id is missing to not break when adding new monitors" do
+        definition[:alert_id] = "a:b"
+        err = Kennel::Utils.capture_stderr do
+          resolve[:alert_id].must_equal ""
+        end
+        err.must_include "Unable to find a:b in existing monitors"
+      end
+    end
+  end
+
   describe "#diff" do
     it "is empty" do
       dashboard.diff(expected_json).must_equal []
