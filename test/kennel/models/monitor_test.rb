@@ -129,6 +129,10 @@ describe Kennel::Models::Monitor do
       e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d"
     end
 
+    it "allows next_x interval for query alert type" do
+      monitor(critical: -> { 234.1 }, query: -> { "avg(next_20m).count() < #{critical}" }).as_json
+    end
+
     it "does not allow mismatching query and critical" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }).as_json }
       e.message.must_equal "test_project:m1 critical and value used in query must match"

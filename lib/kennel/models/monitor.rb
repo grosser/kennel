@@ -183,7 +183,7 @@ module Kennel
         if type == "query alert"
           # verify interval is valud
           interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
-          unless QUERY_INTERVALS.include?(interval)
+          if interval && !QUERY_INTERVALS.include?(interval)
             invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
           end
         end
