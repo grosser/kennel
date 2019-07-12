@@ -31,7 +31,7 @@ describe Kennel::Models::Monitor do
       type: "query alert",
       query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",
-      tags: ["service:test_project", "team:test_team"],
+      tags: ["project:test_project", "team:test_team"],
       options: {
         timeout_h: 0,
         notify_no_data: true,
