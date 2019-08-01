@@ -105,9 +105,9 @@ end
  - datadog is updated by travis
 
 ### Adding a new dashboard
- - go to [datadog dashboard UI](https://app.datadoghq.com/dashboar/lists) and click on _New Dashboard_ to create a dashboard
+ - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard
  - get the `id` from the url
- - `RESOURCE=dashboard ID=12345 bundle exec rake kennel:import`
+ - `RESOURCE=dashboard ID=abc-def-ghi bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing dashboard
@@ -121,7 +121,7 @@ end
         [
           Kennel::Models::Dashboard.new(
             self,
-            id: -> { 123457 }, # id from datadog url, not needed when creating a new dashboard
+            id: -> { "abc-def-ghi" }, # id from datadog url, not needed when creating a new dashboard
             title: -> { "My Dashboard" },
             description: -> { "Overview of foobar" },
             template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
