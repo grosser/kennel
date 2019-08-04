@@ -67,19 +67,6 @@ describe Kennel::Syncer do
     dash
   end
 
-  def screen(pid, cid, extra)
-    screen = Kennel::Models::Screen.new(
-      project(pid),
-      board_title: -> { "x" },
-      description: -> { "x" },
-      kennel_id: -> { cid },
-      id: -> { extra[:id]&.to_s }
-    )
-    screen.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
-    screen.as_json.merge!(extra)
-    screen
-  end
-
   def add_identical
     expected << monitor("a", "b")
     monitors << component("a", "b")
@@ -88,7 +75,6 @@ describe Kennel::Syncer do
   let(:api) { stub("Api") }
   let(:monitors) { [] }
   let(:dashes) { [] }
-  let(:screens) { [] }
   let(:dashboards) { [] } # TODO: individual dashboards use modified_at
   let(:expected) { [] }
   let(:project_filter) { nil }
@@ -98,7 +84,6 @@ describe Kennel::Syncer do
     Kennel::Progress.stubs(:print).yields
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("dash", anything).returns(dashes: dashes)
-    api.stubs(:list).with("screen", anything).returns(screenboards: screens)
     api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
   end
 
@@ -274,30 +259,6 @@ describe Kennel::Syncer do
         }
         api.expects(:show).with("dash", 123).returns(dash: {})
         output.must_equal "Plan:\nNothing to do\n"
-      end
-    end
-
-    describe "screens" do
-      in_temp_dir # uses file-cache
-
-      it "can plan for screens" do
-        expected << screen("a", "b", id: 123)
-        screens << {
-          id: "123",
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified: "2015-12-17T23:12:26.726234+00:00",
-          widgets: []
-        }
-        api.expects(:show).with("screen", 123).returns({})
-        output.must_equal "Plan:\nNothing to do\n"
-      end
-
-      it "links tracking ids" do
-        monitors << component("a", "b", id: 124)
-        s = screen("a", "c", widgets: [{ type: "uptime", monitor: { id: "a:b" } }])
-        expected << s
-        syncer.send(:calculate_diff)
-        s.as_json.dig(:widgets, 0, :monitor, :id).must_equal 124
       end
     end
 
@@ -511,23 +472,6 @@ describe Kennel::Syncer do
         expected << dash("a", "b")
         api.expects(:create).with("dash", anything).returns(dash: { id: 123 })
         output.must_equal "Created dash a:b /dash/123\n"
-      end
-    end
-
-    describe "screens" do
-      in_temp_dir # uses file-cache
-
-      it "can update screens" do
-        expected << screen("a", "b", id: 123)
-        screens << {
-          id: 123,
-          description: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified: "2015-12-17T23:12:26.726234+00:00",
-          widgets: []
-        }
-        api.expects(:show).with("screen", 123).returns(dash: {})
-        api.expects(:update).with("screen", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-        output.must_equal "Updated screen a:b /screen/123\n"
       end
     end
   end

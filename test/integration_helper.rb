@@ -76,17 +76,6 @@ module IntegrationHelper
                   ]
                 }
               ),
-              Kennel::Models::Screen.new(
-                self,
-                board_title: -> { "My Kennel Test Screen" },
-                kennel_id: -> { "test-screen" },
-                widgets: -> {
-                  [
-                    {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
-                    {title_text: "Test", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:test.metric{*}.as_count()", type: "line"}]}}
-                  ]
-                }
-              ),
               Kennel::Models::Dashboard.new(
                 self,
                 title: -> { "My Kennel Test Dashboard" },

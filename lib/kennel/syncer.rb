@@ -123,7 +123,6 @@ module Kennel
       Utils.parallel(api_resources.compact.uniq) do |api_resource|
         results = @api.list(api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
         results = results[results.keys.first] if results.is_a?(Hash) # dashes/screens are nested in {dash: {}}
-        results.each { |r| r[:id] = Integer(r[:id]) if r[:id] =~ /\A\d+\z/ } # screen ids are integers as strings
         results.each { |c| c[:api_resource] = api_resource } # store api resource for later diffing
       end.flatten(1)
     end
