@@ -54,7 +54,7 @@ module Teams
   class MyTeam < Kennel::Models::Team
     defaults(
       slack: -> { "my-alerts" },
-      email: -> { "my-team@exmaple.com" }
+      email: -> { "my-team@example.com" }
     )
   end
 end

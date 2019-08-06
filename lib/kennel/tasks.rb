@@ -50,7 +50,7 @@ namespace :kennel do
     Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
   end
 
-  desc "Covert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
+  desc "Convert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
   task import: :environment do
     resource = ENV["RESOURCE"] || abort("Call with RESOURCE=dash") # TODO: add others
     id = ENV["ID"] || abort("Call with ID=1234")
