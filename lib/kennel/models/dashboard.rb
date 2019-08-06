@@ -35,6 +35,15 @@ module Kennel
           ignore_default expected, actual, DASHBOARD_DEFAULTS
 
           base_pairs(expected, actual).each do |pair|
+            # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
+            pair.each do |b|
+              b[:widgets]&.each do |w|
+                if formats = w.dig(:definition, :conditional_formats)
+                  w[:definition][:conditional_formats] = formats.sort_by { |h| h[:value].to_f }
+                end
+              end
+            end
+
             ignore_request_defaults(*pair, :widgets, :definition)
             pair.each { |dash| dash[:widgets]&.each { |w| w.delete(:id) } }
           end

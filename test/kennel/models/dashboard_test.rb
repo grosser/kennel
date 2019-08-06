@@ -209,6 +209,21 @@ describe Kennel::Models::Dashboard do
 
       dashboard(widgets: -> { widgets }).diff(expected_json).must_equal []
     end
+
+    it "ignores conditional_formats ordering" do
+      formats = [{ value: 1 }, { foo: "bar" }, { value: "2" }]
+      old = formats.dup
+
+      json = expected_json_with_requests
+      json[:widgets][0][:definition][:conditional_formats] = formats
+
+      dash = dashboard_with_requests
+      dash.as_json[:widgets][0][:definition][:conditional_formats] = formats.reverse
+
+      dash.diff(json).must_equal []
+
+      formats.must_equal old, "not in-place modified"
+    end
   end
 
   describe "#url" do
