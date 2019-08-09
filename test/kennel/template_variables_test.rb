@@ -67,5 +67,11 @@ describe Kennel::TemplateVariables do
         validate ["a"], [{ definition: { widgets: [{ definition: { requests: [{ q: "$b" }] } }] } }]
       end
     end
+
+    it "works with hostmap widgets" do
+      assert_raises Kennel::Models::Base::ValidationError do
+        validate ["a"], [{ definition: { requests: { fill: { q: "x" } } } }]
+      end
+    end
   end
 end
