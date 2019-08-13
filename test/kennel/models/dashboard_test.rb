@@ -62,6 +62,13 @@ describe Kennel::Models::Dashboard do
       dashboard(id: -> { "abc" }).as_json.must_equal expected_json.merge(id: "abc")
     end
 
+    it "can resolve q from metadata" do
+      expected_json_with_requests[:widgets][0][:definition][:requests][0][:metadata] = [{ expression: "foo" }]
+      dashboard(
+        widgets: -> { [{ definition: { requests: [{ q: :metadata, display_type: "area", metadata: [{ expression: "foo" }] }], type: "timeseries", title: "bar" } }] }
+      ).as_json.must_equal(expected_json_with_requests)
+    end
+
     describe "definitions" do
       it "can add definitions" do
         dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests

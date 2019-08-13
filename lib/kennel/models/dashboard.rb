@@ -73,12 +73,15 @@ module Kennel
 
       def as_json
         return @json if @json
+        all_widgets = render_definitions + widgets
+        expand_q all_widgets
+
         @json = {
           layout_type: layout_type,
           title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
-          widgets: render_definitions + widgets
+          widgets: all_widgets
         }
 
         @json[:id] = id if id
@@ -109,6 +112,20 @@ module Kennel
       end
 
       private
+
+      # creates queries from metadata to avoid having to keep q and expression in sync
+      #
+      # {q: :metadata, metadata: [{expression: "sum:bar", alias_name: "foo"}, ...], }
+      # -> {q: "sum:bar, ...", metadata: ..., }
+      def expand_q(widgets)
+        widgets = widgets.flat_map { |w| w.dig(:definition, :widgets) || w } # expand groups
+        widgets.each do |w|
+          w.dig(:definition, :requests)&.each do |request|
+            next unless request.is_a?(Hash) && request[:q] == :metadata
+            request[:q] = request.fetch(:metadata).map { |m| m.fetch(:expression) }.join(", ")
+          end
+        end
+      end
 
       def resolve_link(id, id_map)
         return id unless tracking_id?(id)
