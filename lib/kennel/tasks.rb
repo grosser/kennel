@@ -50,6 +50,19 @@ namespace :kennel do
     Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
   end
 
+  desc "show monitors with no data by TAG, for example TAG=team:foo"
+  task nodata: :environment do
+    tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
+    monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
+    monitors.select! { |m| m[:overall_state] == "No Data" }
+
+    monitors.each do |m|
+      Kennel.out.puts m[:name]
+      Kennel.out.puts Kennel::Utils.path_to_url("/monitors/#{m[:id]}")
+      Kennel.out.puts
+    end
+  end
+
   desc "Convert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
   task import: :environment do
     resource = ENV["RESOURCE"] || abort("Call with RESOURCE=dash") # TODO: add others
