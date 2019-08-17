@@ -40,19 +40,6 @@ describe Kennel::Syncer do
     monitor
   end
 
-  def dash(pid, cid, extra = {})
-    dash = Kennel::Models::Dash.new(
-      project(pid),
-      title: -> { "x" },
-      description: -> { "x" },
-      kennel_id: -> { cid },
-      id: -> { extra[:id]&.to_s }
-    )
-    dash.as_json.delete_if { |k, _| ![:description, :options, :graphs, :template_variables].include?(k) }
-    dash.as_json.merge!(extra)
-    dash
-  end
-
   def dashboard(pid, cid, extra = {})
     dash = Kennel::Models::Dashboard.new(
       project(pid),
@@ -246,22 +233,6 @@ describe Kennel::Syncer do
       end
     end
 
-    describe "dashes" do
-      in_temp_dir # uses file-cache
-
-      it "can plan for dashes" do
-        expected << dash("a", "b", id: 123)
-        dashes << {
-          id: 123,
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified: "2015-12-17T23:12:26.726234+00:00",
-          graphs: []
-        }
-        api.expects(:show).with("dash", 123).returns(dash: {})
-        output.must_equal "Plan:\nNothing to do\n"
-      end
-    end
-
     describe "dashboards" do
       in_temp_dir # uses file-cache
 
@@ -273,36 +244,6 @@ describe Kennel::Syncer do
           modified_at: "2015-12-17T23:12:26.726234+00:00"
         }
         api.expects(:show).with("dashboard", "abc").returns(dashboard: { widgets: [] })
-        output.must_equal "Plan:\nNothing to do\n"
-      end
-
-      it "can plan for dashes and dashboards" do
-        expected << dash("a", "b", id: 123) # abc
-        expected << dashboard("a", "c", id: "bcd") # old_id is fake
-        dashboards << {
-          id: "abc", # should be ignored
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00"
-        }
-        dashboards << {
-          id: "bcd", # should be used
-          description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00"
-        }
-        dashes << {
-          id: 123, # should be used
-          new_id: "abc",
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified: "2015-12-17T23:12:26.726234+00:00"
-        }
-        dashes << {
-          id: 234, # should be ignored
-          new_id: "bcd",
-          description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00"
-        }
-        api.expects(:show).with("dash", 123).returns(dash: { graphs: [] })
-        api.expects(:show).with("dashboard", "bcd").returns(dashboard: { widgets: [] })
         output.must_equal "Plan:\nNothing to do\n"
       end
     end
@@ -452,26 +393,26 @@ describe Kennel::Syncer do
       end
     end
 
-    describe "dashes" do
+    describe "dashboards" do
       in_temp_dir # uses file-cache
 
-      it "can update dashes" do
-        expected << dash("a", "b", id: 123)
-        dashes << {
-          id: 123,
+      it "can update dashboards" do
+        expected << dashboard("a", "b", id: "abc")
+        dashboards << {
+          id: "abc",
           description: "y\n-- Managed by kennel test_project:b in test/test_helper.rb, do not modify manually",
           modified: "2015-12-17T23:12:26.726234+00:00",
           graphs: []
         }
-        api.expects(:show).with("dash", 123).returns(dash: {})
-        api.expects(:update).with("dash", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-        output.must_equal "Updated dash a:b /dash/123\n"
+        api.expects(:show).with("dashboard", "abc").returns(dashboard: {})
+        api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
+        output.must_equal "Updated dashboard a:b /dashboard/abc\n"
       end
 
-      it "can create dashes" do
-        expected << dash("a", "b")
-        api.expects(:create).with("dash", anything).returns(dash: { id: 123 })
-        output.must_equal "Created dash a:b /dash/123\n"
+      it "can create dashboards" do
+        expected << dashboard("a", "b")
+        api.expects(:create).with("dashboard", anything).returns(dashboard: { id: "abc" })
+        output.must_equal "Created dashboard a:b /dashboard/abc\n"
       end
     end
   end

@@ -11,7 +11,7 @@ describe Kennel do
     File.write file, content
   end
 
-  let(:models_count) { 3 }
+  let(:models_count) { 2 }
 
   capture_all
   in_temp_dir do

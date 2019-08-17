@@ -75,10 +75,6 @@ module Kennel
           actual.each do |a|
             id = a.fetch(:id)
             e = matching_expected(a)
-
-            # check correct class, since we will have multiple actuals for each flavor (dash/screen/dashboard)
-            next if e && e.class.api_resource != a[:api_resource]
-
             if e && @expected.delete(e)
               fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
               diff = e.diff(a)
