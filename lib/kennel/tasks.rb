@@ -55,6 +55,14 @@ namespace :kennel do
     tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
     monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
     monitors.select! { |m| m[:overall_state] == "No Data" }
+    monitors.reject! { |m| m[:tags].include? ["nodata:ignore"] }
+    if monitors.any?
+      Kennel.err.puts <<~TEXT
+        This is a useful task to find monitors that have mis-spelled metrics or never received data at any time.
+        To ignore monitors with nodata, tag the monitor with "nodata:ignore"
+
+      TEXT
+    end
 
     monitors.each do |m|
       Kennel.out.puts m[:name]
