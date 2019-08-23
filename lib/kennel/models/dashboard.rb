@@ -39,7 +39,7 @@ module Kennel
             pair.each do |b|
               b[:widgets]&.each do |w|
                 if formats = w.dig(:definition, :conditional_formats)
-                  w[:definition][:conditional_formats] = formats.sort_by { |h| h[:value].to_f }
+                  w[:definition][:conditional_formats] = formats.sort_by(&:hash)
                 end
               end
             end
