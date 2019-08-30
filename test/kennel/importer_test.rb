@@ -385,6 +385,56 @@ describe Kennel::Importer do
         )
       RUBY
     end
+
+    describe "converting to q: :metadata" do
+      it "converts" do
+        request = {
+          q: "a,b",
+          metadata: [
+            { alias_name: "foo", expression: "a" },
+            { alias_name: "bar", expression: "b" }
+          ]
+        }
+        response = {
+          id: "abc",
+          title: "hello",
+          widgets: [{ definition: { widgets: [{ definition: { requests: [request] } }] } }]
+        }
+        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+        code = importer.import("dashboard", "abc")
+        code.must_include " q: :metadata,\n"
+      end
+
+      it "ignores bad requests without query" do
+        response = {
+          id: "abc",
+          title: "hello",
+          widgets: [{ definition: { widgets: [{ definition: { requests: [{ metadata: [] }] } }] } }]
+        }
+        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+        importer.import("dashboard", "abc")
+      end
+
+      it "ignores requests hash" do
+        response = {
+          id: "abc",
+          title: "hello",
+          widgets: [{ definition: { widgets: [{ definition: { requests: { a: 1 } } }] } }]
+        }
+        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+        importer.import("dashboard", "abc")
+      end
+
+      it "ignores bad requests without expression" do
+        response = {
+          id: "abc",
+          title: "hello",
+          widgets: [{ definition: { widgets: [{ definition: { requests: [{ q: "x", metadata: [{}] }] } }] } }]
+        }
+        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+        importer.import("dashboard", "abc")
+      end
+    end
   end
 
   describe "#pretty_print" do
