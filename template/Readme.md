@@ -36,7 +36,7 @@ module Teams
   class MyTeam < Kennel::Models::Team
     defaults(
       slack: -> { "my-alerts" },
-      email: -> { "my-team@exmaple.com" }
+      email: -> { "my-team@example.com" }
     )
   end
 end
@@ -87,9 +87,9 @@ end
  - datadog is updated by travis
 
 ### Adding a new dashboard
- - go to [datadog dashboard UI](https://app.datadoghq.com/dash/list) and click on _New Dashboard_ to create a dashboard
+ - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard
  - get the `id` from the url
- - `RESOURCE=dash ID=12345 bundle exec rake kennel:import`
+ - `RESOURCE=dashboard ID=abc-def-ghi bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing dashboard
@@ -101,13 +101,14 @@ end
       team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/
       parts: -> {
         [
-          Kennel::Models::Dash.new(
+          Kennel::Models::Dashboard.new(
             self,
-            id: -> { 123457 }, # id from datadog url, not needed when creating a new dashboard
+            id: -> { "abc-def-ghi" }, # id from datadog url, not needed when creating a new dashboard
             title: -> { "My Dashboard" },
             description: -> { "Overview of foobar" },
             template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
             kennel_id: -> { "overview-dashboard" }, # make up a unique name
+            layout_type: -> { "ordered" },
             definitions: -> {
               [ # An array or arrays, each one is a graph in the dashboard, alternatively a hash for finer control
                 [
@@ -130,23 +131,6 @@ end
   end
  ```
 
-### Adding a new screenboard
- - similar to `dash.rb`
- - add to `parts:` list
-  ```Ruby
-  Kennel::Models::Screen.new(
-    self,
-    board_title: -> { "test-board" },
-    kennel_id: -> { "test-screen" },
-    widgets: -> {
-      [
-        {text: "Hello World", height: 6, width: 24, x: 0, y: 0, type: "free_text"},
-        {title_text: "CPU", height: 12, width: 36, timeframe: "1mo", x: 0, y: 6, type: "timeseries", tile_def: {viz: "timeseries", requests: [{q: "avg:system.cpu.user{*}", type: "line"}]}}
-      ]
-    }
-  )
- ```
-
 ### Skipping validations
 
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
@@ -165,7 +149,7 @@ To link to existing monitors via their kennel_id
  - figure out project name by converting the class name to snake-case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
 
-### Listing umuted alerts
+### Listing un-muted alerts
 
 Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
 

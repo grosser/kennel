@@ -9,9 +9,27 @@ module Kennel
     private
 
     def render_template_variables
-      template_variables.map do |v|
+      (template_variables || []).map do |v|
         v.is_a?(String) ? { default: "*", prefix: v, name: v } : v
       end
+    end
+
+    # check for queries that do not use the variables and would be misleading
+    # TODO: do the same check for apm_query and their group_by
+    def validate_template_variables(data, key)
+      variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
+      queries = data[key].flat_map do |widget|
+        ([widget] + (widget.dig(:definition, :widgets) || [])).flat_map { |w| widget_queries(w) }
+      end.compact
+      bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
+      if bad.any?
+        invalid! "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}"
+      end
+    end
+
+    def widget_queries(widget)
+      requests = widget.dig(:definition, :requests) || []
+      (requests.is_a?(Hash) ? requests.values : requests).map { |r| r[:q] } # hostmap widgets have hash requests
     end
   end
 end

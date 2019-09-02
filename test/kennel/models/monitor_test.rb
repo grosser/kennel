@@ -113,6 +113,11 @@ describe Kennel::Models::Monitor do
       end
     end
 
+    it "does not set thresholds for composite monitors" do
+      json = monitor(critical: -> { raise }, query: -> { "1 || 2" }, type: -> { "composite" }).as_json
+      refute json[:options].key?(:thresholds)
+    end
+
     it "fills default values for service check ok/warning" do
       json = monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
       json.dig(:options, :thresholds, :ok).must_equal 1
@@ -124,8 +129,17 @@ describe Kennel::Models::Monitor do
       e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d"
     end
 
+    it "allows next_x interval for query alert type" do
+      monitor(critical: -> { 234.1 }, query: -> { "avg(next_20m).count() < #{critical}" }).as_json
+    end
+
     it "does not allow mismatching query and critical" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }).as_json }
+      e.message.must_equal "test_project:m1 critical and value used in query must match"
+    end
+
+    it "does not allow mismatching query and critical with >=" do
+      e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }).as_json }
       e.message.must_equal "test_project:m1 critical and value used in query must match"
     end
 
@@ -178,6 +192,10 @@ describe Kennel::Models::Monitor do
 
     it "can set evaluation_delay" do
       monitor(evaluation_delay: -> { 20 }).as_json.dig(:options, :evaluation_delay).must_equal 20
+    end
+
+    it "can set new_host_delay" do
+      monitor(new_host_delay: -> { 300 }).as_json.dig(:options, :new_host_delay).must_equal 300
     end
 
     it "can set threshold_windows" do

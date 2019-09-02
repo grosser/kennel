@@ -19,8 +19,7 @@ require "kennel/models/base"
 
 # parts
 require "kennel/models/monitor"
-require "kennel/models/dash"
-require "kennel/models/screen"
+require "kennel/models/dashboard"
 
 # settings
 require "kennel/models/project"

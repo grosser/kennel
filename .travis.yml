@@ -8,5 +8,5 @@ env:
   - TASK=integration
   - TASK=rubocop
   - TASK=readme
-before_install: gem install bundler --no-ri --no-rdoc
+before_install: ruby -e "File.write('Gemfile.lock', File.read('Gemfile.lock').split('BUNDLED WITH').first)"
 script: bundle exec rake $TASK

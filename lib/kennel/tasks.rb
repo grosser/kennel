@@ -50,7 +50,28 @@ namespace :kennel do
     Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
   end
 
-  desc "Covert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
+  desc "show monitors with no data by TAG, for example TAG=team:foo"
+  task nodata: :environment do
+    tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
+    monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
+    monitors.select! { |m| m[:overall_state] == "No Data" }
+    monitors.reject! { |m| m[:tags].include? ["nodata:ignore"] }
+    if monitors.any?
+      Kennel.err.puts <<~TEXT
+        This is a useful task to find monitors that have mis-spelled metrics or never received data at any time.
+        To ignore monitors with nodata, tag the monitor with "nodata:ignore"
+
+      TEXT
+    end
+
+    monitors.each do |m|
+      Kennel.out.puts m[:name]
+      Kennel.out.puts Kennel::Utils.path_to_url("/monitors/#{m[:id]}")
+      Kennel.out.puts
+    end
+  end
+
+  desc "Convert existing resources to copy-pastable definitions to import existing resources RESOURCE=dash ID=1234"
   task import: :environment do
     resource = ENV["RESOURCE"] || abort("Call with RESOURCE=dash") # TODO: add others
     id = ENV["ID"] || abort("Call with ID=1234")

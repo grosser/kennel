@@ -13,6 +13,7 @@ module Kennel
       # defaults that datadog uses when options are not sent, so safe to leave out if our values match their defaults
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
+        new_host_delay: 300,
         timeout_h: 0,
         renotify_interval: 120,
         no_data_timeframe: nil # this works out ok since if notify_no_data is on, it would never be nil
@@ -22,7 +23,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows
+        :threshold_windows, :new_host_delay
       )
 
       defaults(
@@ -35,6 +36,7 @@ module Kennel
         notify_no_data: -> { true },
         no_data_timeframe: -> { notify_no_data ? 60 : nil },
         notify_audit: -> { true },
+        new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -64,37 +66,37 @@ module Kennel
             no_data_timeframe: no_data_timeframe,
             notify_audit: notify_audit,
             require_full_window: require_full_window,
-            new_host_delay: 300,
+            new_host_delay: new_host_delay,
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
-            renotify_interval: renotify_interval || 0,
-            thresholds: {
-              critical: critical
-            }
+            renotify_interval: renotify_interval || 0
           }
         }
 
-        options = data[:options]
-        thresholds = options[:thresholds]
-
         data[:id] = id if id
 
-        # warning, ok, critical_recovery, and warning_recovery are optional
-        [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
-          if value = send(key)
-            thresholds[key] = value
-          end
-        end
+        options = data[:options]
+        if data.fetch(:type) != "composite"
+          thresholds = (options[:thresholds] = { critical: critical })
 
-        case data.fetch(:type)
-        when "service check"
-          # avoid diff for default values of 1
-          OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
-        when "query alert"
-          # metric and query values are stored as float by datadog
-          thresholds.each { |k, v| thresholds[k] = Float(v) }
+          # warning, ok, critical_recovery, and warning_recovery are optional
+          [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
+            if value = send(key)
+              thresholds[key] = value
+            end
+          end
+
+          thresholds[:critical] = critical unless
+          case data.fetch(:type)
+          when "service check"
+            # avoid diff for default values of 1
+            OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
+          when "query alert"
+            # metric and query values are stored as float by datadog
+            thresholds.each { |k, v| thresholds[k] = Float(v) }
+          end
         end
 
         if windows = threshold_windows
@@ -167,7 +169,7 @@ module Kennel
         end
 
         # verify query includes critical value
-        if query_value = data.fetch(:query)[/\s*[<>]\s*(\d+(\.\d+)?)\s*$/, 1]
+        if query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
             invalid! "critical and value used in query must match"
           end
@@ -181,7 +183,7 @@ module Kennel
         if type == "query alert"
           # verify interval is valud
           interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
-          unless QUERY_INTERVALS.include?(interval)
+          if interval && !QUERY_INTERVALS.include?(interval)
             invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
           end
         end

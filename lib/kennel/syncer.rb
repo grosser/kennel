@@ -72,11 +72,22 @@ module Kennel
         filter_by_project! actual
 
         details_cache do |cache|
-          actual.each do |a|
-            id = a.fetch(:id)
+          items = actual.map do |a|
+            e = matching_expected(a)
+            if e && @expected.delete(e)
+              [e, a]
+            else
+              [nil, a]
+            end
+          end
 
-            if e = delete_matching_expected(a)
-              fill_details(a, cache) if e.class::API_LIST_INCOMPLETE
+          # fill details of things we need to compare (only do this part in parallel for safety & balancing)
+          Utils.parallel(items.select { |e, _| e && e.class::API_LIST_INCOMPLETE }) { |_, a| fill_details(a, cache) }
+
+          # pick out things to update or delete
+          items.each do |e, a|
+            id = a.fetch(:id)
+            if e
               diff = e.diff(a)
               @update << [id, e, a, diff] if diff.any?
             elsif tracking_id(a) # was previously managed
@@ -94,7 +105,7 @@ module Kennel
     def fill_details(a, cache)
       resource = a.fetch(:api_resource)
       args = [resource, a.fetch(:id)]
-      full = cache.fetch(args, a.fetch(:modified)) do
+      full = cache.fetch(args, a[:modified] || a.fetch(:modified_at)) do
         unnest(resource, @api.show(*args))
       end
       a.merge!(full)
@@ -117,13 +128,9 @@ module Kennel
       end
 
       Utils.parallel(api_resources.compact.uniq) do |api_resource|
-        # lookup monitors without adding unnecessary downtime information
-        results = @api.list(api_resource, with_downtimes: false)
-        if results.is_a?(Hash)
-          results = results[results.keys.first]
-          results.each { |r| r[:id] = Integer(r.fetch(:id)) }
-        end
-        results.each { |c| c[:api_resource] = api_resource }
+        results = @api.list(api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+        results = results[results.keys.first] if results.is_a?(Hash) # dashes/screens are nested in {dash: {}}
+        results.each { |c| c[:api_resource] = api_resource } # store api resource for later diffing
       end.flatten(1)
     end
 
@@ -134,7 +141,7 @@ module Kennel
       end
     end
 
-    def delete_matching_expected(a)
+    def matching_expected(a)
       # index list by all the thing we look up by: tracking id and actual id
       @lookup_map ||= @expected.each_with_object({}) do |e, all|
         keys = [tracking_id(e.as_json)]
@@ -145,8 +152,7 @@ module Kennel
         end
       end
 
-      e = @lookup_map["#{a.fetch(:api_resource)}:#{a.fetch(:id)}"] || @lookup_map[tracking_id(a)]
-      @expected.delete(e) if e
+      @lookup_map["#{a.fetch(:api_resource)}:#{a.fetch(:id)}"] || @lookup_map[tracking_id(a)]
     end
 
     def print_plan(step, list, color)
