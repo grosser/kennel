@@ -21,6 +21,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
     mv seed/teamplate/* kennel/
     cd kennel && git add . && git commit -m 'initial'
     ```
+ - `docker build .` if you want to use docker
  - add a basic projects and teams so others can copy-paste to get started
  - setup travis build for your repo
  - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
