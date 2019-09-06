@@ -228,7 +228,6 @@ describe Kennel::Models::Monitor do
   end
 
   describe "#resolve_linked_tracking_ids" do
-
     let(:mon) do
       monitor(query: -> { "%{#{project.kennel_id}:mon}" })
     end
