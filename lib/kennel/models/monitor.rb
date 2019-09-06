@@ -109,7 +109,7 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids(id_map)
-        if as_json.fetch(:type) == "composite"
+        if as_json[:type] == "composite"
           begin
             as_json[:query].gsub!(/%\{(.*?)\}/) { id_map.fetch($1) }
           rescue KeyError => e
