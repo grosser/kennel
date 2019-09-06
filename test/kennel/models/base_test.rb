@@ -122,6 +122,28 @@ describe Kennel::Models::Base do
     end
   end
 
+  describe "#resolve_link" do
+    let(:base) { Kennel::Models::Monitor.new(TestProject.new, kennel_id: -> { "test" }) }
+
+    it "resolves" do
+      base.send(:resolve_link, "foo", { "foo" => 1 }, force: false).must_equal 1
+    end
+
+    it "fails with warning" do
+      err = Kennel::Utils.capture_stderr do
+        base.send(:resolve_link, "bar", { "foo" => 1 }, force: false).must_be_nil
+      end
+      err.must_include "Unable to find bar in existing monitors"
+    end
+
+    it "fails with error" do
+      e = assert_raises Kennel::Models::Base::ValidationError do
+        base.send(:resolve_link, "bar", { "foo" => 1 }, force: true)
+      end
+      e.message.must_include "Unable to find bar in existing monitors"
+    end
+  end
+
   describe ".ignore_request_defaults" do
     let(:valid) { { a: [{ b: { requests: [{ c: 1 }] } }] } }
 

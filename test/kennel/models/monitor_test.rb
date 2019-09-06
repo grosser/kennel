@@ -239,20 +239,19 @@ describe Kennel::Models::Monitor do
 
     describe "composite monitor" do
       let(:mon) do
-        monitor(type: -> { "composite" }, query: -> { "%{#{project.kennel_id}:mon}" })
+        monitor(type: -> { "composite" }, query: -> { "%{foo:mon_a} || !%{bar:mon_b}" })
       end
 
-      it "does not fail hard when matching monitor is missing" do
-        err = Kennel::Utils.capture_stderr do
+      it "fails when matching monitor is missing" do
+        e = assert_raises Kennel::Models::Base::ValidationError do
           mon.resolve_linked_tracking_ids({})
-          mon.as_json[:query].must_equal("%{#{project.kennel_id}:mon}")
         end
-        err.must_include "Unable to find #{project.kennel_id}:mon in existing monitors"
+        e.message.must_include "Unable to find foo:mon_a in existing monitors"
       end
 
       it "resolves correctly with a matching monitor" do
-        mon.resolve_linked_tracking_ids("#{project.kennel_id}:mon" => 42)
-        mon.as_json[:query].must_equal("42")
+        mon.resolve_linked_tracking_ids("foo:mon_x" => 3, "foo:mon_a" => 1, "bar:mon_b" => 2)
+        mon.as_json[:query].must_equal("1 || !2")
       end
     end
   end
