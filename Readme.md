@@ -160,6 +160,7 @@ To link to existing monitors via their kennel_id
 
  - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
  - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
+ - Monitors `composite` can use `query: -> { "%{foo:bar} || %{foo:baz}" }`
 
 ### Debugging changes locally
 
