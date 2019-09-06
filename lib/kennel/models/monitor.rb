@@ -108,6 +108,16 @@ module Kennel
         @as_json = data
       end
 
+      def resolve_linked_tracking_ids(id_map)
+        if as_json.fetch(:type) == "composite"
+          begin
+            as_json[:query].gsub!(/%\{(.*?)\}/) { id_map.fetch($1) }
+          rescue KeyError => e
+            Kennel.err.puts("Unable to find #{e.key} in existing monitors (they need to be created first to link them)")
+          end
+        end
+      end
+
       def self.api_resource
         "monitor"
       end

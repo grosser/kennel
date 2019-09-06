@@ -227,6 +227,37 @@ describe Kennel::Models::Monitor do
     end
   end
 
+  describe "#resolve_linked_tracking_ids" do
+
+    let(:mon) do
+      monitor(query: -> { "%{#{project.kennel_id}:mon}" })
+    end
+
+    it "does nothing for regular monitors" do
+      mon.resolve_linked_tracking_ids({})
+      mon.as_json[:query].must_equal "%{#{project.kennel_id}:mon}"
+    end
+
+    describe "composite monitor" do
+      let(:mon) do
+        monitor(type: -> { "composite" }, query: -> { "%{#{project.kennel_id}:mon}" })
+      end
+
+      it "does not fail hard when matching monitor is missing" do
+        err = Kennel::Utils.capture_stderr do
+          mon.resolve_linked_tracking_ids({})
+          mon.as_json[:query].must_equal("%{#{project.kennel_id}:mon}")
+        end
+        err.must_include "Unable to find #{project.kennel_id}:mon in existing monitors"
+      end
+
+      it "resolves correctly with a matching monitor" do
+        mon.resolve_linked_tracking_ids("#{project.kennel_id}:mon" => 42)
+        mon.as_json[:query].must_equal("42")
+      end
+    end
+  end
+
   describe "#diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
