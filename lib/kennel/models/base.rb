@@ -148,6 +148,13 @@ module Kennel
 
       private
 
+      def resolve_link(id, id_map, force:)
+        id_map[id] || begin
+          message = "Unable to find #{id} in existing monitors (they need to be created first to link them)"
+          force ? invalid!(message) : Kennel.err.puts(message)
+        end
+      end
+
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)
         raise ValidationError, "#{tracking_id} #{message}"

@@ -101,17 +101,23 @@ module Kennel
           case definition[:type]
           when "uptime"
             if ids = definition[:monitor_ids]
-              definition[:monitor_ids] = ids.map { |id| resolve_link(id, id_map) }
+              definition[:monitor_ids] = ids.map do |id|
+                tracking_id?(id) ? resolve_link(id, id_map, force: false) : id
+              end
             end
           when "alert_graph"
-            if id = definition[:alert_id]
-              definition[:alert_id] = resolve_link(id, id_map).to_s
+            if (id = definition[:alert_id]) && tracking_id?(id)
+              definition[:alert_id] = resolve_link(id, id_map, force: false).to_s
             end
           end
         end
       end
 
       private
+
+      def tracking_id?(id)
+        id.is_a?(String) && !id.match?(/\A\d+\z/)
+      end
 
       # creates queries from metadata to avoid having to keep q and expression in sync
       #
@@ -125,16 +131,6 @@ module Kennel
             request[:q] = request.fetch(:metadata).map { |m| m.fetch(:expression) }.join(", ")
           end
         end
-      end
-
-      def resolve_link(id, id_map)
-        return id unless tracking_id?(id)
-        id_map[id] ||
-          Kennel.err.puts("Unable to find #{id} in existing monitors (they need to be created first to link them)")
-      end
-
-      def tracking_id?(id)
-        id.is_a?(String) && !id.match?(/\A\d+\z/)
       end
 
       def validate_json(data)
