@@ -43,7 +43,7 @@ describe Kennel::Models::Monitor do
         escalation_message: nil,
         evaluation_delay: nil,
         locked: false,
-        renotify_interval: 120,
+        renotify_interval: 0,
         thresholds: { critical: 123.0 }
       }
     }
@@ -95,6 +95,10 @@ describe Kennel::Models::Monitor do
 
     it "sets 0 when re-notify is disabled" do
       monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
+    end
+
+    it "can set re-notify interval" do
+      monitor(renotify_interval: -> { 60 }).as_json[:options][:renotify_interval].must_equal 60
     end
 
     it "can set require_full_window" do

@@ -154,6 +154,12 @@ end
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
+### Monitor re-notification
+
+Monitors inherit the re-notification setting from their `project.team`.
+Set this to for example `renotify_interval: -> { 120 }` minutes,
+to make alerts not get ignored by popping back up if they are still alerting.
+
 ### Linking with kennel_ids
 
 To link to existing monitors via their kennel_id

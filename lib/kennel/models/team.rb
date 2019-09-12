@@ -2,9 +2,10 @@
 module Kennel
   module Models
     class Team < Base
-      settings :slack, :email, :tags, :kennel_id
+      settings :slack, :email, :tags, :renotify_interval, :kennel_id
       defaults(
-        tags: -> { ["team:#{kennel_id.sub(/^teams_/, "")}"] }
+        tags: -> { ["team:#{kennel_id.sub(/^teams_/, "")}"] },
+        renotify_interval: -> { 0 }
       )
 
       def initialize(*)
