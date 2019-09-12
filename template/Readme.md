@@ -25,8 +25,9 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - `gem install bundler && bundle install`
  - `cp .env.example .env`
  - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
- - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
  - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
+ - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
+ - change the `DATADOG_SUBDOMAIN=app` in `.env` to your companies subdomain if you have one
 
 ### Adding a team
 
@@ -35,8 +36,8 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 module Teams
   class MyTeam < Kennel::Models::Team
     defaults(
-      slack: -> { "my-alerts" },
-      email: -> { "my-team@example.com" }
+      slack: -> { "my-alerts" }, # where to send alerts
+      email: -> { "my-team@example.com" } # optional
     )
   end
 end
@@ -44,13 +45,14 @@ end
 
 ### Adding a new monitor
  - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
- - get the `id` from the url
- - `RESOURCE=monitor ID=12345 bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to find a monitor
+ - get the `id` from the url
+ - run `RESOURCE=monitor ID=12345 bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
- - add a monitor to `parts: [` list
+ - add the monitor to `parts: [` list, for example:
   ```Ruby
   # projects/my_project.rb
   class MyProject < Kennel::Models::Project
@@ -65,7 +67,8 @@ end
             kennel_id: -> { "load-too-high" }, # make up a unique name
             name: -> { "Foobar Load too high" }, # nice descriptive name that will show up in alerts and emails
             message: -> {
-              # Explain what behavior to expect and how to fix the cause. Use #{super()} to add team notifications.
+              # Explain what behavior to expect and how to fix the cause
+              # Use #{super()} to add team notifications.
               <<~TEXT
                 Foobar will be slow and that could cause Barfoo to go down.
                 Add capacity or debug why it is suddenly slow.
@@ -80,21 +83,22 @@ end
     )
   end
   ```
- - `bundle exec rake plan` update to existing should be shown (not Create / Delete)
- - alternatively: `bundle exec rake generate` to only update the generated `json` files
+ - run `PROJECT=my_project bundle exec rake plan`, an Update to the existing monitor should be shown (not Create / Delete)
+ - alternatively: `bundle exec rake generate` to only locally update the generated `json` files
  - review changes then `git commit`
  - make a PR ... get reviewed ... merge
  - datadog is updated by travis
 
 ### Adding a new dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard
- - get the `id` from the url
- - `RESOURCE=dashboard ID=abc-def-ghi bundle exec rake kennel:import`
  - see below
 
 ### Updating an existing dashboard
+ - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to find a dashboard
+ - get the `id` from the url
+ - run `RESOURCE=dashboard ID=abc-def-ghi bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
- - add a dashboard to `parts: [` list
+ - add a dashboard to `parts: [` list, for example:
   ```Ruby
   class MyProject < Kennel::Models::Project
     defaults(
@@ -138,8 +142,9 @@ to unblock use the `validate: -> { false }` option.
 
 ### Monitor re-notification
 
-Monitors inherit the re-notification setting from their projects team.
-By default this is `renotify_interval: -> { 120 }` minutes, which will make alerts not get ignored by popping back up.
+Monitors inherit the re-notification setting from their `project.team`.
+Set this to for example `renotify_interval: -> { 120 }` minutes,
+to make alerts not get ignored by popping back up if they are still alerting.
 
 ### Linking with kennel_ids
 
