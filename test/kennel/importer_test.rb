@@ -191,7 +191,8 @@ describe Kennel::Importer do
           id: -> { 123 },
           kennel_id: -> { "hello" },
           critical: -> { 25.0 },
-          notify_no_data: -> { false }
+          notify_no_data: -> { false },
+          renotify_interval: -> { 120 }
         )
       RUBY
     end

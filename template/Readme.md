@@ -136,12 +136,18 @@ end
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
+### Monitor re-notification
+
+Monitors inherit the re-notification setting from their projects team.
+By default this is `renotify_interval: -> { 120 }` minutes, which will make alerts not get ignored by popping back up.
+
 ### Linking with kennel_ids
 
 To link to existing monitors via their kennel_id
 
  - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
  - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
+ - Monitors `composite` can use `query: -> { "%{foo:bar} || %{foo:baz}" }`
 
 ### Debugging changes locally
 

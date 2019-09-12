@@ -15,7 +15,7 @@ module Kennel
         evaluation_delay: nil,
         new_host_delay: 300,
         timeout_h: 0,
-        renotify_interval: 120,
+        renotify_interval: 0,
         no_data_timeframe: nil # this works out ok since if notify_no_data is on, it would never be nil
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
@@ -29,7 +29,7 @@ module Kennel
       defaults(
         message: -> { "\n\n@slack-#{project.slack}" },
         escalation_message: -> { DEFAULT_ESCALATION_MESSAGE.first },
-        renotify_interval: -> { MONITOR_OPTION_DEFAULTS.fetch(:renotify_interval) },
+        renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
         id: -> { nil },
