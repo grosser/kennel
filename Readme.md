@@ -43,7 +43,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
  - `cp .env.example .env`
  - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
  - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
- - find or create your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=` (will be on the last page if new)
+ - find or create (check last page) your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=`
  - change the `DATADOG_SUBDOMAIN=app` in `.env` to your companies subdomain if you have one
 -->
 
