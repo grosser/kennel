@@ -27,7 +27,7 @@ module Kennel
       )
 
       defaults(
-        message: -> { "\n\n@slack-#{project.slack}" },
+        message: -> { "\n\n#{project.mention}" },
         escalation_message: -> { DEFAULT_ESCALATION_MESSAGE.first },
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },

@@ -190,8 +190,8 @@ describe Kennel::Models::Monitor do
       monitor(query: -> { " avg(last_5m) > 123.0 " }).as_json.dig(:query).must_equal "avg(last_5m) > 123.0"
     end
 
-    it "can set slack on the project" do
-      monitor(project: TestProject.new(slack: -> { "project" })).as_json[:message].must_equal "@slack-project"
+    it "can set mention on the project" do
+      monitor(project: TestProject.new(mention: -> { "@slack-project" })).as_json[:message].must_equal "@slack-project"
     end
 
     it "can set evaluation_delay" do

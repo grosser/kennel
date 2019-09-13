@@ -14,12 +14,6 @@ describe Kennel::Models::Team do
     end
   end
 
-  describe "#slack" do
-    it "is invalid when using leading #" do
-      assert_raises(Kennel::Models::Base::ValidationError) { Teams::MyTeam.new(slack: -> { "#foo" }) }
-    end
-  end
-
   describe "#renotify_interval" do
     it "is set to datadogs default" do
       Teams::MyTeam.new.renotify_interval.must_equal 0

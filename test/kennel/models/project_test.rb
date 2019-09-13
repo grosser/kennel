@@ -16,9 +16,9 @@ describe Kennel::Models::Project do
     end
   end
 
-  describe "#slack" do
-    it "uses teams slack" do
-      TestProject.new.slack.must_equal "foo"
+  describe "#mention" do
+    it "uses teams mention" do
+      TestProject.new.mention.must_equal "@slack-foo"
     end
   end
 end

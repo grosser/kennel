@@ -28,8 +28,7 @@ module IntegrationHelper
       module Teams
         class MyTeam < Kennel::Models::Team
           defaults(
-            slack: -> { "my-alerts" },
-            email: -> { "my-team@example.com" }
+            mention: -> { "@slack-my-alerts" }
           )
         end
       end
@@ -43,7 +42,7 @@ module IntegrationHelper
                 self,
                 type: -> { "query alert" },
                 kennel_id: -> { "load-too-high" }, # make up a unique name
-                name: -> { "My Kennel Test Monitor" }, # nice descriptive name that will show up in alerts and emails
+                name: -> { "My Kennel Test Monitor" }, # nice descriptive name that will show up in alerts
                 message: -> {
                   <<~TEXT
                     Foobar will be slow and that could cause Barfoo to go down.

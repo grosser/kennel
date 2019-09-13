@@ -26,12 +26,12 @@ class SubTestProject < TestProject
 end
 
 class TestTeam < Kennel::Models::Team
-  defaults(slack: -> { "foo" })
+  defaults(mention: -> { "@slack-foo" })
 end
 
 module Teams
   class MyTeam < Kennel::Models::Team
-    defaults(slack: -> { "my" })
+    defaults(mention: -> { "@slack-my" })
   end
 end
 
