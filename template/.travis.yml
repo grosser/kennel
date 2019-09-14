@@ -12,6 +12,8 @@ matrix:
   include:
     # Ensure there is no diff between generated and actual
     - env: TASK="kennel:no_diff"
+    # Ensure all used mentions actually exist (can remove false-positives with KNOWN="@foo[,@bar,...]")
+    - env: TASK="kennel:validate_mentions"
     # automated planing and updating for PRs
     # fill this out with datadog credentials and a github token of a user that can access your repo
 #   - env:

@@ -12,6 +12,35 @@ namespace :kennel do
     abort "Error during diffing" unless $CHILD_STATUS.success?
   end
 
+  # ideally do this on every run, but it's slow (~1.5s) and brittle (might not find all + might find false-positives)
+  # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
+  desc "Verify that all used monitor  mentions are valid"
+  task validate_mentions: :environment do
+    known = Kennel.send(:api)
+      .send(:request, :get, "/monitor/notifications")
+      .fetch(:handles)
+      .values
+      .flatten(1)
+      .map { |v| v.fetch(:value) }
+
+    known += ENV["KNOWN"].to_s.split(",")
+
+    bad = []
+    Dir["generated/**/*.json"].each do |f|
+      next unless message = JSON.parse(File.read(f))["message"]
+      used = message.scan(/\s(@[^\s{,'"]+)/).flatten(1)
+        .grep(/^@.*@|^@.*-/) # ignore @here etc handles ... datadog uses @foo@bar.com for emails and @foo-bar for integrations
+      (used - known).each { |v| bad << [f, v] }
+    end
+
+    if bad.any?
+      subdomain = ENV["DATADOG_SUBDOMAIN"]
+      url = (subdomain ? "https://zendesk.datadoghq.com" : "") + "/account/settings"
+      puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
+      bad.each { |f, v| puts "Invalid mention #{v} in monitor message of #{f}" }
+    end
+  end
+
   desc "generate local definitions"
   task generate: :environment do
     Kennel.generate

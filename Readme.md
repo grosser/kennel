@@ -179,6 +179,10 @@ To link to existing monitors via their kennel_id
 
 Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
 
+### Validating mentions work
+
+`rake kennel:validate_mentions` should run as part of CI
+
 ## Examples
 
 ### Reusable monitors/dashes/etc
