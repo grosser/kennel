@@ -38,6 +38,7 @@ namespace :kennel do
       url = (subdomain ? "https://zendesk.datadoghq.com" : "") + "/account/settings"
       puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
       bad.each { |f, v| puts "Invalid mention #{v} in monitor message of #{f}" }
+      abort
     end
   end
 
