@@ -47,11 +47,11 @@ end
 ```
 
 ### Adding a new monitor
- - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors#create) to create a monitor
  - see below
 
 ### Updating an existing monitor
- - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to find a monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors/manage) to find a monitor
  - get the `id` from the url
  - run `RESOURCE=monitor ID=12345 bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
@@ -160,6 +160,10 @@ To link to existing monitors via their kennel_id
 ### Listing un-muted alerts
 
 Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
+
+### Validating mentions work
+
+`rake kennel:validate_mentions` should run as part of CI
 
 ## Examples
 

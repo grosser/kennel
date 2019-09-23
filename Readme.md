@@ -65,11 +65,11 @@ end
 ```
 
 ### Adding a new monitor
- - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to create a monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors#create) to create a monitor
  - see below
 
 ### Updating an existing monitor
- - use [datadog monitor UI](https://app.datadoghq.com/monitors#create/metric) to find a monitor
+ - use [datadog monitor UI](https://app.datadoghq.com/monitors/manage) to find a monitor
  - get the `id` from the url
  - run `RESOURCE=monitor ID=12345 bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
