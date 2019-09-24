@@ -53,6 +53,8 @@ module Kennel
         if query && critical
           query.sub!(/([><=]) (#{Regexp.escape(critical.to_f.to_s)}|#{Regexp.escape(critical.to_i.to_s)})$/, "\\1 \#{critical}")
         end
+
+        data[:type] = "query alert" if data[:type] == "metric alert"
       elsif resource == "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
         widgets&.each { |widget| dry_up_query!(widget) }

@@ -101,6 +101,22 @@ describe Kennel::Importer do
       RUBY
     end
 
+    # request to automate this that got ignored https://help.datadoghq.com/hc/en-us/requests/256724
+    it "converts deprecated metric alert monitor type" do
+      response = { id: 123, name: "hello", type: "metric alert", options: {} }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          type: -> { "query alert" }
+        )
+      RUBY
+    end
+
     it "removes lock so we do not double it" do
       response = { id: 123, name: "hello#{Kennel::Models::Base::LOCK}", options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
