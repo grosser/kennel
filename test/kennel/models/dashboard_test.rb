@@ -187,6 +187,11 @@ describe Kennel::Models::Dashboard do
       dashboard.diff(expected_json).must_equal []
     end
 
+    it "always sets template variables, since not setting them makes them nil on datadog side" do
+      expected_json.delete :template_variables
+      dashboard.diff(expected_json).must_equal [["+", "template_variables", []]]
+    end
+
     it "ignores author_*" do
       dashboard.diff(expected_json.merge(author_handle: "a", author_name: "b")).must_equal []
     end

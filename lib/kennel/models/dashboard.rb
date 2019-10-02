@@ -32,8 +32,6 @@ module Kennel
         def normalize(expected, actual)
           super
 
-          ignore_default expected, actual, DASHBOARD_DEFAULTS
-
           base_pairs(expected, actual).each do |pair|
             # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
             pair.each do |b|
