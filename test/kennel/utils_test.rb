@@ -217,4 +217,18 @@ describe Kennel::Utils do
       end.must_equal [:a, :a, :a]
     end
   end
+
+  describe ".all_keys" do
+    it "finds keys for hash" do
+      Kennel::Utils.all_keys(foo: 1).must_equal [:foo]
+    end
+
+    it "finds keys for hash in array" do
+      Kennel::Utils.all_keys([{ foo: 1 }]).must_equal [:foo]
+    end
+
+    it "finds keys for multiple" do
+      Kennel::Utils.all_keys([{ foo: 1 }, [[[{ bar: 2 }]]]]).must_equal [:foo, :bar]
+    end
+  end
 end

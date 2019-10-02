@@ -13,20 +13,6 @@ describe Kennel::OptionalValidations do
     TestVariables.new(validate: -> { false }, project: -> { TestProject.new }).validate.must_equal false
   end
 
-  describe ".all_keys" do
-    it "finds keys for hash" do
-      Kennel::OptionalValidations.all_keys(foo: 1).must_equal [:foo]
-    end
-
-    it "finds keys for hash in array" do
-      Kennel::OptionalValidations.all_keys([{ foo: 1 }]).must_equal [:foo]
-    end
-
-    it "finds keys for multiple" do
-      Kennel::OptionalValidations.all_keys([{ foo: 1 }, [[[{ bar: 2 }]]]]).must_equal [:foo, :bar]
-    end
-  end
-
   describe "#validate_json" do
     it "ignores valid" do
       TestVariables.new(project: -> { TestProject.new }).send(:validate_json, a: 1, b: [{ c: 1 }])
