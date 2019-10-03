@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module Models
-    class Monitor < Base
+    class Monitor < Record
       include OptionalValidations
 
       API_LIST_INCOMPLETE = false

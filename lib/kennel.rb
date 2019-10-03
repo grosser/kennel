@@ -16,8 +16,9 @@ require "kennel/optional_validations"
 require "kennel/unmuted_alerts"
 
 require "kennel/models/base"
+require "kennel/models/record"
 
-# parts
+# records
 require "kennel/models/monitor"
 require "kennel/models/dashboard"
 

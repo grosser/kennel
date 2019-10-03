@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module Models
-    class Dashboard < Base
+    class Dashboard < Record
       include TemplateVariables
       include OptionalValidations
 
