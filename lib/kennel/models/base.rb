@@ -14,53 +14,15 @@ module Kennel
         conditional_formats: [],
         aggregator: "avg"
       }.freeze
-      OVERRIDABLE_METHODS = [:name, :kennel_id].freeze
+      SETTING_OVERRIDABLE_METHODS = [:name, :kennel_id].freeze
 
       class ValidationError < RuntimeError
       end
 
+      extend SubclassTracking
+      include SettingsAsMethods
+
       class << self
-        include SubclassTracking
-
-        def settings(*names)
-          duplicates = (@set & names)
-          if duplicates.any?
-            raise ArgumentError, "Settings #{duplicates.map(&:inspect).join(", ")} are already defined"
-          end
-
-          overrides = ((instance_methods - OVERRIDABLE_METHODS) & names)
-          if overrides.any?
-            raise ArgumentError, "Settings #{overrides.map(&:inspect).join(", ")} are already used as methods"
-          end
-
-          @set.concat names
-          names.each do |name|
-            next if method_defined?(name)
-            define_method name do
-              message = "Trying to call #{name} for #{self.class} but it was never set or passed as option"
-              raise_with_location ArgumentError, message
-            end
-          end
-        end
-
-        def defaults(options)
-          options.each do |name, block|
-            validate_setting_exists name
-            define_method name, &block
-          end
-        end
-
-        def inherited(child)
-          super
-          child.instance_variable_set(:@set, (@set || []).dup)
-        end
-
-        def validate_setting_exists(name)
-          return if !@set || @set.include?(name)
-          supported = @set.map(&:inspect)
-          raise ArgumentError, "Unsupported setting #{name.inspect}, supported settings are #{supported.join(", ")}"
-        end
-
         private
 
         def normalize(_expected, actual)
@@ -97,29 +59,17 @@ module Kennel
         end
       end
 
-      def initialize(options = {})
-        validate_options(options)
-
-        options.each do |name, block|
-          self.class.validate_setting_exists name
-          define_singleton_method name, &block
-        end
-
-        # need expand_path so it works wih rake and when run individually
-        pwd = /^#{Regexp.escape(Dir.pwd)}\//
-        @invocation_location = caller.detect do |l|
-          if found = File.expand_path(l).sub!(pwd, "")
-            break found
-          end
-        end
-      end
-
       def kennel_id
         name = self.class.name
         if name.start_with?("Kennel::")
           raise_with_location ArgumentError, "Set :kennel_id"
         end
         @kennel_id ||= Utils.snake_case name
+      end
+
+      def raise_with_location(error, message)
+        message += " for project #{project.kennel_id}" if defined?(project)
+        super error, message
       end
 
       def name
@@ -158,23 +108,6 @@ module Kennel
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)
         raise ValidationError, "#{tracking_id} #{message}"
-      end
-
-      def raise_with_location(error, message)
-        message = message.dup
-        message << " for project #{project.kennel_id}" if defined?(project)
-        message << " on #{@invocation_location}" if @invocation_location
-        raise error, message
-      end
-
-      def validate_options(options)
-        unless options.is_a?(Hash)
-          raise ArgumentError, "Expected #{self.class.name}.new options to be a Hash, got a #{options.class}"
-        end
-        options.each do |k, v|
-          next if v.class == Proc
-          raise ArgumentError, "Expected #{self.class.name}.new option :#{k} to be Proc, for example `#{k}: -> { 12 }`"
-        end
       end
     end
   end
