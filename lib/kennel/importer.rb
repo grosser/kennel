@@ -28,7 +28,7 @@ module Kennel
 
       title_field = TITLES.detect { |f| data[f] }
       title = data.fetch(title_field)
-      title.tr!(Kennel::Models::Base::LOCK, "") # avoid double lock icon
+      title.tr!(Kennel::Models::Record::LOCK, "") # avoid double lock icon
 
       # calculate or reuse kennel_id
       # TODO: this is copy-pasted from syncer, need to find a nice way to reuse it

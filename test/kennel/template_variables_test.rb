@@ -4,18 +4,17 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::TemplateVariables do
-  class TestVariables < Kennel::Models::Base
+  class TestVariables < Kennel::Models::Record
     include Kennel::TemplateVariables
-    attr_accessor :project
   end
 
   it "adds settings" do
-    TestVariables.new(template_variables: -> { ["xxx"] }).template_variables.must_equal ["xxx"]
+    TestVariables.new(TestProject.new, template_variables: -> { ["xxx"] }).template_variables.must_equal ["xxx"]
   end
 
   describe "#render_template_variables" do
     def var(value)
-      TestVariables.new(template_variables: -> { value }).send(:render_template_variables)
+      TestVariables.new(TestProject.new, template_variables: -> { value }).send(:render_template_variables)
     end
 
     it "leaves empty alone" do
@@ -37,12 +36,9 @@ describe Kennel::TemplateVariables do
         template_variables: value.map { |v| { name: v } },
         graphs: list
       }
-      v = TestVariables.new(template_variables: -> { value })
-      v.project = project
+      v = TestVariables.new(TestProject.new, template_variables: -> { value })
       v.send(:validate_template_variables, data, :graphs)
     end
-
-    let(:project) { TestProject.new }
 
     it "is valid when empty" do
       validate [], []
@@ -57,19 +53,19 @@ describe Kennel::TemplateVariables do
     end
 
     it "is invalid when vars are not used" do
-      assert_raises Kennel::Models::Base::ValidationError do
+      assert_raises Kennel::Models::Record::ValidationError do
         validate ["a"], [{ definition: { requests: [{ q: "$b" }] } }]
       end
     end
 
     it "is invalid when nested vars are not used" do
-      assert_raises Kennel::Models::Base::ValidationError do
+      assert_raises Kennel::Models::Record::ValidationError do
         validate ["a"], [{ definition: { widgets: [{ definition: { requests: [{ q: "$b" }] } }] } }]
       end
     end
 
     it "works with hostmap widgets" do
-      assert_raises Kennel::Models::Base::ValidationError do
+      assert_raises Kennel::Models::Record::ValidationError do
         validate ["a"], [{ definition: { requests: { fill: { q: "x" } } } }]
       end
     end

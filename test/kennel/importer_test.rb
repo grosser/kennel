@@ -118,7 +118,7 @@ describe Kennel::Importer do
     end
 
     it "removes lock so we do not double it" do
-      response = { id: 123, name: "hello#{Kennel::Models::Base::LOCK}", options: {} }
+      response = { id: 123, name: "hello#{Kennel::Models::Record::LOCK}", options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       code = importer.import("monitor", 123)
       code.must_include 'name: -> { "hello" }'

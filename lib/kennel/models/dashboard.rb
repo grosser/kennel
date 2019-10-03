@@ -7,7 +7,7 @@ module Kennel
 
       API_LIST_INCOMPLETE = true
       DASHBOARD_DEFAULTS = { template_variables: [] }.freeze
-      READONLY_ATTRIBUTES = Base::READONLY_ATTRIBUTES + [
+      READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list
       ]
       REQUEST_DEFAULTS = {
@@ -60,13 +60,6 @@ module Kennel
           end
           result
         end
-      end
-
-      attr_reader :project
-
-      def initialize(project, *args)
-        @project = project
-        super(*args)
       end
 
       def as_json
