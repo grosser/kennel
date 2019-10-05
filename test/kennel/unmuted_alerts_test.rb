@@ -45,7 +45,7 @@ describe Kennel::UnmutedAlerts do
       Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
       Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([monitor])
       out = Kennel::Utils.capture_stdout do
-        Kennel::UnmutedAlerts.send(:print, nil, tag)
+        Kennel::UnmutedAlerts.send(:print, nil, tag, nil)
       end
       out.must_equal <<~TEXT
         monitor_name
@@ -60,9 +60,32 @@ describe Kennel::UnmutedAlerts do
     it "does not print alerts when there are no monitors" do
       Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([])
       out = Kennel::Utils.capture_stdout do
-        Kennel::UnmutedAlerts.send(:print, nil, tag)
+        Kennel::UnmutedAlerts.send(:print, nil, tag, nil)
       end
       out.must_equal "No unmuted alerts found\n"
+    end
+
+    it "filters alerts by scope" do
+      Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
+      Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([monitor])
+      out = Kennel::Utils.capture_stdout do
+        Kennel::UnmutedAlerts.send(:print, nil, tag, "pod:pod10")
+      end
+      out.must_equal <<~TEXT
+        monitor_name
+        /monitors/12345
+        \e[31mAlert\e[0m\tpod:pod10\t00:00:10
+
+      TEXT
+    end
+
+    it "does not print alerts when not in scope" do
+      Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
+      Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([monitor])
+      out = Kennel::Utils.capture_stdout do
+        Kennel::UnmutedAlerts.send(:print, nil, tag, "pod:pod999")
+      end
+      out.must_equal ""
     end
   end
 

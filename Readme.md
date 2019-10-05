@@ -175,9 +175,10 @@ To link to existing monitors via their kennel_id
  - figure out project name by converting the class name to snake-case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
 
-### Listing un-muted alerts
+### Listing unmuted alerts
 
-Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
+Run `rake kennel:alerts TAG=service:my-service SCOPE=scope` to see all un-muted alerts for a given datadog monitor tag.
+Scope is optional and can be omitted.
 
 ### Validating mentions work
 

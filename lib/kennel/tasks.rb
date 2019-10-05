@@ -77,7 +77,8 @@ namespace :kennel do
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
   task alerts: :environment do
     tag = ENV["TAG"] || abort("Call with TAG=foo:bar")
-    Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
+    scope = ENV["SCOPE"]
+    Kennel::UnmutedAlerts.print(Kennel.send(:api), tag, scope)
   end
 
   desc "show monitors with no data by TAG, for example TAG=team:foo"

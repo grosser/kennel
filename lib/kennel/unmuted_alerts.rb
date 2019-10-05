@@ -11,12 +11,16 @@ module Kennel
     }.freeze
 
     class << self
-      def print(api, tag)
+      def print(api, tag, scope)
         monitors = filtered_monitors(api, tag)
         if monitors.empty?
           Kennel.out.puts "No unmuted alerts found"
         else
           monitors.each do |m|
+            if scope
+              m[:state][:groups].select! { |g| g[:name].include?(scope) }
+            end
+            next if m[:state][:groups].empty?
             Kennel.out.puts m[:name]
             Kennel.out.puts Utils.path_to_url("/monitors/#{m[:id]}")
             m[:state][:groups].each do |g|
@@ -44,7 +48,7 @@ module Kennel
       end
 
       def filtered_monitors(api, tag)
-        # Download all monitors with given tag
+        # Download all monitors with given tag and scope
         monitors = Progress.progress("Downloading") do
           api.list("monitor", monitor_tags: tag, group_states: "all", with_downtimes: "true")
         end
