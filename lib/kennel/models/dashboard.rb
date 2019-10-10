@@ -15,13 +15,14 @@ module Kennel
       }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
-      settings :id, :title, :description, :definitions, :widgets, :kennel_id, :layout_type
+      settings :id, :title, :description, :definitions, :widgets, :kennel_id, :layout_type, :dashboard_list_id
 
       defaults(
         description: -> { "" },
         definitions: -> { [] },
         widgets: -> { [] },
-        id: -> { nil }
+        id: -> { nil },
+        dashboard_list_id: -> { "" }
       )
 
       class << self
@@ -76,6 +77,8 @@ module Kennel
         }
 
         @json[:id] = id if id
+
+        @json[:dashboard_list_id] = dashboard_list_id unless dashboard_list_id == ""
 
         validate_json(@json) if validate
 

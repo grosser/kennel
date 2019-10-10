@@ -62,6 +62,10 @@ describe Kennel::Models::Dashboard do
       dashboard(id: -> { "abc" }).as_json.must_equal expected_json.merge(id: "abc")
     end
 
+    it "adds dashboard_list_id when given" do
+      dashboard(dashboard_list_id: -> { "1337" }).as_json.must_equal expected_json.merge(dashboard_list_id: "1337")
+    end
+
     it "can resolve q from metadata" do
       expected_json_with_requests[:widgets][0][:definition][:requests][0][:metadata] = [{ expression: "foo" }]
       dashboard(
