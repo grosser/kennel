@@ -124,7 +124,7 @@ module Kennel
     def download_definitions
       Utils.parallel(Models::Record.subclasses.map(&:api_resource)) do |api_resource|
         results = @api.list(api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
-        results = results[results.keys.first] if results.is_a?(Hash) # dashes/screens are nested in {dash: {}}
+        results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
         results.each { |c| c[:api_resource] = api_resource } # store api resource for later diffing
       end.flatten(1)
     end
