@@ -108,6 +108,8 @@ module Kennel
             "\n#{pretty}\n  "
           elsif k == :message
             "\n    <<~TEXT\n#{v.each_line.map { |l| l.strip.empty? ? "\n" : "      #{l}" }.join}\n    TEXT\n  "
+          elsif k == :tags
+            " super() + #{v.inspect} "
           else
             " #{v.inspect} "
           end

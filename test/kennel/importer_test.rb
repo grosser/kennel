@@ -255,7 +255,7 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "hello" },
-          tags: -> { ["a", "b", "c"] }
+          tags: -> { super() + ["a", "b", "c"] }
         )
       RUBY
     end
