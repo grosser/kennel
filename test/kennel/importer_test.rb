@@ -134,7 +134,7 @@ describe Kennel::Importer do
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       code = importer.import("monitor", 123)
       code.must_include 'kennel_id: -> { "bar" }'
-      code.must_include "<<~TEXT\n      Heyho\n    TEXT"
+      code.must_include "<<~TEXT\n      Heyho\n      \#{super()}\n    TEXT"
     end
 
     it "can pick up tracking id without text" do
@@ -147,7 +147,7 @@ describe Kennel::Importer do
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       code = importer.import("monitor", 123)
       code.must_include 'kennel_id: -> { "bar" }'
-      code.must_include "<<~TEXT\n\n    TEXT"
+      code.must_include "<<~TEXT\n\n      \#{super()}\n    TEXT"
     end
 
     it "removes monitor default" do
@@ -276,6 +276,7 @@ describe Kennel::Importer do
 
 
               world
+              \#{super()}
             TEXT
           }
         )
