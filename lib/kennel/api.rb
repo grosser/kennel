@@ -18,7 +18,7 @@ module Kennel
 
     def create(api_resource, attributes)
       reply = request :post, "/api/v1/#{api_resource}", body: attributes
-      api_resource == "slo" ? reply.first : reply
+      api_resource == "slo" ? reply[:data].first : reply
     end
 
     def update(api_resource, id, attributes)

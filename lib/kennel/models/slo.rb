@@ -54,6 +54,12 @@ module Kennel
       def self.normalize(expected, actual)
         super
 
+        # remove readonly values
+        actual[:thresholds]&.each do |threshold|
+          threshold.delete(:warning_display)
+          threshold.delete(:target_display)
+        end
+
         # tags come in a semi-random order and order is never updated
         expected[:tags]&.sort!
         actual[:tags].sort!

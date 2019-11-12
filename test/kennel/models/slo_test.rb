@@ -124,5 +124,13 @@ describe Kennel::Models::Slo do
       expected.must_equal(tags: [])
       actual.must_equal(tags: [])
     end
+
+    it "ignores readonly display values" do
+      expected = { thresholds: [{ warning: 1.0 }], tags: [] }
+      actual = { thresholds: [{ warning: 1.0, warning_display: "1.00" }], tags: [] }
+      Kennel::Models::Slo.normalize(expected, actual)
+      expected.must_equal(thresholds: [{ warning: 1.0 }], tags: [])
+      actual.must_equal expected
+    end
   end
 end

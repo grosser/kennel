@@ -33,6 +33,14 @@ module Kennel
           super
 
           base_pairs(expected, actual).each do |pair|
+            # datadog always adds 2 to slo widget height
+            # need to check fir layout since some monitors have height/width in their definition
+            pair.dig(1, :widgets)&.each do |widget|
+              if widget.dig(:definition, :type) == "slo" && widget.dig(:layout, :height)
+                widget[:layout][:height] -= 2
+              end
+            end
+
             # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
             pair.each do |b|
               b[:widgets]&.each do |w|

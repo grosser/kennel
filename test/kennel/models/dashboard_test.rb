@@ -251,6 +251,13 @@ describe Kennel::Models::Dashboard do
 
       formats.must_equal old, "not in-place modified"
     end
+
+    it "compensates for datadog always adding +2 to slo widget height" do
+      dashboard = dashboard(widgets: -> { [{ definition: { type: "slo" }, layout: { height: 12 } }] })
+      dashboard.diff(
+        expected_json.merge(widgets: [{ definition: { type: "slo" }, layout: { height: 14 } }])
+      ).must_equal []
+    end
   end
 
   describe "#url" do

@@ -70,7 +70,7 @@ describe Kennel::Api do
     end
 
     it "unwraps slo array reply" do
-      stub_request(:post, "slo").to_return(body: [{ bar: "foo" }].to_json)
+      stub_request(:post, "slo").to_return(body: { data: [{ bar: "foo" }] }.to_json)
       api.create("slo", foo: "bar").must_equal bar: "foo"
     end
   end
