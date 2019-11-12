@@ -100,6 +100,10 @@ module Kennel
             if (id = definition[:alert_id]) && tracking_id?(id)
               definition[:alert_id] = resolve_link(id, id_map, force: false).to_s
             end
+          when "slo"
+            if (id = definition[:slo_id]) && tracking_id?(id)
+              definition[:slo_id] = resolve_link(id, id_map, force: false).to_s
+            end
           end
         end
       end

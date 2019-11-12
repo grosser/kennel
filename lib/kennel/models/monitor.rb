@@ -101,8 +101,6 @@ module Kennel
         @as_json = data
       end
 
-      # resolve composite monitors ... only works when referenced monitors already exist
-      # since leaving names or bad ids in the query breaks the monitor update
       def resolve_linked_tracking_ids(id_map)
         if as_json[:type] == "composite"
           as_json[:query] = as_json[:query].gsub(/%\{(.*?)\}/) do

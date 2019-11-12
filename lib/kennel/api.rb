@@ -8,7 +8,8 @@ module Kennel
     end
 
     def show(api_resource, id, params = {})
-      request :get, "/api/v1/#{api_resource}/#{id}", params: params
+      reply = request :get, "/api/v1/#{api_resource}/#{id}", params: params
+      api_resource == "slo" ? reply[:data] : reply
     end
 
     def list(api_resource, params = {})
@@ -16,7 +17,8 @@ module Kennel
     end
 
     def create(api_resource, attributes)
-      request :post, "/api/v1/#{api_resource}", body: attributes
+      reply = request :post, "/api/v1/#{api_resource}", body: attributes
+      api_resource == "slo" ? reply.first : reply
     end
 
     def update(api_resource, id, attributes)

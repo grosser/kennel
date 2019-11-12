@@ -18,6 +18,11 @@ describe Kennel::Api do
       api.show("monitor", 1234).must_equal bar: "foo"
     end
 
+    it "fetches slo" do
+      stub_request(:get, "slo/1234").to_return(body: { data: { bar: "foo" } }.to_json)
+      api.show("slo", "1234").must_equal bar: "foo"
+    end
+
     it "can pass params so external users can filter" do
       stub_request(:get, "monitor/1234", "&foo=bar")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
@@ -62,6 +67,11 @@ describe Kennel::Api do
         response:
         {\"bar\":\"foo\"}
       TEXT
+    end
+
+    it "unwraps slo array reply" do
+      stub_request(:post, "slo").to_return(body: [{ bar: "foo" }].to_json)
+      api.create("slo", foo: "bar").must_equal bar: "foo"
     end
   end
 
