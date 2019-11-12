@@ -54,6 +54,21 @@ describe Kennel::Syncer do
     dash
   end
 
+  def slo(pid, cid, extra = {})
+    dash = Kennel::Models::Slo.new(
+      project(pid),
+      name: -> { "x" },
+      description: -> { "x" },
+      type: -> { "metric" },
+      kennel_id: -> { cid },
+      id: -> { extra[:id]&.to_s },
+      thresholds: -> { [] }
+    )
+    # dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
+    dash.as_json.merge!(extra)
+    dash
+  end
+
   def add_identical
     expected << monitor("a", "b")
     monitors << component("a", "b")
@@ -61,24 +76,24 @@ describe Kennel::Syncer do
 
   let(:api) { stub("Api") }
   let(:monitors) { [] }
-  let(:dashes) { [] }
-  let(:dashboards) { [] } # TODO: individual dashboards use modified_at
+  let(:dashboards) { [] }
+  let(:slos) { [] }
   let(:expected) { [] }
   let(:project_filter) { nil }
   let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter) }
 
   before do
     Kennel::Progress.stubs(:print).yields
-    api.stubs(:list).with("monitor", anything).returns(monitors)
-    api.stubs(:list).with("dash", anything).returns(dashes: dashes)
     api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
+    api.stubs(:list).with("monitor", anything).returns(monitors)
+    api.stubs(:list).with("slo", anything).returns(data: slos)
   end
 
   capture_all # TODO: pass an IO to syncer so we don't have to capture all output
 
   describe "#plan" do
     let(:output) do
-      (monitors + dashes).each { |m| m[:id] ||= 123 } # existing components always have an id
+      (monitors + dashboards).each { |m| m[:id] ||= 123 } # existing components always have an id
       syncer.plan
       stdout.string.gsub(/\e\[\d+m(.*)\e\[0m/, "\\1") # remove colors
     end
@@ -245,6 +260,21 @@ describe Kennel::Syncer do
           modified_at: "2015-12-17T23:12:26.726234+00:00"
         }
         api.expects(:show).with("dashboard", "abc").returns(dashboard: { widgets: [] })
+        output.must_equal "Plan:\nNothing to do\n"
+      end
+    end
+
+    describe "slos" do
+      it "can plan for slos" do
+        expected << slo("a", "b", id: "abc")
+        slos << {
+          id: "abc",
+          name: "x\u{1F512}",
+          type: "metric",
+          thresholds: [],
+          tags: ["team:test_team", "service:a"],
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+        }
         output.must_equal "Plan:\nNothing to do\n"
       end
     end

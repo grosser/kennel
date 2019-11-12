@@ -5,7 +5,7 @@ module Kennel
       LOCK = "\u{1F512}"
       READONLY_ATTRIBUTES = [
         :deleted, :matching_downtimes, :id, :created, :created_at, :creator, :org_id, :modified,
-        :overall_state_modified, :overall_state, :api_resource
+        :modified_at, :overall_state_modified, :overall_state, :api_resource
       ].freeze
       REQUEST_DEFAULTS = {
         style: { width: "normal", palette: "dog_classic", type: "solid" },

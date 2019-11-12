@@ -113,7 +113,7 @@ module Kennel
 
     # dashes are nested, others are not
     def unnest(api_resource, result)
-      result[api_resource.to_sym] || result
+      result[api_resource.to_sym] || result[:data] || result
     end
 
     def details_cache(&block)

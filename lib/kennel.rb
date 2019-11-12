@@ -20,8 +20,9 @@ require "kennel/models/base"
 require "kennel/models/record"
 
 # records
-require "kennel/models/monitor"
 require "kennel/models/dashboard"
+require "kennel/models/monitor"
+require "kennel/models/slo"
 
 # settings
 require "kennel/models/project"

@@ -180,6 +180,21 @@ describe Kennel::Models::Dashboard do
         err.must_include "Unable to find a:b in existing monitors"
       end
     end
+
+    describe "slo" do
+      before { definition[:type] = "slo" }
+
+      it "does not modify regular ids" do
+        definition[:slo_id] = 123
+        resolve[:slo_id].must_equal 123
+      end
+
+      it "resolves the slo widget with full id" do
+        definition[:slo_id] = "#{project.kennel_id}:b"
+        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        resolved[:slo_id].must_equal "123"
+      end
+    end
   end
 
   describe "#diff" do
