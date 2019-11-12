@@ -71,28 +71,28 @@ module Kennel
       Progress.progress "Diffing" do
         filter_by_project! actual
 
-        details_cache do |cache|
-          items = actual.map do |a|
-            e = matching_expected(a)
-            if e && @expected.delete(e)
-              [e, a]
-            else
-              [nil, a]
-            end
+        items = actual.map do |a|
+          e = matching_expected(a)
+          if e && @expected.delete(e)
+            [e, a]
+          else
+            [nil, a]
           end
+        end
 
+        details_cache do |cache|
           # fill details of things we need to compare (only do this part in parallel for safety & balancing)
           Utils.parallel(items.select { |e, _| e && e.class::API_LIST_INCOMPLETE }) { |_, a| fill_details(a, cache) }
+        end
 
-          # pick out things to update or delete
-          items.each do |e, a|
-            id = a.fetch(:id)
-            if e
-              diff = e.diff(a)
-              @update << [id, e, a, diff] if diff.any?
-            elsif tracking_id(a) # was previously managed
-              @delete << [id, nil, a]
-            end
+        # pick out things to update or delete
+        items.each do |e, a|
+          id = a.fetch(:id)
+          if e
+            diff = e.diff(a)
+            @update << [id, e, a, diff] if diff.any?
+          elsif tracking_id(a) # was previously managed
+            @delete << [id, nil, a]
           end
         end
 
