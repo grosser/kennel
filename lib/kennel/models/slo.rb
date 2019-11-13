@@ -47,7 +47,7 @@ module Kennel
 
       def resolve_linked_tracking_ids(id_map)
         as_json[:monitor_ids] = as_json[:monitor_ids].map do |id|
-          id.is_a?(String) ? resolve_link(id, id_map, force: true) : id
+          id.is_a?(String) ? resolve_link(id, id_map, force: false) || 1 : id
         end
       end
 
