@@ -12,6 +12,7 @@ module Kennel
         conditional_formats: [],
         aggregator: "avg"
       }.freeze
+      API_LIST_INCOMPLETE = false
 
       class ValidationError < RuntimeError
       end

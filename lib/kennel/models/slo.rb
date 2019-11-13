@@ -3,7 +3,6 @@ module Kennel
   module Models
     class Slo < Record
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:type_id, :monitor_tags]
-      API_LIST_INCOMPLETE = false
       DEFAULTS = {
         description: nil,
         query: nil,
