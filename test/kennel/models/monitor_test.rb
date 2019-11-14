@@ -51,11 +51,11 @@ describe Kennel::Models::Monitor do
 
   describe "#initialize" do
     it "stores project" do
-      TestMonitor.new(111).project.must_equal 111
+      TestMonitor.new(project).project.must_equal project
     end
 
     it "stores options" do
-      TestMonitor.new(111, name: -> { "XXX" }).name.must_equal "XXX"
+      TestMonitor.new(project, name: -> { "XXX" }).name.must_equal "XXX"
     end
   end
 

@@ -13,6 +13,13 @@ describe Kennel::Models::Record do
     )
   end
 
+  describe "#initialize" do
+    it "complains when passing invalid project" do
+      e = assert_raises(ArgumentError) { TestRecord.new(123) }
+      e.message.must_equal "First argument must be a project, not Integer"
+    end
+  end
+
   describe "#invalid!" do
     it "raises a validation error whit project name to help when backtrace is generic" do
       e = assert_raises Kennel::Models::Record::ValidationError do

@@ -58,6 +58,7 @@ module Kennel
       attr_reader :project
 
       def initialize(project, *args)
+        raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
         @project = project
         super(*args)
       end
