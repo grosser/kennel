@@ -16,6 +16,8 @@ module Kennel
       class ValidationError < RuntimeError
       end
 
+      settings :id, :kennel_id
+
       class << self
         private
 

@@ -9,7 +9,7 @@ module Kennel
         monitor_ids: []
       }.freeze
 
-      settings :id, :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :kennel_id, :name
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name
 
       defaults(
         id: -> { nil },

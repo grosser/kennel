@@ -22,8 +22,8 @@ module Kennel
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
 
       settings(
-        :query, :name, :message, :escalation_message, :critical, :kennel_id, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
-        :ok, :id, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
+        :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
+        :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
         :threshold_windows, :new_host_delay
       )
 

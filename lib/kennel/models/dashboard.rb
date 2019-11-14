@@ -15,7 +15,7 @@ module Kennel
       }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
-      settings :id, :title, :description, :definitions, :widgets, :kennel_id, :layout_type
+      settings :title, :description, :definitions, :widgets, :layout_type
 
       defaults(
         description: -> { "" },
