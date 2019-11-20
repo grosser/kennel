@@ -45,12 +45,21 @@ describe Kennel::Models::Slo do
       TestSlo.new(project, name: -> { "XXX" }).name.must_equal "XXX"
     end
 
-    it "validates thresholds" do
-      assert_raises Kennel::Models::Record::ValidationError do
-        Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 0, critical: 99 }] })
+    describe "validates threshold" do
+      it "is valid when warning not set" do
+        Kennel::Models::Slo.new(project, thresholds: -> { [{ critical: 99 }] })
       end
-      assert_raises Kennel::Models::Record::ValidationError do
-        Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 99, critical: 99 }] })
+
+      it "is invalid if warning > critical" do
+        assert_raises Kennel::Models::Record::ValidationError do
+          Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 0, critical: 99 }] })
+        end
+      end
+
+      it "is invalid warning != critical" do
+        assert_raises Kennel::Models::Record::ValidationError do
+          Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 99, critical: 99 }] })
+        end
       end
     end
   end
