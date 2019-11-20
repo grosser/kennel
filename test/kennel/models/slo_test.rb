@@ -44,6 +44,12 @@ describe Kennel::Models::Slo do
     it "stores options" do
       TestSlo.new(project, name: -> { "XXX" }).name.must_equal "XXX"
     end
+
+    it "validates thresholds" do
+      assert_raises Kennel::Models::Record::ValidationError do
+        Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 0, critical: 99 }] })
+      end
+    end
   end
 
   describe "#as_json" do
