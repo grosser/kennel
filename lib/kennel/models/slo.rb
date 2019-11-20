@@ -19,6 +19,11 @@ module Kennel
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) }
       )
 
+      def initialize(project, *args)
+        super(project, *args)
+        raise ValidationError, 'Threshold warning must be less-than critical value' if thresholds.each { |t| t[:warning].to_f < t[:critical].to_f }
+      end
+
       def as_json
         return @as_json if @as_json
         data = {
