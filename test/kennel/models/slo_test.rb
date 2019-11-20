@@ -49,6 +49,9 @@ describe Kennel::Models::Slo do
       assert_raises Kennel::Models::Record::ValidationError do
         Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 0, critical: 99 }] })
       end
+      assert_raises Kennel::Models::Record::ValidationError do
+        Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 99, critical: 99 }] })
+      end
     end
   end
 

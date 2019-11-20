@@ -21,9 +21,9 @@ module Kennel
         thresholds: -> { DEFAULTS.fetch(:thresholds) }
       )
 
-      def initialize(project, *args)
-        super(project, *args)
-        raise ValidationError, "Threshold warning must be greater-than critical value" if thresholds.any? { |t| t[:warning].to_f < t[:critical].to_f }
+      def initialize(*)
+        super
+        raise ValidationError, "Threshold warning must be greater-than critical value" if thresholds.any? { |t| t[:warning].to_f <= t[:critical].to_f }
       end
 
       def as_json
