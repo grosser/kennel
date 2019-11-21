@@ -56,7 +56,7 @@ describe Kennel::Models::Slo do
         end
       end
 
-      it "is invalid warning != critical" do
+      it "is invalid if warning == critical" do
         assert_raises Kennel::Models::Record::ValidationError do
           Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 99, critical: 99 }] })
         end

@@ -23,9 +23,8 @@ module Kennel
 
       def initialize(*)
         super
-
-        raise ValidationError, "Threshold warning must be greater-than critical value" if thresholds.any? do |t|
-          t.key?(:warning) && !t[:warning].nil? && t[:warning].to_f <= t[:critical].to_f
+        if thresholds.any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
+          raise ValidationError, "Threshold warning must be greater-than critical value"
         end
       end
 
