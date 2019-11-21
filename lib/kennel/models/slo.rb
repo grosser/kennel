@@ -6,7 +6,8 @@ module Kennel
       DEFAULTS = {
         description: nil,
         query: nil,
-        monitor_ids: []
+        monitor_ids: [],
+        thresholds: []
       }.freeze
 
       settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name
@@ -16,8 +17,16 @@ module Kennel
         tags: -> { @project.tags },
         query: -> { DEFAULTS.fetch(:query) },
         description: -> { DEFAULTS.fetch(:description) },
-        monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) }
+        monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
+        thresholds: -> { DEFAULTS.fetch(:thresholds) }
       )
+
+      def initialize(*)
+        super
+        if thresholds.any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
+          raise ValidationError, "Threshold warning must be greater-than critical value"
+        end
+      end
 
       def as_json
         return @as_json if @as_json
