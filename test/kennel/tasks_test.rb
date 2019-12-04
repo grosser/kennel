@@ -11,6 +11,7 @@ describe "tasks" do
   def execute(env = {})
     with_env(env) { Rake::Task[task].execute }
   rescue SystemExit
+    $!.status.must_equal 1
     raise "Aborted #{$!.message}"
   end
 

@@ -9,7 +9,7 @@ module Kennel
     class << self
       def abort(message = nil)
         Kennel.err.puts message if message
-        raise SystemExit, message
+        raise SystemExit.new(1), message
       end
     end
   end
