@@ -45,6 +45,17 @@ describe Kennel::Api do
       e = assert_raises(RuntimeError) { api.list("monitor", foo: "bar") }
       e.message.must_equal "Error 300 during GET /api/v1/monitor\nfoo"
     end
+
+    it "paginates slos" do
+      stub_request(:get, "slo", "&limit=1000&offset=0").to_return(body: { data: Array.new(1000) { { bar: "foo" } } }.to_json)
+      stub_request(:get, "slo", "&limit=1000&offset=1000").to_return(body: { data: [{ bar: "foo"  }] }.to_json)
+      api.list("slo").size.must_equal 1001
+    end
+
+    it "fails when pagination would not work" do
+      assert_raises(ArgumentError) { api.list("slo", limit: 100) }
+      assert_raises(ArgumentError) { api.list("slo", offset: 100) }
+    end
   end
 
   describe "#create" do

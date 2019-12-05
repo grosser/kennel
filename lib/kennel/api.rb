@@ -13,7 +13,22 @@ module Kennel
     end
 
     def list(api_resource, params = {})
-      request :get, "/api/v1/#{api_resource}", params: params
+      if api_resource == "slo"
+        raise ArgumentError if params[:limit] || params[:offset]
+        limit = 1000
+        offset = 0
+        all = []
+
+        loop do
+          result = request :get, "/api/v1/#{api_resource}", params: params.merge(limit: limit, offset: offset)
+          data = result.fetch(:data)
+          all.concat data
+          break all if data.size < limit
+          offset += limit
+        end
+      else
+        request :get, "/api/v1/#{api_resource}", params: params
+      end
     end
 
     def create(api_resource, attributes)
