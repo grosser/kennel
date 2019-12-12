@@ -45,8 +45,7 @@ namespace :kennel do
     end
 
     if bad.any?
-      subdomain = ENV["DATADOG_SUBDOMAIN"]
-      url = (subdomain ? "https://zendesk.datadoghq.com" : "") + "/account/settings"
+      url = Kennel::Utils.path_to_url "/account/settings"
       puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
       bad.each { |f, v| puts "Invalid mention #{v} in monitor message of #{f}" }
       Kennel::Tasks.abort
