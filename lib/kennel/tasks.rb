@@ -18,7 +18,7 @@ end
 namespace :kennel do
   desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
   task no_diff: :generate do
-    result = `git status --porcelain`.strip
+    result = `git status --porcelain generated/`.strip
     Kennel::Tasks.abort "Diff found:\n#{result}\nrun `rake generate` and commit the diff to fix" unless result == ""
     Kennel::Tasks.abort "Error during diffing" unless $CHILD_STATUS.success?
   end
