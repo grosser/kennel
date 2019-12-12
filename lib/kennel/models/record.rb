@@ -78,10 +78,19 @@ module Kennel
 
       private
 
-      def resolve_link(id, id_map, force:)
-        id_map[id] || begin
-          message = "Unable to find #{id} in existing monitors (they need to be created first to link them)"
-          force ? invalid!(message) : Kennel.err.puts(message)
+      def resolve_link(id, id_map, force: false)
+        found = id_map[id]
+        return found if found && found != :new
+
+        if found == :new
+          if force
+            invalid! "Monitor #{id} will be created in the current run and can only be used after that"
+          else
+            Kennel.err.puts "Monitor #{id} will be created in the current run, the next run will link it properly"
+            Kennel::MISSING_ID
+          end
+        else
+          invalid! "Unable to find monitor #{id} (does not exist and is not being created by the current run)"
         end
       end
 

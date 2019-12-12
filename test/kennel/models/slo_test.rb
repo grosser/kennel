@@ -105,8 +105,15 @@ describe Kennel::Models::Slo do
     it "allows unresolvable ids so monitors can be created with slos" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
       Kennel.err.expects(:puts)
-      slo.resolve_linked_tracking_ids({})
+      slo.resolve_linked_tracking_ids("#{project.kennel_id}:mon" => :new)
       slo.as_json[:monitor_ids].must_equal [1]
+    end
+
+    it "fails with typos" do
+      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      assert_raises Kennel::ValidationError do
+        slo.resolve_linked_tracking_ids({})
+      end
     end
   end
 

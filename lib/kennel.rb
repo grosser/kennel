@@ -29,6 +29,7 @@ require "kennel/models/project"
 require "kennel/models/team"
 
 module Kennel
+  MISSING_ID = 1
   class ValidationError < RuntimeError
   end
 

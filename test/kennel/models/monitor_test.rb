@@ -250,7 +250,7 @@ describe Kennel::Models::Monitor do
         e = assert_raises Kennel::ValidationError do
           mon.resolve_linked_tracking_ids({})
         end
-        e.message.must_include "Unable to find foo:mon_a in existing monitors"
+        e.message.must_include "test_project:m1 Unable to find monitor foo:mon_a"
       end
 
       it "resolves correctly with a matching monitor" do

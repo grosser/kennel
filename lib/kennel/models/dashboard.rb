@@ -101,16 +101,16 @@ module Kennel
           when "uptime"
             if ids = definition[:monitor_ids]
               definition[:monitor_ids] = ids.map do |id|
-                tracking_id?(id) ? resolve_link(id, id_map, force: false) : id
+                tracking_id?(id) ? resolve_link(id, id_map) : id
               end
             end
           when "alert_graph"
             if (id = definition[:alert_id]) && tracking_id?(id)
-              definition[:alert_id] = resolve_link(id, id_map, force: false).to_s
+              definition[:alert_id] = resolve_link(id, id_map).to_s
             end
           when "slo"
             if (id = definition[:slo_id]) && tracking_id?(id)
-              definition[:slo_id] = resolve_link(id, id_map, force: false).to_s
+              definition[:slo_id] = resolve_link(id, id_map).to_s
             end
           end
         end

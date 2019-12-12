@@ -105,6 +105,7 @@ module Kennel
       def resolve_linked_tracking_ids(id_map)
         if as_json[:type] == "composite"
           as_json[:query] = as_json[:query].gsub(/%\{(.*?)\}/) do
+            # need force here since it validates the id exists
             resolve_link($1, id_map, force: true)
           end
         end

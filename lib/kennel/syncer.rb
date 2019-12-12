@@ -195,6 +195,7 @@ module Kennel
 
     def resolve_linked_tracking_ids(actual)
       map = actual.each_with_object({}) { |a, lookup| lookup[tracking_id(a)] = a.fetch(:id) }
+      @expected.each { |e| map[e.tracking_id] ||= :new }
       @expected.each { |e| e.resolve_linked_tracking_ids(map) }
     end
 

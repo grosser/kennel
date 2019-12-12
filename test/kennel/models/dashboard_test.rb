@@ -143,9 +143,9 @@ describe Kennel::Models::Dashboard do
       it "does not fail hard when id is missing to not break when adding new monitors" do
         definition[:monitor_ids] = ["missing:the_id"]
         err = Kennel::Utils.capture_stderr do
-          resolve[:monitor_ids].must_equal [nil]
+          resolve("missing:the_id" => :new)[:monitor_ids].must_equal [1]
         end
-        err.must_include "Unable to find missing:the_id in existing monitors"
+        err.must_include "Monitor missing:the_id will be created in the current run"
       end
     end
 
@@ -175,9 +175,9 @@ describe Kennel::Models::Dashboard do
       it "does not fail hard when id is missing to not break when adding new monitors" do
         definition[:alert_id] = "a:b"
         err = Kennel::Utils.capture_stderr do
-          resolve[:alert_id].must_equal ""
+          resolve("a:b" => :new)[:alert_id].must_equal "1"
         end
-        err.must_include "Unable to find a:b in existing monitors"
+        err.must_include "Monitor a:b will be created in the current run"
       end
     end
 
