@@ -22,7 +22,7 @@ describe Kennel::Models::Record do
 
   describe "#invalid!" do
     it "raises a validation error whit project name to help when backtrace is generic" do
-      e = assert_raises Kennel::Models::Record::ValidationError do
+      e = assert_raises Kennel::ValidationError do
         Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }, kennel_id: -> { "x" }).send(:invalid!, "X")
       end
       e.message.must_equal "test_project:x X"
@@ -44,7 +44,7 @@ describe Kennel::Models::Record do
     end
 
     it "fails with error" do
-      e = assert_raises Kennel::Models::Record::ValidationError do
+      e = assert_raises Kennel::ValidationError do
         base.send(:resolve_link, "bar", { "foo" => 1 }, force: true)
       end
       e.message.must_include "Unable to find bar in existing monitors"

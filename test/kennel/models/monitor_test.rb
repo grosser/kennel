@@ -247,7 +247,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails when matching monitor is missing" do
-        e = assert_raises Kennel::Models::Record::ValidationError do
+        e = assert_raises Kennel::ValidationError do
           mon.resolve_linked_tracking_ids({})
         end
         e.message.must_include "Unable to find foo:mon_a in existing monitors"

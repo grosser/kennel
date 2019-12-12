@@ -18,7 +18,7 @@ describe Kennel::OptionalValidations do
     end
 
     it "shows all valid" do
-      e = assert_raises Kennel::Models::Record::ValidationError do
+      e = assert_raises Kennel::ValidationError do
         TestVariables.new(TestProject.new).send(:validate_json, 0 => 1, b: [{ "c" => 1, d: 2 }])
       end
       e.message.must_equal(

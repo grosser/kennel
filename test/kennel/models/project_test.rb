@@ -21,4 +21,10 @@ describe Kennel::Models::Project do
       TestProject.new.mention.must_equal "@slack-foo"
     end
   end
+
+  describe "#validated_parts" do
+    it "returns parts" do
+      TestProject.new.validated_parts.size.must_equal 0
+    end
+  end
 end

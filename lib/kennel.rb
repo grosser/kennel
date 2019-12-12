@@ -29,6 +29,9 @@ require "kennel/models/project"
 require "kennel/models/team"
 
 module Kennel
+  class ValidationError < RuntimeError
+  end
+
   @out = $stdout
   @err = $stderr
 
@@ -68,7 +71,7 @@ module Kennel
         Progress.progress "Generating" do
           load_all
           parts = Models::Project.recursive_subclasses.flat_map do |project_class|
-            project_class.new.parts
+            project_class.new.validated_parts
           end
           parts.map(&:tracking_id).group_by { |id| id }.select do |id, same|
             raise "#{id} is defined #{same.size} times" if same.size != 1

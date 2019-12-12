@@ -53,19 +53,19 @@ describe Kennel::TemplateVariables do
     end
 
     it "is invalid when vars are not used" do
-      assert_raises Kennel::Models::Record::ValidationError do
+      assert_raises Kennel::ValidationError do
         validate ["a"], [{ definition: { requests: [{ q: "$b" }] } }]
       end
     end
 
     it "is invalid when nested vars are not used" do
-      assert_raises Kennel::Models::Record::ValidationError do
+      assert_raises Kennel::ValidationError do
         validate ["a"], [{ definition: { widgets: [{ definition: { requests: [{ q: "$b" }] } }] } }]
       end
     end
 
     it "works with hostmap widgets" do
-      assert_raises Kennel::Models::Record::ValidationError do
+      assert_raises Kennel::ValidationError do
         validate ["a"], [{ definition: { requests: { fill: { q: "x" } } } }]
       end
     end

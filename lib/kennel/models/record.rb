@@ -13,9 +13,6 @@ module Kennel
       }.freeze
       API_LIST_INCOMPLETE = false
 
-      class ValidationError < RuntimeError
-      end
-
       settings :id, :kennel_id
 
       class << self
