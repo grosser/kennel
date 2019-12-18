@@ -259,7 +259,7 @@ describe Kennel::Syncer do
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
           modified_at: "2015-12-17T23:12:26.726234+00:00"
         }
-        api.expects(:show).with("dashboard", "abc").returns(dashboard: { widgets: [] })
+        api.expects(:show).with("dashboard", "abc").returns(widgets: [])
         output.must_equal "Plan:\nNothing to do\n"
       end
     end
@@ -442,7 +442,7 @@ describe Kennel::Syncer do
 
       it "can create dashboards" do
         expected << dashboard("a", "b")
-        api.expects(:create).with("dashboard", anything).returns(dashboard: { id: "abc" })
+        api.expects(:create).with("dashboard", anything).returns(id: "abc")
         output.must_equal "Created dashboard a:b /dashboard/abc\n"
       end
     end

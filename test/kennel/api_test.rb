@@ -39,6 +39,12 @@ describe Kennel::Api do
       api.list("monitor", foo: "bar").must_equal [{ bar: "foo" }]
     end
 
+    it "fetches dashboards" do
+      stub_request(:get, "dashboard")
+        .to_return(body: { dashboards: [{ bar: "foo" }] }.to_json)
+      api.list("dashboard").must_equal [{ bar: "foo" }]
+    end
+
     it "shows a descriptive failure when request fails" do
       stub_request(:get, "monitor", "&foo=bar")
         .to_return(status: 300, body: "foo")

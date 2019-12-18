@@ -27,7 +27,9 @@ module Kennel
           offset += limit
         end
       else
-        request :get, "/api/v1/#{api_resource}", params: params
+        result = request :get, "/api/v1/#{api_resource}", params: params
+        result = result.fetch(:dashboards) if api_resource == "dashboard"
+        result
       end
     end
 
