@@ -35,7 +35,7 @@ module Kennel
           description: description,
           thresholds: thresholds,
           monitor_ids: monitor_ids,
-          tags: tags,
+          tags: tags.uniq,
           type: type
         }
 
