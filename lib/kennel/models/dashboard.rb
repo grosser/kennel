@@ -13,6 +13,7 @@ module Kennel
       REQUEST_DEFAULTS = {
         style: { line_width: "normal", palette: "dog_classic", line_type: "solid" }
       }.freeze
+      TIMESERIES_DEFAULTS = { show_legend: false, legend_size: "0" }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
       settings :title, :description, :definitions, :widgets, :layout_type
@@ -50,6 +51,8 @@ module Kennel
               end
             end
 
+            ignore_definition_defaults_for_type pair, "timeseries", TIMESERIES_DEFAULTS
+
             ignore_request_defaults(*pair)
 
             # ids are kinda random so we always discard them
@@ -58,6 +61,14 @@ module Kennel
         end
 
         private
+
+        def ignore_definition_defaults_for_type(pair, type, defaults)
+          pair.map(&:size).max.times do |i|
+            if pair.all? { |w| w.dig(i, :definition, :type) == type }
+              ignore_defaults(pair[0], pair[1], defaults, nesting: :definition)
+            end
+          end
+        end
 
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
         def ignore_request_defaults(expected, actual)
@@ -68,10 +79,10 @@ module Kennel
           end
         end
 
-        def ignore_defaults(expected, actual, defaults)
+        def ignore_defaults(expected, actual, defaults, nesting: nil)
           [expected.size, actual.size].max.times do |i|
-            e = expected[i] || {}
-            a = actual[i] || {}
+            e = expected.dig(i, *nesting) || {}
+            a = actual.dig(i, *nesting) || {}
             ignore_default(e, a, defaults)
           end
         end

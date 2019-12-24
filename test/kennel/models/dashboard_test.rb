@@ -258,6 +258,12 @@ describe Kennel::Models::Dashboard do
         expected_json.merge(widgets: [{ definition: { type: "slo" }, layout: { height: 14 } }])
       ).must_equal []
     end
+
+    it "ignores remove timeseries defaults" do
+      json = expected_json_with_requests
+      json[:widgets][0][:definition][:show_legend] = false
+      dashboard_with_requests.diff(json).must_equal []
+    end
   end
 
   describe "#url" do
