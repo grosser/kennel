@@ -32,44 +32,44 @@ module Kennel
         def normalize(expected, actual)
           super
 
-          base_pairs(expected, actual).each do |pair|
+          widgets_pairs(expected, actual).each do |pair|
             # datadog always adds 2 to slo widget height
             # need to check fir layout since some monitors have height/width in their definition
-            pair.dig(1, :widgets)&.each do |widget|
+            pair[1].each do |widget|
               if widget.dig(:definition, :type) == "slo" && widget.dig(:layout, :height)
                 widget[:layout][:height] -= 2
               end
             end
 
             # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
-            pair.each do |b|
-              b[:widgets]&.each do |w|
-                if formats = w.dig(:definition, :conditional_formats)
-                  w[:definition][:conditional_formats] = formats.sort_by(&:hash)
+            pair.each do |widgets|
+              widgets.each do |widget|
+                if formats = widget.dig(:definition, :conditional_formats)
+                  widget[:definition][:conditional_formats] = formats.sort_by(&:hash)
                 end
               end
             end
 
-            ignore_request_defaults(*pair, :widgets, :definition)
-            pair.each { |dash| dash[:widgets]&.each { |w| w.delete(:id) } }
+            ignore_request_defaults(*pair)
+
+            # ids are kinda random so we always discard them
+            pair.each { |widgets| widgets.each { |w| w.delete(:id) } }
           end
         end
 
         private
 
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
-        def ignore_request_defaults(expected, actual, level1, level2)
-          actual = actual[level1] || {}
-          expected = expected[level1] || {}
-          [expected.size.to_i, actual.size.to_i].max.times do |i|
-            a_r = actual.dig(i, level2, :requests) || []
-            e_r = expected.dig(i, level2, :requests) || []
+        def ignore_request_defaults(expected, actual)
+          [expected.size, actual.size].max.times do |i|
+            a_r = actual.dig(i, :definition, :requests) || []
+            e_r = expected.dig(i, :definition, :requests) || []
             ignore_defaults e_r, a_r, REQUEST_DEFAULTS
           end
         end
 
         def ignore_defaults(expected, actual, defaults)
-          [expected&.size.to_i, actual&.size.to_i].max.times do |i|
+          [expected.size, actual.size].max.times do |i|
             e = expected[i] || {}
             a = actual[i] || {}
             ignore_default(e, a, defaults)
@@ -77,13 +77,13 @@ module Kennel
         end
 
         # expand nested widgets into expected/actual pairs for default resolution
-        # [a, e] -> [[a, e], [aw1, ew1], ...]
-        def base_pairs(*pair)
-          result = [pair]
-          slots = pair.map { |d| d[:widgets]&.size }.compact.max.to_i
+        # [a, e] -> [[a-w, e-w], [a-w1-w1, e-w1-w1], ...]
+        def widgets_pairs(*pair)
+          result = [pair.map { |d| d[:widgets] || [] }]
+          slots = result.compact.map(&:size).max.to_i
           slots.times do |i|
-            nested = pair.map { |d| d.dig(:widgets, i, :definition) || {} }
-            result << nested if nested.any? { |d| d.key?(:widgets) }
+            nested = pair.map { |d| d.dig(:widgets, i, :definition, :widgets) || [] }
+            result << nested if nested.any?(&:any?)
           end
           result
         end

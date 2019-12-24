@@ -279,44 +279,44 @@ describe Kennel::Models::Dashboard do
   end
 
   describe ".ignore_request_defaults" do
-    let(:valid) { { a: [{ b: { requests: [{ c: 1 }] } }] } }
+    let(:valid) { [{ definition: { requests: [{ c: 1 }] } }] }
     let(:default_style) { { line_width: "normal", palette: "dog_classic", line_type: "solid" } }
 
     it "does not change valid" do
       copy = deep_dup(valid)
-      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid, :a, :b)
+      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid)
       valid.must_equal copy
     end
 
     it "removes defaults" do
       copy = deep_dup(valid)
-      valid.dig(:a, 0, :b, :requests, 0)[:style] = default_style
-      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid, :a, :b)
+      valid.dig(0, :definition, :requests, 0)[:style] = default_style
+      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid)
       valid.must_equal copy
     end
 
     it "removes defaults when only a single side is given" do
       copy = deep_dup(valid)
       other = deep_dup(valid)
-      copy.dig(:a, 0, :b, :requests, 0)[:style] = default_style
-      other.dig(:a, 0, :b, :requests).pop
-      Kennel::Models::Dashboard.send(:ignore_request_defaults, copy, other, :a, :b)
+      copy.dig(0, :definition, :requests, 0)[:style] = default_style
+      other.dig(0, :definition, :requests).pop
+      Kennel::Models::Dashboard.send(:ignore_request_defaults, copy, other)
       copy.must_equal valid
     end
 
     it "does not remove non-defaults" do
-      valid.dig(:a, 0, :b, :requests, 0)[:style] = { foo: "bar" }
+      valid.dig(0, :definition, :requests, 0)[:style] = { foo: "bar" }
       copy = deep_dup(valid)
-      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid, :a, :b)
+      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid)
       valid.must_equal copy
     end
 
     it "skips newly added requests" do
       copy = deep_dup(valid)
-      copy.dig(:a, 0, :b, :requests).clear
-      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, copy, :a, :b)
-      valid.must_equal a: [{ b: { requests: [c: 1] } }]
-      copy.must_equal a: [{ b: { requests: [] } }]
+      copy.dig(0, :definition, :requests).clear
+      Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, copy)
+      valid.must_equal [{ definition: { requests: [c: 1] } }]
+      copy.must_equal [{ definition: { requests: [] } }]
     end
   end
 end
