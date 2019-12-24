@@ -25,7 +25,7 @@ module Kennel
       if bad.any?
         invalid!(
           "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}\n" \
-          "If that is not possible, add `validate_template_variables: -> { false } # query foo in bar does not have baz tag`"
+          "If that is not possible, add `validate: -> { false } # query foo in bar does not have baz tag`"
         )
       end
     end
