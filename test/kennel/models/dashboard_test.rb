@@ -237,6 +237,12 @@ describe Kennel::Models::Dashboard do
       dashboard(widgets: -> { widgets }).diff(expected_json).must_equal []
     end
 
+    it "ignores when only one side has widgets" do
+      widgets = Array.new(3) { { id: 1, definition: { title: "Foo", widgets: [{ id: 2 }] } } }
+      expected_json[:widgets] = widgets
+      dashboard(widgets: -> { [] }).diff(expected_json).inspect.wont_include ":id"
+    end
+
     it "ignores conditional_formats ordering" do
       formats = [{ value: 1 }, { foo: "bar" }, { value: "2" }]
       old = formats.dup

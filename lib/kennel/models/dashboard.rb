@@ -91,7 +91,7 @@ module Kennel
         # [a, e] -> [[a-w, e-w], [a-w1-w1, e-w1-w1], ...]
         def widgets_pairs(*pair)
           result = [pair.map { |d| d[:widgets] || [] }]
-          slots = result.compact.map(&:size).max.to_i
+          slots = result[0].map(&:size).max
           slots.times do |i|
             nested = pair.map { |d| d.dig(:widgets, i, :definition, :widgets) || [] }
             result << nested if nested.any?(&:any?)
