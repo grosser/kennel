@@ -58,47 +58,6 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe ".ignore_request_defaults" do
-    let(:valid) { { a: [{ b: { requests: [{ c: 1 }] } }] } }
-
-    it "does not change valid" do
-      copy = deep_dup(valid)
-      Kennel::Models::Record.send(:ignore_request_defaults, valid, valid, :a, :b)
-      valid.must_equal copy
-    end
-
-    it "removes defaults" do
-      copy = deep_dup(valid)
-      valid.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = []
-      Kennel::Models::Record.send(:ignore_request_defaults, valid, valid, :a, :b)
-      valid.must_equal copy
-    end
-
-    it "removes defaults when only a single side is given" do
-      copy = deep_dup(valid)
-      other = deep_dup(valid)
-      copy.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = []
-      other.dig(:a, 0, :b, :requests).pop
-      Kennel::Models::Record.send(:ignore_request_defaults, copy, other, :a, :b)
-      copy.must_equal valid
-    end
-
-    it "does not remove non-defaults" do
-      valid.dig(:a, 0, :b, :requests, 0)[:conditional_formats] = [111]
-      copy = deep_dup(valid)
-      Kennel::Models::Record.send(:ignore_request_defaults, valid, valid, :a, :b)
-      valid.must_equal copy
-    end
-
-    it "skips newly added requests" do
-      copy = deep_dup(valid)
-      copy.dig(:a, 0, :b, :requests).clear
-      Kennel::Models::Record.send(:ignore_request_defaults, valid, copy, :a, :b)
-      valid.must_equal a: [{ b: { requests: [c: 1] } }]
-      copy.must_equal a: [{ b: { requests: [] } }]
-    end
-  end
-
   describe ".diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
@@ -139,6 +98,40 @@ describe Kennel::Models::Record do
     it "combines project and id into a human-readable string" do
       base = TestRecord.new TestProject.new
       base.tracking_id.must_equal "test_project:test_record"
+    end
+  end
+
+  describe ".ignore_default" do
+    it "ignores defaults" do
+      a = { a: 1 }
+      b = { a: 1 }
+      Kennel::Models::Dashboard.send(:ignore_default, a, b, a: 1)
+      a.must_equal({})
+      a.must_equal b
+    end
+
+    it "ignores missing left" do
+      a = { a: 1 }
+      b = {}
+      Kennel::Models::Dashboard.send(:ignore_default, a, b, a: 1)
+      a.must_equal({})
+      b.must_equal a
+    end
+
+    it "ignores missing right" do
+      a = {}
+      b = { a: 1 }
+      Kennel::Models::Dashboard.send(:ignore_default, a, b, a: 1)
+      a.must_equal({})
+      b.must_equal a
+    end
+
+    it "keeps uncommon" do
+      a = {}
+      b = { a: 2 }
+      Kennel::Models::Dashboard.send(:ignore_default, a, b, a: 1)
+      a.must_equal({})
+      b.must_equal a: 2
     end
   end
 

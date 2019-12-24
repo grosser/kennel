@@ -6,11 +6,6 @@ module Kennel
       READONLY_ATTRIBUTES = [
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at, :api_resource
       ].freeze
-      REQUEST_DEFAULTS = {
-        style: { width: "normal", palette: "dog_classic", type: "solid" },
-        conditional_formats: [],
-        aggregator: "avg"
-      }.freeze
       API_LIST_INCOMPLETE = false
 
       settings :id, :kennel_id
@@ -20,25 +15,6 @@ module Kennel
 
         def normalize(_expected, actual)
           self::READONLY_ATTRIBUTES.each { |k| actual.delete k }
-        end
-
-        # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
-        def ignore_request_defaults(expected, actual, level1, level2)
-          actual = actual[level1] || {}
-          expected = expected[level1] || {}
-          [expected.size.to_i, actual.size.to_i].max.times do |i|
-            a_r = actual.dig(i, level2, :requests) || []
-            e_r = expected.dig(i, level2, :requests) || []
-            ignore_defaults e_r, a_r, self::REQUEST_DEFAULTS
-          end
-        end
-
-        def ignore_defaults(expected, actual, defaults)
-          [expected&.size.to_i, actual&.size.to_i].max.times do |i|
-            e = expected[i] || {}
-            a = actual[i] || {}
-            ignore_default(e, a, defaults)
-          end
         end
 
         def ignore_default(expected, actual, defaults)

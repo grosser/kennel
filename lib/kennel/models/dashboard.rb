@@ -57,6 +57,25 @@ module Kennel
 
         private
 
+        # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
+        def ignore_request_defaults(expected, actual, level1, level2)
+          actual = actual[level1] || {}
+          expected = expected[level1] || {}
+          [expected.size.to_i, actual.size.to_i].max.times do |i|
+            a_r = actual.dig(i, level2, :requests) || []
+            e_r = expected.dig(i, level2, :requests) || []
+            ignore_defaults e_r, a_r, REQUEST_DEFAULTS
+          end
+        end
+
+        def ignore_defaults(expected, actual, defaults)
+          [expected&.size.to_i, actual&.size.to_i].max.times do |i|
+            e = expected[i] || {}
+            a = actual[i] || {}
+            ignore_default(e, a, defaults)
+          end
+        end
+
         # expand nested widgets into expected/actual pairs for default resolution
         # [a, e] -> [[a, e], [aw1, ew1], ...]
         def base_pairs(*pair)
