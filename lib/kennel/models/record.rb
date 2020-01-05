@@ -57,16 +57,17 @@ module Kennel
       def resolve_link(id, id_map, force: false)
         found = id_map[id]
         return found if found && found != :new
+        api_resource = self.class.api_resource
 
         if found == :new
           if force
-            invalid! "Monitor #{id} will be created in the current run and can only be used after that"
+            invalid! "#{api_resource.capitalize} #{id} will be created in the current run and can only be used after that"
           else
-            Kennel.err.puts "Monitor #{id} will be created in the current run, the next run will link it properly"
+            Kennel.err.puts "#{api_resource.capitalize} #{id} will be created in the current run, the next run will link it properly"
             Kennel::MISSING_ID
           end
         else
-          invalid! "Unable to find monitor #{id} (does not exist and is not being created by the current run)"
+          invalid! "Unable to find #{api_resource} #{id} (does not exist and is not being created by the current run)"
         end
       end
 

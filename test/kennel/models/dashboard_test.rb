@@ -145,7 +145,7 @@ describe Kennel::Models::Dashboard do
         err = Kennel::Utils.capture_stderr do
           resolve("missing:the_id" => :new)[:monitor_ids].must_equal [1]
         end
-        err.must_include "Monitor missing:the_id will be created in the current run"
+        err.must_include "Dashboard missing:the_id will be created in the current run"
       end
     end
 
@@ -177,7 +177,7 @@ describe Kennel::Models::Dashboard do
         err = Kennel::Utils.capture_stderr do
           resolve("a:b" => :new)[:alert_id].must_equal "1"
         end
-        err.must_include "Monitor a:b will be created in the current run"
+        err.must_include "Dashboard a:b will be created in the current run"
       end
     end
 
