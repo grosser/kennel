@@ -104,7 +104,7 @@ describe Kennel::Syncer do
 
     it "creates missing" do
       expected << monitor("a", "b")
-      output.must_equal "Plan:\nCreate a:b\n"
+      output.must_equal "Plan:\nCreate monitor a:b\n"
     end
 
     it "ignores identical" do
@@ -129,7 +129,7 @@ describe Kennel::Syncer do
       monitors << component("a", "b", foo: "baz", baz: "foo", nested: { foo: "baz" })
       output.must_equal <<~TEXT
         Plan:
-        Update a:b
+        Update monitor a:b
           -baz \"foo\" -> nil
           ~foo \"baz\" -> \"bar\"
           ~nested.foo \"baz\" -> \"bar\"
@@ -145,7 +145,7 @@ describe Kennel::Syncer do
         monitors << component("a", "", id: 123, message: "old stuff")
         output.must_equal <<~TEXT
           Plan:
-          Update a:b
+          Update monitor a:b
             ~message \"old stuff\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
         TEXT
       end
@@ -156,7 +156,7 @@ describe Kennel::Syncer do
       monitors << component("a", "b", foo: "something shorter but still very long but also different")
       output.must_equal <<~TEXT
         Plan:
-        Update a:b
+        Update monitor a:b
           ~foo
             \"something shorter but still very long but also different\" ->
             \"something very long but not too long I do not know\"
@@ -168,21 +168,21 @@ describe Kennel::Syncer do
       monitors << component("a", "b", tags: ["foo", "baz"])
       output.must_equal <<~TEXT
         Plan:
-        Update a:b
+        Update monitor a:b
           ~tags[1] \"baz\" -> \"bar\"
       TEXT
     end
 
     it "deletes when removed from code" do
       monitors << component("a", "b")
-      output.must_equal "Plan:\nDelete a:b\n"
+      output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
     it "deletes newest when existing monitor was copied" do
       expected << monitor("a", "b")
       monitors << component("a", "b")
       monitors << component("a", "b", tags: ["old"])
-      output.must_equal "Plan:\nDelete a:b\n"
+      output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
     it "does not break on nil tracking field (dashboards can have nil description)" do
@@ -227,7 +227,7 @@ describe Kennel::Syncer do
 
       it "does something when filtered changes" do
         expected << monitor("a", "c")
-        output.must_equal "Plan:\nCreate a:c\n"
+        output.must_equal "Plan:\nCreate monitor a:c\n"
       end
 
       it "leaves unmanaged alone" do
@@ -289,7 +289,7 @@ describe Kennel::Syncer do
         monitors.last[:message] = "nope" # actual is not marked yet
         output.must_equal <<~TEXT
           Plan:
-          Update a:b
+          Update monitor a:b
             ~message \"nope\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
             +foo nil -> \"bar\"
         TEXT
@@ -299,7 +299,7 @@ describe Kennel::Syncer do
         monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
         output.must_equal <<~TEXT
           Plan:
-          Update a:b
+          Update monitor a:b
             ~message
               "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
               "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
@@ -312,7 +312,7 @@ describe Kennel::Syncer do
         monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
         output.must_equal <<~TEXT
           Plan:
-          Update a:b
+          Update monitor a:b
             ~message
               "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
               "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"

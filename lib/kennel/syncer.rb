@@ -147,7 +147,8 @@ module Kennel
     def print_plan(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
-        Kennel.out.puts Utils.color(color, "#{step} #{tracking_id(e&.as_json || a)}")
+        api_resource = (e ? e.class.api_resource : a.fetch(:api_resource))
+        Kennel.out.puts Utils.color(color, "#{step} #{api_resource} #{tracking_id(e&.as_json || a)}")
         print_diff(diff) if diff # only for update
       end
     end
