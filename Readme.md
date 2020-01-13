@@ -17,7 +17,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
     ```Bash
     git clone git@github.com:your-org/kennel.git
     git clone git@github.com:grosser/kennel.git seed
-    mv seed/teamplate/* kennel/
+    mv seed/template/* kennel/
     cd kennel && git add . && git commit -m 'initial'
     ```
  - add a basic projects and teams so others can copy-paste to get started
