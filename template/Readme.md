@@ -6,8 +6,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
  - Documented, reusable, automated, and searchable configuration
  - Changes are PR reviewed and auditable
- - Good defaults like no-data / re-notify are preselected
- - Reliable cleanup with automated deletion
+ - Automated deletion when removed from code
 
 ![](github/screen.png?raw=true)
 
@@ -15,7 +14,7 @@ Keep datadog monitors/dashboards/etc in version control, avoid chaotic managemen
 
  - `projects/` monitors/dashboards/etc scoped by project
  - `teams/` team definitions
- - `parts/` monitors/dashes/etc that are used by multiple projects
+ - `parts/` monitors/dashboards/etc that are used by multiple projects
  - `generated/` projects as json, to show current state and proposed changes in PRs
 
 ## Workflows
