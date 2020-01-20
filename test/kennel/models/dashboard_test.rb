@@ -194,6 +194,12 @@ describe Kennel::Models::Dashboard do
         resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
         resolved[:slo_id].must_equal "123"
       end
+
+      it "resolves nested slo widget with full id" do
+        definition[:widgets] = [{ definition: { slo_id: "#{project.kennel_id}:b", type: "slo" } }]
+        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        resolved[:widgets][0][:definition][:slo_id].must_equal "123"
+      end
     end
   end
 
