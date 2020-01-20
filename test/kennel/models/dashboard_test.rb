@@ -185,8 +185,8 @@ describe Kennel::Models::Dashboard do
       before { definition[:type] = "slo" }
 
       it "does not modify regular ids" do
-        definition[:slo_id] = 123
-        resolve[:slo_id].must_equal 123
+        definition[:slo_id] = "abcdef1234567"
+        resolve[:slo_id].must_equal "abcdef1234567"
       end
 
       it "resolves the slo widget with full id" do

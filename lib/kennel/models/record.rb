@@ -54,7 +54,7 @@ module Kennel
 
       private
 
-      def resolve_link(id, id_map, force: false)
+      def resolve_link(id, type, id_map, force: false)
         found = id_map[id]
         return found if found && found != :new
         api_resource = self.class.api_resource
@@ -67,7 +67,7 @@ module Kennel
             Kennel::MISSING_ID
           end
         else
-          invalid! "Unable to find #{api_resource} #{id} (does not exist and is not being created by the current run)"
+          invalid! "Unable to find #{type} #{id} (does not exist and is not being created by the current run)"
         end
       end
 

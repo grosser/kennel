@@ -106,7 +106,7 @@ module Kennel
         if as_json[:type] == "composite"
           as_json[:query] = as_json[:query].gsub(/%\{(.*?)\}/) do
             # need force here since it validates the id exists
-            resolve_link($1, id_map, force: true)
+            resolve_link($1, :monitor, id_map, force: true)
           end
         end
       end
