@@ -32,6 +32,7 @@ describe Kennel::Models::Monitor do
       query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",
       tags: ["service:test_project", "team:test_team"],
+      restricted_roles: nil,
       options: {
         timeout_h: 0,
         notify_no_data: true,
@@ -157,7 +158,10 @@ describe Kennel::Models::Monitor do
     end
 
     it "sets no_data_timeframe to `nil` when notify_no_data is false" do
-      monitor(notify_no_data: -> { false }).as_json[:options][:no_data_timeframe].must_be_nil
+      monitor(
+        notify_no_data: -> { false },
+        no_data_timeframe: -> { 2 }
+      ).as_json[:options][:no_data_timeframe].must_be_nil
     end
 
     it "can set notify_audit" do
