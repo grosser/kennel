@@ -8,7 +8,7 @@ module Kennel
       QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :multi, :matching_downtimes, :overall_state_modified, :overall_state
+        :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles
       ]
 
       # defaults that datadog uses when options are not sent, so safe to leave out if our values match their defaults
@@ -54,7 +54,6 @@ module Kennel
           query: query.strip,
           message: message.strip,
           tags: tags.uniq,
-          restricted_roles: nil,
           options: {
             timeout_h: timeout_h,
             notify_no_data: notify_no_data,
