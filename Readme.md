@@ -2,11 +2,12 @@
 
 ![](template/github/cage.jpg?raw=true)
 
-Keep datadog monitors/dashboards/etc in version control, avoid chaotic management via UI.
+Manage datadog monitors/dashboards/slos as code
 
- - Documented, reusable, automated, and searchable configuration
+ - Documented, reusable, and searchable
  - Changes are PR reviewed and auditable
- - Automated deletion when removed from code
+ - Updating shows diff before applying
+ - Automated import of existing monitors/dashboards/slos
 
 ![](template/github/screen.png?raw=true)
 <!-- NOT IN template/Readme.md  -->
