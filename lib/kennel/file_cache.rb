@@ -32,11 +32,12 @@ module Kennel
     private
 
     def load_data
-      @data = begin
-        Marshal.load(File.read(@file)) # rubocop:disable Security/MarshalLoad
-      rescue StandardError
-        {}
-      end
+      @data =
+        begin
+          Marshal.load(File.read(@file)) # rubocop:disable Security/MarshalLoad
+        rescue StandardError
+          {}
+        end
     end
 
     def persist
