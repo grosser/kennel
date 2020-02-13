@@ -87,6 +87,14 @@ describe Kennel::Models::Slo do
         expected_basic_json
       )
     end
+
+    it "sets groups when given" do
+      expected_basic_json[:groups] = ["foo"]
+      assert_json_equal(
+        slo(groups: -> { ["foo"] }).as_json,
+        expected_basic_json
+      )
+    end
   end
 
   describe "#resolve_linked_tracking_ids" do

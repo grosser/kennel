@@ -7,13 +7,16 @@ AllCops:
     - template/vendor/**/*
     - projects/**/*
 
+Layout/LineLength:
+  Enabled: false
+
 Bundler/OrderedGems:
   Enabled: false
 
 Layout/EmptyLineAfterMagicComment:
   Enabled: false
 
-Layout/IndentHash:
+Layout/FirstHashElementIndentation:
   EnforcedStyle: consistent
 
 Layout/MultilineMethodCallIndentation:
@@ -21,9 +24,6 @@ Layout/MultilineMethodCallIndentation:
 
 Lint/AssignmentInCondition:
   Enabled: false
-
-Layout/EndAlignment:
-  Enabled: variable
 
 Metrics:
    Enabled: false
@@ -79,7 +79,7 @@ Style/WordArray:
 Style/MultilineBlockChain:
   Enabled: false
 
-Naming/UncommunicativeMethodParamName:
+Naming/MethodParameterName:
   Enabled: false
 
 Style/RegexpLiteral:
@@ -93,3 +93,9 @@ Style/SpecialGlobalVars:
 
 Style/PerlBackrefs:
   Enabled: false
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+Style/FormatStringToken:
+  EnforcedStyle: unannotated
