@@ -6,11 +6,12 @@ module Kennel
       DEFAULTS = {
         description: nil,
         query: nil,
+        groups: nil,
         monitor_ids: [],
         thresholds: []
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups
 
       defaults(
         id: -> { nil },
@@ -18,7 +19,8 @@ module Kennel
         query: -> { DEFAULTS.fetch(:query) },
         description: -> { DEFAULTS.fetch(:description) },
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
-        thresholds: -> { DEFAULTS.fetch(:thresholds) }
+        thresholds: -> { DEFAULTS.fetch(:thresholds) },
+        groups: -> { DEFAULTS.fetch(:groups) }
       )
 
       def initialize(*)
@@ -39,8 +41,15 @@ module Kennel
           type: type
         }
 
-        data[:query] = query if query
-        data[:id] = id if id
+        if v = query
+          data[:query] = v
+        end
+        if v = id
+          data[:id] = v
+        end
+        if v = groups
+          data[:groups] = v
+        end
 
         @as_json = data
       end
