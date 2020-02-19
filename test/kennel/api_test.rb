@@ -29,6 +29,13 @@ describe Kennel::Api do
         .to_return(body: { bar: "foo" }.to_json)
       api.show("monitor", 1234, foo: "bar").must_equal bar: "foo"
     end
+
+    it "does not ignore 404" do
+      stub_request(:get, "monitor/1234").to_return(status: 404)
+      assert_raises RuntimeError do
+        api.show("monitor", 1234).must_equal({})
+      end.message.must_include "Error 404 during GET"
+    end
   end
 
   describe "#list" do
@@ -121,6 +128,11 @@ describe Kennel::Api do
         Error 300 during DELETE /api/v1/monitor/123
         {}
       TEXT
+    end
+
+    it "ignores 404" do
+      stub_request(:delete, "monitor/123").to_return(status: 404)
+      api.delete("monitor", 123).must_equal({})
     end
   end
 

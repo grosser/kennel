@@ -43,12 +43,12 @@ module Kennel
     end
 
     def delete(api_resource, id)
-      request :delete, "/api/v1/#{api_resource}/#{id}"
+      request :delete, "/api/v1/#{api_resource}/#{id}", ignore_404: true
     end
 
     private
 
-    def request(method, path, body: nil, params: {})
+    def request(method, path, body: nil, params: {}, ignore_404: false)
       params = params.merge(application_key: @app_key, api_key: @api_key)
       query = Faraday::FlatParamsEncoder.encode(params)
       response = nil
@@ -66,7 +66,7 @@ module Kennel
         Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
       end
 
-      unless response.success?
+      if !response.success? && (response.status != 404 || !ignore_404)
         message = +"Error #{response.status} during #{method.upcase} #{path}\n"
         message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
         message << response.body
