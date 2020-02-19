@@ -38,7 +38,7 @@ task :readme do
   raise "Unable to find REMOVE" unless readme.gsub!(/<!-- NOT IN .*? -->.*?<!-- NOT IN -->\n/m, "")
   raise "Unable to find images" unless readme.gsub!(/template\//, "")
   File.write("template/Readme.md", readme)
-  sh "git diff HEAD --exit-code -- Readme.md"
+  sh "git diff HEAD --exit-code -- template/Readme.md"
 end
 
 # make sure we always run what travis runs
