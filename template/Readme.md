@@ -166,6 +166,14 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 
 `rake kennel:validate_mentions` should run as part of CI
 
+### Grepping through all of datadog
+
+`TYPE=monitor rake kennel:dump`
+
+### Find all monitors with No-Data
+
+`rake kennel:nodata TAG=team:foo`
+
 ## Examples
 
 ### Reusable monitors/dashes/etc
