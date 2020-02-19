@@ -7,13 +7,13 @@ module Kennel
     class << self
       def report(token, &block)
         return yield unless token
-        new(token).report(&block)
+        new(token, Utils.capture_sh("git rev-parse HEAD").strip).report(&block)
       end
     end
 
-    def initialize(token)
+    def initialize(token, git_sha)
       @token = token
-      @git_sha = Utils.capture_sh("git rev-parse HEAD").strip
+      @git_sha = git_sha
       origin = ENV["PROJECT_REPOSITORY"] || Utils.capture_sh("git remote -v").split("\n").first
       @repo_part = origin[%r{github\.com[:/](.+?)(\.git|$)}, 1] || raise("no origin found")
     end
@@ -27,8 +27,6 @@ module Kennel
       comment "```\n#{output || "Error"}\n```"
     end
 
-    private
-
     # https://developer.github.com/v3/repos/comments/#create-a-commit-comment
     def comment(body)
       # truncate to maximum allowed comment size for github to avoid 422
@@ -38,6 +36,8 @@ module Kennel
 
       post "commits/#{@git_sha}/comments", body: body
     end
+
+    private
 
     def post(path, data)
       url = "https://api.github.com/repos/#{@repo_part}/#{path}"
