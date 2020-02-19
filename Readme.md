@@ -184,6 +184,14 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 
 `rake kennel:validate_mentions` should run as part of CI
 
+### Grepping through all of datadog
+
+`TYPE=monitor rake kennel:dump`
+
+### Find all monitors with No-Data
+
+`rake kennel:nodata TAG=team:foo`
+
 ## Examples
 
 ### Reusable monitors/dashes/etc
@@ -220,10 +228,10 @@ end
 ```Bash
 rake play
 cd template
-rake kennel:plan
+rake plan
 ```
 
-Then make changes to play around, do not commit changes and make sure to revert with a `rake kennel:update` after deleting everything.
+Then make changes to play around, do not commit changes and make sure to revert with a `rake kennel:update_datadog` after deleting everything.
 
 To make changes via the UI, make a new free datadog account and use it's credentaisl instead.
 
