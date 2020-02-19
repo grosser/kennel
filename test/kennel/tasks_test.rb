@@ -18,8 +18,6 @@ describe "tasks" do
   capture_all
 
   describe "kennel:nodata" do
-    before { Kennel.send(:api).stubs(:list).returns monitors }
-
     let(:task) { "kennel:nodata" }
     let(:monitors) do
       [{
@@ -29,6 +27,8 @@ describe "tasks" do
         tags: []
       }]
     end
+
+    before { Kennel.send(:api).stubs(:list).returns monitors }
 
     it "reports missing data" do
       execute TAG: "team:foo"
@@ -51,6 +51,21 @@ describe "tasks" do
       monitors[0][:tags] = ["nodata:ignore"]
       execute TAG: "team:foo"
       stdout.string.must_equal ""
+    end
+  end
+
+  describe "kennel:dump" do
+    let(:task) { "kennel:dump" }
+
+    before { Kennel.send(:api).stubs(:list).returns [{ foo: "bar" }] }
+
+    it "dumps" do
+      execute(TYPE: "monitor")
+      stdout.string.must_equal <<~JSON
+        {
+          "foo": "bar"
+        }
+      JSON
     end
   end
 end
