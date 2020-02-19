@@ -119,6 +119,13 @@ namespace :kennel do
     puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
   end
 
+  desc "Dump ALL of datadog config as raw json ... useful for grep/search TYPE=slo|monitor|dashboard"
+  task dump: :environment do
+    Kennel.send(:api).list(ENV.fetch("TYPE")).each do |r|
+      Kennel.out.puts JSON.pretty_generate(r)
+    end
+  end
+
   task :environment do
     require "kennel"
     gem "dotenv"

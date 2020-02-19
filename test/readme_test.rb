@@ -5,6 +5,10 @@ require "tmpdir"
 SingleCov.not_covered!
 
 describe "Readme.md" do
+  def rake_tasks(content)
+    content.scan(/(rake [^\[\s`]+)/).flatten(1).sort.uniq
+  end
+
   let(:readme) { "Readme.md" }
   let(:ruby_block_start) { "```Ruby" }
 
@@ -27,5 +31,19 @@ describe "Readme.md" do
   it "has language selected for all code blocks so 'working' test above is reliable" do
     code_blocks_starts = File.read(readme).scan(/```.*/).each_slice(2).map(&:first).map(&:strip)
     code_blocks_starts.uniq.sort.must_equal ["```Bash", ruby_block_start]
+  end
+
+  it "documents all public rake tasks" do
+    documented = rake_tasks(File.read("Readme.md"))
+    documented -= ["rake play"] # in parent repo
+
+    output = `cd template && rake -T`
+      .gsub("kennel:plan", "plan") # alias in template/Rakefile
+      .gsub("kennel:generate", "generate") # alias in template/Rakefile
+    available = rake_tasks(output)
+    available -= ["rake kennel:no_diff"] # in template/.travis.yml
+    available -= ["rake kennel:travis"] # in template/.travis.yml
+
+    assert available == documented, "Documented and available rake tasks are not the same:\n#{documented}\n#{available}"
   end
 end
