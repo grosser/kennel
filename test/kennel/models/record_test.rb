@@ -92,6 +92,10 @@ describe Kennel::Models::Record do
         [["~", "graphs[0].requests[0].foo", "baz", "bar"]]
       )
     end
+
+    it "ignores numeric class difference since the api is semi random on these" do
+      diff_resource({ a: 1 }, a: 1.0).must_equal []
+    end
   end
 
   describe ".tracking_id" do

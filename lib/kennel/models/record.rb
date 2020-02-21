@@ -42,7 +42,10 @@ module Kennel
 
         self.class.send(:normalize, expected, actual)
 
-        HashDiff.diff(actual, expected, use_lcs: false)
+        # strict: ignore Integer vs Float
+        # similarity: show diff when not 100% similar
+        # use_lcs: saner output
+        Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
       end
 
       def tracking_id

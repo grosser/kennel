@@ -12,6 +12,6 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.license = "MIT"
   s.required_ruby_version = ">= 2.5.0"
   s.add_runtime_dependency "faraday"
-  s.add_runtime_dependency "hashdiff", "~> 0.3.9" # https://github.com/liufengyun/hashdiff/issues/66
+  s.add_runtime_dependency "hashdiff", "~> 1.0"
   s.add_runtime_dependency "net-http-persistent-retry"
 end

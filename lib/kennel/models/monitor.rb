@@ -132,7 +132,7 @@ module Kennel
 
         case actual[:type]
         when "event alert"
-          # setting 0 results in thresholds not getting returned from the api
+          # setting nothing results in thresholds not getting returned from the api
           options[:thresholds] ||= { critical: 0 }
 
         when "service check"
