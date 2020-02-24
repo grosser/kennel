@@ -3,6 +3,7 @@ module Kennel
   class Syncer
     CACHE_FILE = "tmp/cache/details" # keep in sync with .travis.yml caching
     TRACKING_FIELDS = [:message, :description].freeze
+    DELETE_ORDER = ["dashboard", "slo", "monitor"].freeze # dashboards references monitors + slos, slos reference monitors
 
     def initialize(api, expected, project: nil)
       @api = api
@@ -98,6 +99,8 @@ module Kennel
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
       end
+
+      @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:api_resource) }
     end
 
     # Make diff work even though we cannot mass-fetch definitions

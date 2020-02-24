@@ -178,6 +178,13 @@ describe Kennel::Syncer do
       output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
+    it "deletes in logical order" do
+      monitors << component("a", "a")
+      dashboards << component("a", "b")
+      slos << component("a", "c", id: 1)
+      output.must_equal "Plan:\nDelete dashboard a:b\nDelete slo a:c\nDelete monitor a:a\n"
+    end
+
     it "deletes newest when existing monitor was copied" do
       expected << monitor("a", "b")
       monitors << component("a", "b")
