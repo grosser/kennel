@@ -130,7 +130,7 @@ describe Kennel::Models::Monitor do
 
     it "fails when using invalid interval for query alert type" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 234.1 }, query: -> { "avg(last_20m).count() < #{critical}" }).as_json }
-      e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d"
+      e.message.must_equal "test_project:m1 query interval was 20m, but must be one of 1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d, 2d, 1w"
     end
 
     it "allows next_x interval for query alert type" do
