@@ -84,21 +84,19 @@ describe Kennel::SettingsAsMethods do
 
     it "explains when user forgets to set an option" do
       e = assert_raises(ArgumentError) { TestSetting.new.unset }
-      e.message.must_include "unset for TestSetting"
-      e.message.must_include " on "
+      e.message.must_include "'unset' on TestSetting"
     end
 
     it "does not crash when location was unable to be stored" do
       s = TestSetting.new
       s.instance_variable_set(:@invocation_location, nil)
       e = assert_raises(ArgumentError) { s.unset }
-      e.message.must_include "unset for TestSetting"
-      e.message.wont_include " on "
+      e.message.must_equal "'unset' on TestSetting was not set or passed as option"
     end
 
     it "explains when user forgets to set an option" do
       e = assert_raises(ArgumentError) { TestSetting.new.unset }
-      e.message.must_include "unset for TestSetting"
+      e.message.must_include "'unset' on TestSetting"
     end
 
     it "cannot set unknown settings on base" do
