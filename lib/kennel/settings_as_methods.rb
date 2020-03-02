@@ -25,8 +25,7 @@ module Kennel
         names.each do |name|
           next if method_defined?(name)
           define_method name do
-            message = "Trying to call #{name} for #{self.class} but it was never set or passed as option"
-            raise_with_location ArgumentError, message
+            raise_with_location ArgumentError, "'#{name}' on #{self.class} was not set or passed as option"
           end
         end
       end
