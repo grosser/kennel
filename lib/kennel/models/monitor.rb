@@ -199,7 +199,7 @@ module Kennel
           allowed = data.fetch(:query)[/by\s*{([^\}]+)}/, 1].to_s.split(/\s*,\s*/)
           unsupported = used - allowed
           if unsupported.any?
-            invalid! "is_match used with unsupported dimensions #{unsupported}, allowed dimensions are #{allowed}"
+            invalid! "is_match used with #{unsupported}, but metric is only grouped by #{allowed}"
           end
         end
       end

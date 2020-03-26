@@ -224,7 +224,7 @@ describe Kennel::Models::Monitor do
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
         e = assert_raises(RuntimeError) { mon.as_json }
-        e.message.must_equal "test_project:m1 is_match used with unsupported dimensions [\"environment\"], allowed dimensions are [\"env\"]"
+        e.message.must_equal "test_project:m1 is_match used with [\"environment\"], but metric is only grouped by [\"env\"]"
       end
 
       it "passes when using valid is_match" do
