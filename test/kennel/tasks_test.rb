@@ -3,7 +3,7 @@ require_relative "../test_helper"
 require "rake"
 require "kennel/tasks"
 
-SingleCov.covered! uncovered: 41 # TODO: reduce this
+SingleCov.covered! uncovered: 42 # TODO: reduce this
 
 describe "tasks" do
   with_env DATADOG_APP_KEY: "foo", DATADOG_API_KEY: "bar"
