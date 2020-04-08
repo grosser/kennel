@@ -130,6 +130,14 @@ namespace :kennel do
     require "kennel"
     gem "dotenv"
     require "dotenv"
-    Dotenv.load
+    source = ".env"
+
+    # warn when users have things like DATADOG_TOKEN already set and it will not be loaded from .env
+    unless ENV["KENNEL_SILENCE_UPDATED_ENV"]
+      updated = Dotenv.parse(source).select { |k, v| ENV[k] && ENV[k] != v }
+      warn "Environment variables #{updated.keys.join(", ")} need to be unset to be sourced from #{source}" if updated.any?
+    end
+
+    Dotenv.load(source)
   end
 end
