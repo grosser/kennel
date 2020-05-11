@@ -13,5 +13,5 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.required_ruby_version = ">= 2.5.0"
   s.add_runtime_dependency "faraday"
   s.add_runtime_dependency "hashdiff", "~> 1.0"
-  s.add_runtime_dependency "net-http-persistent-retry"
+  s.add_runtime_dependency "net-http-persistent", "~> 4.0"
 end
