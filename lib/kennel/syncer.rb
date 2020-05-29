@@ -19,6 +19,7 @@ module Kennel
       end
       @expected.each { |e| add_tracking_id e }
       calculate_diff
+      prevent_irreversible_partial_updates
     end
 
     def plan
@@ -42,7 +43,6 @@ module Kennel
         Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
       end
 
-      block_irreversible_partial_updates
       @update.each do |id, e|
         @api.update e.class.api_resource, id, e.as_json
         Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
@@ -151,7 +151,7 @@ module Kennel
       return if list.empty?
       list.each do |_, e, a, diff|
         api_resource = (e ? e.class.api_resource : a.fetch(:api_resource))
-        Kennel.out.puts Utils.color(color, "#{step} #{api_resource} #{tracking_id(e&.as_json || a)}")
+        Kennel.out.puts Utils.color(color, "#{step} #{api_resource} #{e&.tracking_id || tracking_id(a)}")
         print_diff(diff) if diff # only for update
       end
     end
@@ -177,18 +177,30 @@ module Kennel
       end
     end
 
-    def block_irreversible_partial_updates
+    # Do not add tracking-id when working with existing ids on a branch,
+    # so resource do not get deleted from merges to master.
+    # Also make sure the diff still makes sense, by kicking out the now noop-update.
+    #
+    # Note: ideally we'd never add tracking in the first place, but at that point we do not know the diff yet
+    def prevent_irreversible_partial_updates
       return unless @project_filter
-      return if @update.none? do |_, e, _, diff|
-        e.id && diff.any? do |_, field, old, new = nil|
-          TRACKING_FIELDS.include?(field.to_sym) && tracking_value(old) != tracking_value(new)
+      @update.select! do |_, e, _, diff|
+        next true unless e.id # short circuit for performance
+
+        diff.select! do |field_diff|
+          (_, field, old, new) = field_diff
+          next true unless tracking_field?(field)
+
+          if (old_tracking = tracking_value(old))
+            old_tracking == tracking_value(new) || raise("do not update! (atm unreachable)")
+          else
+            field_diff[3] = remove_tracking_id(e) # make plan output match update
+            old != field_diff[3]
+          end
         end
+
+        !diff.empty?
       end
-      raise <<~TEXT
-        Updates with PROJECT= filter should not update tracking id in #{TRACKING_FIELDS.join("/")} of resources with a set `id:`,
-        since this makes them get deleted by a full update.
-        Remove the `id:` to test them out, which will result in a copy being created and later deleted.
-      TEXT
     end
 
     def resolve_linked_tracking_ids(actual)
@@ -212,6 +224,13 @@ module Kennel
       json[field] = "#{json[field]}\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually".lstrip
     end
 
+    def remove_tracking_id(e)
+      json = e.as_json
+      field = tracking_field(json)
+      value = json[field]
+      json[field] = value.dup.sub!(/\n-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
+    end
+
     def tracking_id(a)
       tracking_value a[tracking_field(a)]
     end
@@ -222,6 +241,10 @@ module Kennel
 
     def tracking_field(a)
       TRACKING_FIELDS.detect { |f| a.key?(f) }
+    end
+
+    def tracking_field?(field)
+      TRACKING_FIELDS.include?(field.to_sym)
     end
   end
 end

@@ -140,13 +140,13 @@ describe Kennel::Syncer do
     describe "with project filter set" do
       let(:project_filter) { "a" }
 
-      it "updates when previously unmanaged" do
+      it "updates without tracking when previously unmanaged" do
         expected << monitor("a", "b", id: 123)
         monitors << component("a", "", id: 123, message: "old stuff")
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
-            ~message \"old stuff\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+            ~message \"old stuff\" -> \"@slack-foo\"
         TEXT
       end
     end
@@ -409,23 +409,38 @@ describe Kennel::Syncer do
     describe "with project_filter" do
       let(:project_filter) { "a" }
 
-      it "refuses to tag resources with ids since they would be irreversibly deleted by other branches" do
+      it "refuses to update tracking on resources with ids since they would be deleted by other updates" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor")
+        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel b:b")
         e = assert_raises(RuntimeError) { output }
-        e.message.must_include "should not update"
+        # NOTE: we never reach the actual raise since updating tracking ids is not supported
+        e.message.must_equal "Unable to find existing monitor with id 123"
       end
 
-      it "allows partial updates on monitors with ids when it does not modify tracking" do
+      it "removes tracking from partial updates with ids if they would be deleted by other branches" do
+        expected << monitor("a", "b", foo: "bar", id: 123)
+        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor")
+        api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
+        output.must_equal "Updated monitor  /monitors#123/edit\n"
+      end
+
+      it "allows partial updates on monitors with ids when it does not modify tracking field" do
         expected << monitor("a", "b", foo: "bar", id: 123)
         monitors << component("a", "b", id: 123)
         api.expects(:update)
         output
       end
 
-      it "allows partial updates on monitors with ids when it does not modify tracking id" do
+      it "allows partial updates on monitors with ids when it does not update tracking id" do
         expected << monitor("a", "b", foo: "bar", id: 123)
         monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel a:b")
+        api.expects(:update)
+        output
+      end
+
+      it "allows partial updates on monitors without ids" do
+        expected << monitor("a", "b", foo: "bar")
+        monitors << component("a", "b", id: 123)
         api.expects(:update)
         output
       end

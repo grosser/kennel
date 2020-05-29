@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 require "bundler/setup"
+
+require "maxitest/global_must"
 require "maxitest/autorun"
 require "maxitest/timeout"
+
 require "tmpdir"
 require "kennel/utils"
 require "English"
+
 require "./test/integration_helper"
 
 Maxitest.timeout = 30
