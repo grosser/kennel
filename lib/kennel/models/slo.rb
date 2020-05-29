@@ -62,6 +62,10 @@ module Kennel
         Utils.path_to_url "/slo?slo_id=#{id}"
       end
 
+      def self.parse_url(url)
+        url[/\/slo\?slo_id=([a-z\d]+)/, 1]
+      end
+
       def resolve_linked_tracking_ids(id_map)
         as_json[:monitor_ids] = as_json[:monitor_ids].map do |id|
           id.is_a?(String) ? resolve_link(id, :monitor, id_map) : id

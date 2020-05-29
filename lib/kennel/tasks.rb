@@ -111,12 +111,18 @@ namespace :kennel do
     end
   end
 
-  desc "Convert existing resources to copy-pastable definitions to import existing resources RESOURCE=[dashboard,monitor,slo] ID=1234"
+  desc "Convert existing resources to copy-pasteable definitions to import existing resources (call with URL= or call with RESOURCE= and ID=)"
   task import: :environment do
-    resource = ENV["RESOURCE"] || Kennel::Tasks.abort("Call with RESOURCE=dashboard or monitor or slo")
-    id = ENV["ID"] || Kennel::Tasks.abort("Call with ID=1234")
-    id = Integer(id) if id =~ /^\d+$/ # dashboards can have alphanumeric ids
-    puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
+    if (id = ENV["ID"]) && (resource = ENV["RESOURCE"])
+      id = Integer(id) if id =~ /^\d+$/ # dashboards can have alphanumeric ids
+    elsif (url = ENV["URL"])
+      resource, id = Kennel::Models::Record.parse_any_url(url) || Kennel::Tasks.abort("Unable to parse url")
+    else
+      possible_resources = Kennel::Models::Record.subclasses.map(&:api_resource)
+      Kennel::Tasks.abort("Call with URL= or call with RESOURCE=#{possible_resources.join(" or ")} and ID=")
+    end
+
+    Kennel.out.puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
   end
 
   desc "Dump ALL of datadog config as raw json ... useful for grep/search TYPE=slo|monitor|dashboard"

@@ -3,7 +3,7 @@ require_relative "../test_helper"
 require "rake"
 require "kennel/tasks"
 
-SingleCov.covered! uncovered: 42 # TODO: reduce this
+SingleCov.covered! uncovered: 38 # TODO: reduce this
 
 describe "tasks" do
   with_env DATADOG_APP_KEY: "foo", DATADOG_API_KEY: "bar"
@@ -66,6 +66,27 @@ describe "tasks" do
           "foo": "bar"
         }
       JSON
+    end
+  end
+
+  describe "kennel:import" do
+    let(:task) { "kennel:import" }
+
+    it "can import from RESOURCE/ID" do
+      Kennel::Importer.any_instance.expects(:import).with("monitor", 123).returns("X")
+      execute(RESOURCE: "monitor", ID: "123")
+      stdout.string.must_equal "X\n"
+    end
+
+    it "can import from URL" do
+      Kennel::Importer.any_instance.expects(:import).with("dashboard", "abc").returns("X")
+      execute(URL: "https://app.datadoghq.com/dashboard/abc")
+      stdout.string.must_equal "X\n"
+    end
+
+    it "fails when neither is given" do
+      e = assert_raises(RuntimeError) { execute(ID: "123") }
+      e.message.must_equal "Aborted Call with URL= or call with RESOURCE=dashboard or monitor or slo and ID="
     end
   end
 end

@@ -11,6 +11,14 @@ module Kennel
       settings :id, :kennel_id
 
       class << self
+        def parse_any_url(url)
+          subclasses.detect do |s|
+            if id = s.parse_url(url)
+              break s.api_resource, id
+            end
+          end
+        end
+
         private
 
         def normalize(_expected, actual)

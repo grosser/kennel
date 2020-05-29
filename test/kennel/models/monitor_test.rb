@@ -355,6 +355,23 @@ describe Kennel::Models::Monitor do
     end
   end
 
+  describe ".parse_url" do
+    it "parses" do
+      url = "https://app.datadoghq.com/monitors/123"
+      Kennel::Models::Monitor.parse_url(url).must_equal 123
+    end
+
+    it "parses with # which datadog links to in the UI" do
+      url = "https://app.datadoghq.com/monitors#123"
+      Kennel::Models::Monitor.parse_url(url).must_equal 123
+    end
+
+    it "fails to parse other" do
+      url = "https://app.datadoghq.com/dashboard/bet-foo-bar?from_ts=1585064592575&to_ts=1585068192575&live=true"
+      Kennel::Models::Monitor.parse_url(url).must_be_nil
+    end
+  end
+
   describe ".normalize" do
     it "works with empty" do
       Kennel::Models::Monitor.normalize({}, options: {})

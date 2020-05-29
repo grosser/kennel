@@ -11,6 +11,10 @@ describe Kennel::Models::Record do
       bar: -> { "bar" },
       override: -> { "parent" }
     )
+
+    def self.parse_url(*)
+      nil
+    end
   end
 
   describe "#initialize" do
@@ -136,6 +140,16 @@ describe Kennel::Models::Record do
       Kennel::Models::Dashboard.send(:ignore_default, a, b, a: 1)
       a.must_equal({})
       b.must_equal a: 2
+    end
+  end
+
+  describe ".parse_any_url" do
+    it "finds monitor" do
+      Kennel::Models::Record.parse_any_url("https://app.datadoghq.com/monitors/123").must_equal ["monitor", 123]
+    end
+
+    it "is nil when not found" do
+      Kennel::Models::Record.parse_any_url("https://app.datadoghq.com/wut/123").must_be_nil
     end
   end
 

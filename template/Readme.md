@@ -54,7 +54,7 @@ end
 ### Updating an existing monitor
  - use [datadog monitor UI](https://app.datadoghq.com/monitors/manage) to find a monitor
  - get the `id` from the url
- - run `RESOURCE=monitor ID=12345 bundle exec rake kennel:import` and copy the output
+ - run `URL='https://app.datadoghq.com/monitors/123' bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
  - add the monitor to `parts: [` list, for example:
   ```Ruby
@@ -100,7 +100,7 @@ end
 ### Updating an existing dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to find a dashboard
  - get the `id` from the url
- - run `RESOURCE=dashboard ID=abc-def-ghi bundle exec rake kennel:import` and copy the output
+ - run `URL='https://app.datadoghq.com/dashboard/bet-foo-bar' bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
  - add a dashboard to `parts: [` list, for example:
   ```Ruby

@@ -116,6 +116,10 @@ module Kennel
         Utils.path_to_url "/dashboard/#{id}"
       end
 
+      def self.parse_url(url)
+        url[/\/dashboard\/([a-z\d-]+)/, 1]
+      end
+
       def resolve_linked_tracking_ids(id_map)
         widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
         widgets.each do |widget|

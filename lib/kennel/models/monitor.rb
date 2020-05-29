@@ -120,6 +120,12 @@ module Kennel
         Utils.path_to_url "/monitors##{id}/edit"
       end
 
+      # datadog uses both / and # as separator in it's links
+      def self.parse_url(url)
+        return unless id = url[/\/monitors[\/#](\d+)/, 1]
+        Integer(id)
+      end
+
       def self.normalize(expected, actual)
         super
         options = actual.fetch(:options)

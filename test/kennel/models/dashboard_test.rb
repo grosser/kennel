@@ -289,6 +289,18 @@ describe Kennel::Models::Dashboard do
     end
   end
 
+  describe ".parse_url" do
+    it "parses" do
+      url = "https://app.datadoghq.com/dashboard/bet-foo-bar?from_ts=1585064592575&to_ts=1585068192575&live=true"
+      Kennel::Models::Dashboard.parse_url(url).must_equal "bet-foo-bar"
+    end
+
+    it "fails to parse other" do
+      url = "https://app.datadoghq.com/monitors/123"
+      Kennel::Models::Dashboard.parse_url(url).must_be_nil
+    end
+  end
+
   describe ".ignore_request_defaults" do
     let(:valid) { [{ definition: { requests: [{ c: 1 }] } }] }
     let(:default_style) { { line_width: "normal", palette: "dog_classic", line_type: "solid" } }
