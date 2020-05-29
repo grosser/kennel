@@ -231,4 +231,14 @@ describe Kennel::Utils do
       Kennel::Utils.all_keys([{ foo: 1 }, [[[{ bar: 2 }]]]]).must_equal [:foo, :bar]
     end
   end
+
+  describe ".pretty_inspect" do
+    it "shows hashes that rubocop likes" do
+      Kennel::Utils.pretty_inspect(foo: "bar", bar: 1).must_equal "{ foo: \"bar\", bar: 1 }"
+    end
+
+    it "supports nesting" do
+      Kennel::Utils.pretty_inspect([{ foo: { bar: "bar" } }]).must_equal "[{ foo: { bar: \"bar\" } }]"
+    end
+  end
 end
