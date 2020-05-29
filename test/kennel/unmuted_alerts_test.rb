@@ -93,7 +93,7 @@ describe Kennel::UnmutedAlerts do
     end
 
     it "removes monitors that are Ignored since that just means recovered" do
-      monitor[:state][:groups].values.each { |v| v[:status] = "Ignored" }
+      monitor[:state][:groups].each_value { |v| v[:status] = "Ignored" }
       result.size.must_equal 0
     end
 

@@ -8,7 +8,7 @@ module IntegrationHelper
 
   def with_test_keys_in_dotenv
     File.write(".env", TEST_KEYS)
-    Bundler.with_clean_env do
+    Bundler.with_unbundled_env do
       # we need to make sure we use the test credentials
       # so delete real credentials in the users env
       ENV.delete "DATADOG_API_KEY"

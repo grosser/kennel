@@ -6,6 +6,7 @@ SingleCov.setup :minitest
 
 ENV.delete("CI") # make travis and local behave the same
 
+require "maxitest/global_must"
 require "maxitest/autorun"
 require "maxitest/timeout"
 require "webmock/minitest"
