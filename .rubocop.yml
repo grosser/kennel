@@ -1,7 +1,7 @@
 # Keep these alphabetical
 AllCops:
   CacheRootDirectory: tmp
-  DisplayCopNames: true
+  NewCops: enable
   Exclude:
     - vendor/**/*
     - template/vendor/**/*
