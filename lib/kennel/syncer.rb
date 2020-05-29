@@ -159,12 +159,12 @@ module Kennel
     def print_diff(diff)
       diff.each do |type, field, old, new|
         if type == "+"
-          temp = new.inspect
-          new = old.inspect
+          temp = Utils.pretty_inspect(new)
+          new = Utils.pretty_inspect(old)
           old = temp
         else # ~ and -
-          old = old.inspect
-          new = new.inspect
+          old = Utils.pretty_inspect(old)
+          new = Utils.pretty_inspect(new)
         end
 
         if (old + new).size > 100
