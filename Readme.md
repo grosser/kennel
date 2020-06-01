@@ -23,7 +23,7 @@ Manage datadog monitors/dashboards/slos as code
     ```
  - add a basic projects and teams so others can copy-paste to get started
  - setup travis build for your repo
- - uncomment `.travis.yml` section for automated github PR feedback and datadog updates on merge
+ - uncomment `.travis.yml` section for automated PR planing and datadog updates on merge
  - follow `Setup` in your repos Readme.md
 <!-- NOT IN -->
 

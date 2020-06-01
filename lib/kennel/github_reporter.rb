@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+# Not used in here, but in our templated repo ... so keeping it around for now.
 module Kennel
   class GithubReporter
     MAX_COMMENT_SIZE = 65536
