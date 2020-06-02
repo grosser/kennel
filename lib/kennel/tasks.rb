@@ -68,7 +68,7 @@ namespace :kennel do
     Kennel.update
   end
 
-  desc "update if this is a push to the default branch, otherwise plan (report to github with GITHUB_TOKEN)"
+  desc "update if this is a push to the default branch, otherwise plan"
   task :travis do
     on_default_branch = (ENV["TRAVIS_BRANCH"] == (ENV["DEFAULT_BRANCH"] || "master"))
     is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false")
@@ -79,9 +79,7 @@ namespace :kennel do
         "kennel:plan" # show plan in travis logs
       end
 
-    Kennel::GithubReporter.report(ENV["GITHUB_TOKEN"]) do
-      Rake::Task[task_name].invoke
-    end
+    Rake::Task[task_name].invoke
   end
 
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
