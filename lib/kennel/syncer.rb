@@ -228,7 +228,7 @@ module Kennel
       json = e.as_json
       field = tracking_field(json)
       value = json[field]
-      json[field] = value.dup.sub!(/\n-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
+      json[field] = value.dup.sub!(/\n?-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
     end
 
     def tracking_id(a)

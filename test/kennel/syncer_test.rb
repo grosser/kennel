@@ -149,6 +149,12 @@ describe Kennel::Syncer do
             ~message \"old stuff\" -> \"@slack-foo\"
         TEXT
       end
+
+      it "can plan when linked only by id during update" do
+        expected << monitor("a", "b", id: 123, message: "")
+        monitors << component("a", "b", id: 123, message: "")
+        output.must_equal "Plan:\nNothing to do\n"
+      end
     end
 
     it "shows long updates nicely" do
