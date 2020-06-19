@@ -19,6 +19,7 @@ module Kennel
           .gsub(/::/, "_") # Foo::Bar -> foo_bar
           .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2') # FOOBar -> foo_bar
           .gsub(/([a-z\d])([A-Z])/, '\1_\2') # fooBar -> foo_bar
+          .tr("-", "_") # foo-bar -> foo_bar
           .downcase
       end
 

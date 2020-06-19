@@ -12,6 +12,10 @@ describe Kennel::Utils do
     it "converts classes with all-caps" do
       Kennel::Utils.snake_case("Foo2BarBAZ").must_equal "foo2_bar_baz"
     end
+
+    it "converts dashes for external users" do
+      Kennel::Utils.snake_case("fo-o-bar").must_equal "fo_o_bar"
+    end
   end
 
   describe ".parameterize" do
