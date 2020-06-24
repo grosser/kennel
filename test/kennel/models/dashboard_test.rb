@@ -18,6 +18,7 @@ describe Kennel::Models::Dashboard do
       layout_type: "ordered",
       description: "",
       template_variables: [],
+      template_variable_presets: [],
       widgets: []
     }
   end
@@ -56,6 +57,16 @@ describe Kennel::Models::Dashboard do
 
     it "can ignore validations" do
       dashboard(widgets: -> { [{ definition: { "foo" => 1 } }] }, validate: -> { false }).as_json
+    end
+
+    it "complains when datadog would created a diff by sorting template_variable_presets" do
+      assert_raises Kennel::ValidationError do
+        dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }).as_json
+      end
+    end
+
+    it "doesn't complain on sorted template_variable_presets" do
+      dashboard(template_variable_presets: -> { [{ name: "A" }, { name: "B" }] }).as_json
     end
 
     it "adds ID when given" do

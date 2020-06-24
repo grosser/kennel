@@ -16,12 +16,13 @@ module Kennel
       TIMESERIES_DEFAULTS = { show_legend: false, legend_size: "0" }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
-      settings :title, :description, :definitions, :widgets, :layout_type
+      settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets
 
       defaults(
         description: -> { "" },
         definitions: -> { [] },
         widgets: -> { [] },
+        template_variable_presets: -> { [] },
         id: -> { nil }
       )
 
@@ -102,6 +103,7 @@ module Kennel
           title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
+          template_variable_presets: template_variable_presets,
           widgets: all_widgets
         }
 
@@ -167,6 +169,10 @@ module Kennel
         super
 
         validate_template_variables data, :widgets
+
+        # Avoid diff from datadog presets sorting.
+        presets = data[:template_variable_presets]
+        invalid! "template_variable_presets must be sorted by name" if presets != presets.sort_by { |p| p[:name] }
       end
 
       def render_definitions
