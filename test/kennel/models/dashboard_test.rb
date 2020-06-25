@@ -18,7 +18,7 @@ describe Kennel::Models::Dashboard do
       layout_type: "ordered",
       description: "",
       template_variables: [],
-      template_variable_presets: [],
+      template_variable_presets: nil,
       widgets: []
     }
   end
