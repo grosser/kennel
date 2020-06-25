@@ -202,7 +202,7 @@ module Kennel
           # verify is_match uses available variables
           message = data.fetch(:message)
           used = message.scan(/{{\s*#is_match\s*"([a-zA-Z\d_.-]+).name"/).flatten.uniq
-          allowed = data.fetch(:query)[/by\s*{([^\}]+)}/, 1].to_s.split(/\s*,\s*/)
+          allowed = data.fetch(:query)[/by\s*[\({]([^\}\)]+)[}\)]/, 1].to_s.gsub(/["']/, "").split(/\s*,\s*/)
           unsupported = used - allowed
           if unsupported.any?
             invalid! "is_match used with #{unsupported}, but metric is only grouped by #{allowed}"
