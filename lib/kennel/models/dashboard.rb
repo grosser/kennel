@@ -16,13 +16,17 @@ module Kennel
       TIMESERIES_DEFAULTS = { show_legend: false, legend_size: "0" }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
+      DEFAULTS = {
+        template_variable_presets: nil
+      }.freeze
+
       settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets
 
       defaults(
         description: -> { "" },
         definitions: -> { [] },
         widgets: -> { [] },
-        template_variable_presets: -> { [] },
+        template_variable_presets: -> { nil },
         id: -> { nil }
       )
 
@@ -33,6 +37,8 @@ module Kennel
 
         def normalize(expected, actual)
           super
+
+          ignore_default(expected, actual, DEFAULTS)
 
           widgets_pairs(expected, actual).each do |pair|
             # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
@@ -172,7 +178,7 @@ module Kennel
 
         # Avoid diff from datadog presets sorting.
         presets = data[:template_variable_presets]
-        invalid! "template_variable_presets must be sorted by name" if presets != presets.sort_by { |p| p[:name] }
+        invalid! "template_variable_presets must be sorted by name" if presets && presets != presets.sort_by { |p| p[:name] }
       end
 
       def render_definitions
