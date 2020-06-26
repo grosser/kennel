@@ -275,10 +275,38 @@ describe Kennel::Models::Dashboard do
       formats.must_equal old, "not in-place modified"
     end
 
-    it "ignores remove timeseries defaults" do
-      json = expected_json_with_requests
-      json[:widgets][0][:definition][:show_legend] = false
-      dashboard_with_requests.diff(json).must_equal []
+    describe "with missing default" do
+      let(:json) { expected_json_with_requests }
+      before { json[:widgets][0][:definition][:show_legend] = false }
+
+      it "ignores timeseries defaults" do
+        dashboard_with_requests.diff(json).must_equal []
+      end
+
+      it "does not ignore diff for different types" do
+        json[:widgets][0][:definition][:show_legend] = false
+        json[:widgets][0][:definition][:type] = "note"
+        dashboard_with_requests.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
+      end
+    end
+
+    it "ignores note defaults" do
+      json = expected_json
+      json[:widgets] << {
+        definition: {
+          type: "note",
+          content: "C",
+          text_align: "left",
+          background_color: "white",
+          font_size: "14",
+          show_tick: false,
+          tick_edge: "left",
+          tick_pos: "50%"
+        }
+      }
+      dashboard(
+        widgets: -> { [{ definition: { type: "note", content: "C" } }] }
+      ).diff(json).must_equal []
     end
   end
 

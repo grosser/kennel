@@ -13,7 +13,10 @@ module Kennel
       REQUEST_DEFAULTS = {
         style: { line_width: "normal", palette: "dog_classic", line_type: "solid" }
       }.freeze
-      TIMESERIES_DEFAULTS = { show_legend: false, legend_size: "0" }.freeze
+      WIDGET_DEFAULTS = {
+        "timeseries" => { show_legend: false, legend_size: "0" },
+        "note" => { background_color: "white", font_size: "14", show_tick: false, tick_edge: "left", tick_pos: "50%", text_align: "left" }
+      }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
       DEFAULTS = {
@@ -26,7 +29,7 @@ module Kennel
         description: -> { "" },
         definitions: -> { [] },
         widgets: -> { [] },
-        template_variable_presets: -> { nil },
+        template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         id: -> { nil }
       )
 
@@ -50,7 +53,7 @@ module Kennel
               end
             end
 
-            ignore_definition_defaults_for_type pair, "timeseries", TIMESERIES_DEFAULTS
+            ignore_widget_defaults pair
 
             ignore_request_defaults(*pair)
 
@@ -61,11 +64,12 @@ module Kennel
 
         private
 
-        def ignore_definition_defaults_for_type(pair, type, defaults)
+        def ignore_widget_defaults(pair)
           pair.map(&:size).max.times do |i|
-            if pair.all? { |w| w.dig(i, :definition, :type) == type }
-              ignore_defaults(pair[0], pair[1], defaults, nesting: :definition)
-            end
+            types = pair.map { |w| w.dig(i, :definition, :type) }.uniq
+            next unless types.size == 1
+            next unless defaults = WIDGET_DEFAULTS[types.first]
+            ignore_defaults(pair[0], pair[1], defaults, nesting: :definition)
           end
         end
 
