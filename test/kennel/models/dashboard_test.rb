@@ -374,7 +374,7 @@ describe Kennel::Models::Dashboard do
       copy = deep_dup(valid)
       copy.dig(0, :definition, :requests).clear
       Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, copy)
-      valid.must_equal [{ definition: { requests: [c: 1] } }]
+      valid.must_equal [{ definition: { requests: [{ c: 1 }] } }]
       copy.must_equal [{ definition: { requests: [] } }]
     end
   end

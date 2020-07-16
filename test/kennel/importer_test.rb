@@ -25,13 +25,13 @@ describe Kennel::Importer do
       project.parts.size.must_equal 1
     end
 
-    it "refuses to import deprected screen" do
+    it "refuses to import deprecated screen" do
       assert_raises ArgumentError do
         importer.import("dash", "abc")
       end
     end
 
-    it "refuses to import deprected dash" do
+    it "refuses to import deprecated dash" do
       assert_raises ArgumentError do
         importer.import("screen", "abc")
       end
@@ -97,6 +97,21 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "hello" }
+        )
+      RUBY
+    end
+
+    it "can import a slo" do
+      response = { data: { id: 123, name: "hello", tags: [] } }
+      stub_datadog_request(:get, "slo/123").to_return(body: response.to_json)
+      dash = importer.import("slo", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Slo.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          tags: -> { super() + [] }
         )
       RUBY
     end

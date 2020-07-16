@@ -40,7 +40,8 @@ module Kennel
           Kennel::Utils.parameterize(title)
         end
 
-      if resource == "monitor"
+      case resource
+      when "monitor"
         # flatten monitor options so they are all on the base
         data.merge!(data.delete(:options))
         data.merge!(data.delete(:thresholds) || {})
@@ -55,7 +56,7 @@ module Kennel
         end
 
         data[:type] = "query alert" if data[:type] == "metric alert"
-      elsif resource == "dashboard"
+      when "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
         widgets&.each { |widget| dry_up_query!(widget) }
       end
