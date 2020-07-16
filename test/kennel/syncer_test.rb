@@ -412,6 +412,23 @@ describe Kennel::Syncer do
       output.must_equal "Deleted monitor a:b 123\n"
     end
 
+    it "can create multiple dependent resources" do
+      expected << monitor("a", "b")
+      expected << slo("a", "c", monitor_ids: ["a:b"])
+      api.expects(:create)
+        .with("monitor", expected.first.as_json)
+        .returns(expected.first.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
+      api.expects(:create)
+        .with(
+          "slo",
+          expected.last.as_json.merge(
+            monitor_ids: [1],
+            description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
+          )
+        ).returns(id: 2)
+      output.must_equal "Created monitor a:b /monitors#1/edit\nCreated slo a:c /slo?slo_id=2\n"
+    end
+
     describe "with project_filter" do
       let(:project_filter) { "a" }
 

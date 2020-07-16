@@ -60,23 +60,22 @@ module Kennel
         "#{project.kennel_id}:#{kennel_id}"
       end
 
-      def resolve_linked_tracking_ids(*)
+      def resolve_linked_tracking_ids!(*)
       end
 
       private
 
-      def resolve_link(id, type, id_map, force: false)
-        found = id_map[id]
-        return found if found && found != :new
-        api_resource = self.class.api_resource
-
-        if found == :new
+      def resolve_link(id, type, id_map, force:)
+        value = id_map[id]
+        if value == :new
           if force
-            invalid! "#{api_resource.capitalize} #{id} will be created in the current run and can only be used after that"
+            # TODO: remove the need for this by sorting monitors by missing resolutions
+            invalid! "#{id} needs to already exist, try again"
           else
-            Kennel.err.puts "#{api_resource.capitalize} #{id} will be created in the current run, the next run will link it properly"
-            Kennel::MISSING_ID
+            id # will be re-resolved by syncer after the linked object was created
           end
+        elsif value
+          value
         else
           invalid! "Unable to find #{type} #{id} (does not exist and is not being created by the current run)"
         end

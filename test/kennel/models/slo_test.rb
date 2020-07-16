@@ -97,30 +97,29 @@ describe Kennel::Models::Slo do
     end
   end
 
-  describe "#resolve_linked_tracking_ids" do
+  describe "#resolve_linked_tracking_ids!" do
     it "does nothing for hardcoded ids" do
       slo = slo(monitor_ids: -> { [123] })
-      slo.resolve_linked_tracking_ids({})
+      slo.resolve_linked_tracking_ids!({}, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "resolves relative ids" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      slo.resolve_linked_tracking_ids("#{project.kennel_id}:mon" => 123)
+      slo.resolve_linked_tracking_ids!({ "#{project.kennel_id}:mon" => 123 }, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
-    it "allows unresolvable ids so monitors can be created with slos" do
+    it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      Kennel.err.expects(:puts)
-      slo.resolve_linked_tracking_ids("#{project.kennel_id}:mon" => :new)
-      slo.as_json[:monitor_ids].must_equal [1]
+      slo.resolve_linked_tracking_ids!({ "#{project.kennel_id}:mon" => :new }, force: false)
+      slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
     end
 
     it "fails with typos" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
       assert_raises Kennel::ValidationError do
-        slo.resolve_linked_tracking_ids({})
+        slo.resolve_linked_tracking_ids!({}, force: false)
       end
     end
   end

@@ -119,8 +119,8 @@ describe Kennel::Models::Dashboard do
   describe "#resolve_linked_tracking_ids" do
     let(:definition) { dashboard_with_requests.as_json[:widgets][0][:definition] }
 
-    def resolve(map = {})
-      dashboard_with_requests.resolve_linked_tracking_ids(map)
+    def resolve(map = {}, force: false)
+      dashboard_with_requests.resolve_linked_tracking_ids!(map, force: force)
       dashboard_with_requests.as_json[:widgets][0][:definition]
     end
 
@@ -151,12 +151,12 @@ describe Kennel::Models::Dashboard do
         resolved[:monitor_ids].must_equal [123]
       end
 
-      it "does not fail hard when id is missing to not break when adding new monitors" do
+      it "fail hard when id is still missing after dependent monitors were created by syncer" do
         definition[:monitor_ids] = ["missing:the_id"]
-        err = Kennel::Utils.capture_stderr do
-          resolve("missing:the_id" => :new)[:monitor_ids].must_equal [1]
+        e = assert_raises Kennel::ValidationError do
+          resolve({ "missing:the_id" => :new }, force: true)
         end
-        err.must_include "Dashboard missing:the_id will be created in the current run"
+        e.message.must_include "missing:the_id needs to already exist"
       end
     end
 
@@ -185,10 +185,7 @@ describe Kennel::Models::Dashboard do
 
       it "does not fail hard when id is missing to not break when adding new monitors" do
         definition[:alert_id] = "a:b"
-        err = Kennel::Utils.capture_stderr do
-          resolve("a:b" => :new)[:alert_id].must_equal "1"
-        end
-        err.must_include "Dashboard a:b will be created in the current run"
+        resolve("a:b" => :new)[:alert_id].must_equal "a:b"
       end
     end
 

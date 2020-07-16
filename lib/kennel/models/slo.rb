@@ -66,9 +66,9 @@ module Kennel
         url[/\/slo\?slo_id=([a-z\d]+)/, 1]
       end
 
-      def resolve_linked_tracking_ids(id_map)
+      def resolve_linked_tracking_ids!(id_map, **args)
         as_json[:monitor_ids] = as_json[:monitor_ids].map do |id|
-          id.is_a?(String) ? resolve_link(id, :monitor, id_map) : id
+          id.is_a?(String) ? resolve_link(id, :monitor, id_map, **args) : id
         end
       end
 

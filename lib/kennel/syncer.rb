@@ -38,12 +38,23 @@ module Kennel
     end
 
     def update
+      changed = (@create + @update).map { |_, e| e } unless @create.empty?
+
       @create.each do |_, e|
+        e.resolve_linked_tracking_ids!({}, force: true)
+
         reply = @api.create e.class.api_resource, e.as_json
-        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(reply.fetch(:id))}"
+        id = reply.fetch(:id)
+
+        # resolve ids we could previously no resolve
+        changed.delete e
+        resolve_linked_tracking_ids! from: [reply], to: changed
+
+        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
       @update.each do |id, e|
+        e.resolve_linked_tracking_ids!({}, force: true)
         @api.update e.class.api_resource, id, e.as_json
         Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
@@ -65,12 +76,10 @@ module Kennel
       @delete = []
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
-
-      resolve_linked_tracking_ids actual
+      resolve_linked_tracking_ids! from: actual, to: @expected
+      filter_by_project! actual
 
       Progress.progress "Diffing" do
-        filter_by_project! actual
-
         items = actual.map do |a|
           e = matching_expected(a)
           if e && @expected.delete(e)
@@ -98,6 +107,7 @@ module Kennel
 
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
+        @create.sort_by! { |_, e| -DELETE_ORDER.index(e.class.api_resource) }
       end
 
       @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:api_resource) }
@@ -178,7 +188,7 @@ module Kennel
     end
 
     # Do not add tracking-id when working with existing ids on a branch,
-    # so resource do not get deleted from merges to master.
+    # so resource do not get deleted fr:om merges to master.
     # Also make sure the diff still makes sense, by kicking out the now noop-update.
     #
     # Note: ideally we'd never add tracking in the first place, but at that point we do not know the diff yet
@@ -203,10 +213,10 @@ module Kennel
       end
     end
 
-    def resolve_linked_tracking_ids(actual)
-      map = actual.each_with_object({}) { |a, lookup| lookup[tracking_id(a)] = a.fetch(:id) }
-      @expected.each { |e| map[e.tracking_id] ||= :new }
-      @expected.each { |e| e.resolve_linked_tracking_ids(map) }
+    def resolve_linked_tracking_ids!(from:, to:)
+      map = from.each_with_object({}) { |a, lookup| lookup[tracking_id(a)] = a.fetch(:id) }
+      to.each { |e| map[e.tracking_id] ||= :new }
+      to.each { |e| e.resolve_linked_tracking_ids!(map, force: false) }
     end
 
     def filter_by_project!(definitions)

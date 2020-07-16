@@ -37,26 +37,23 @@ describe Kennel::Models::Record do
     let(:base) { Kennel::Models::Monitor.new(TestProject.new, kennel_id: -> { "test" }) }
 
     it "resolves" do
-      base.send(:resolve_link, "foo", :monitor, "foo" => 2).must_equal 2
+      base.send(:resolve_link, "foo", :monitor, { "foo" => 2 }, force: false).must_equal 2
     end
 
     it "warns when new but not required" do
-      err = Kennel::Utils.capture_stderr do
-        base.send(:resolve_link, "foo", :monitor, "foo" => :new).must_equal Kennel::MISSING_ID
-      end
-      err.must_include "Monitor foo will be created in the current run"
+      base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: false).must_equal "foo"
     end
 
     it "fails when new but required" do
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: true)
       end
-      e.message.must_include "test_project:test Monitor foo will be created"
+      e.message.must_include "needs to already exist, try again"
     end
 
     it "fails when missing" do
       e = assert_raises Kennel::ValidationError do
-        base.send(:resolve_link, "foo", :monitor, "bar" => 1)
+        base.send(:resolve_link, "foo", :monitor, { "bar" => 1 }, force: false)
       end
       e.message.must_include "test_project:test Unable to find monitor foo"
     end

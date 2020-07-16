@@ -261,7 +261,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "does nothing for regular monitors" do
-      mon.resolve_linked_tracking_ids({})
+      mon.resolve_linked_tracking_ids!({}, force: false)
       mon.as_json[:query].must_equal "%{#{project.kennel_id}:mon}"
     end
 
@@ -272,13 +272,13 @@ describe Kennel::Models::Monitor do
 
       it "fails when matching monitor is missing" do
         e = assert_raises Kennel::ValidationError do
-          mon.resolve_linked_tracking_ids({})
+          mon.resolve_linked_tracking_ids!({}, force: false)
         end
         e.message.must_include "test_project:m1 Unable to find monitor foo:mon_a"
       end
 
       it "resolves correctly with a matching monitor" do
-        mon.resolve_linked_tracking_ids("foo:mon_x" => 3, "foo:mon_a" => 1, "bar:mon_b" => 2)
+        mon.resolve_linked_tracking_ids!({ "foo:mon_x" => 3, "foo:mon_a" => 1, "bar:mon_b" => 2 }, force: false)
         mon.as_json[:query].must_equal("1 || !2")
       end
     end

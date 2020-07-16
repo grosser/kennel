@@ -132,7 +132,7 @@ module Kennel
         url[/\/dashboard\/([a-z\d-]+)/, 1]
       end
 
-      def resolve_linked_tracking_ids(id_map)
+      def resolve_linked_tracking_ids!(id_map, **args)
         widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
         widgets.each do |widget|
           next unless definition = widget[:definition]
@@ -140,16 +140,16 @@ module Kennel
           when "uptime"
             if ids = definition[:monitor_ids]
               definition[:monitor_ids] = ids.map do |id|
-                tracking_id?(id) ? resolve_link(id, :monitor, id_map) : id
+                tracking_id?(id) ? resolve_link(id, :monitor, id_map, **args) : id
               end
             end
           when "alert_graph"
             if (id = definition[:alert_id]) && tracking_id?(id)
-              definition[:alert_id] = resolve_link(id, :monitor, id_map).to_s
+              definition[:alert_id] = resolve_link(id, :monitor, id_map, **args).to_s
             end
           when "slo"
             if (id = definition[:slo_id]) && tracking_id?(id)
-              definition[:slo_id] = resolve_link(id, :slo, id_map).to_s
+              definition[:slo_id] = resolve_link(id, :slo, id_map, **args).to_s
             end
           end
         end
