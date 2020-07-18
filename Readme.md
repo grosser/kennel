@@ -1,17 +1,58 @@
-# Kennel
-
 ![](template/github/cage.jpg?raw=true)
 
-Manage datadog monitors/dashboards/slos as code
+Manage Datadog Monitors / Dashboards / Slos as code
 
- - Documented, reusable, and searchable
- - Changes are PR reviewed and auditable
+ - DRY, searchable, audited, documented
+ - Changes are PR reviewed and applied on merge
  - Updating shows diff before applying
- - Automated import of existing monitors/dashboards/slos
+ - Automated import of existing resources
+ - Resources are grouped into projects that belong to teams and inherit tags
+ - No copy-pasting of ids to create new resources
+ - Automated cleanup when removing code
+ - [Helpers](#helpers) for automating common tasks
+ 
+### Applying changes
 
 ![](template/github/screen.png?raw=true)
+
+### Example code
+
+```Ruby
+# teams/foo.rb
+module Teams
+  class Foo < Kennel::Models::Team
+    defaults(mention: -> { "@slack-my-team" })
+  end
+end
+
+# projects/bar.rb
+class Bar < Kennel::Models::Project
+  defaults(
+    team: -> { Teams::Foo.new }, # use mention and tags from the team
+    parts: -> {
+      [
+        Kennel::Models::Monitor.new(
+          self, # the current project
+          type: -> { "query alert" },
+          kennel_id: -> { "load-too-high" }, # pick a unique name
+          name: -> { "Foobar Load too high" }, # nice descriptive name that will show up in alerts and emails
+          message: -> {
+            <<~TEXT
+              This is bad!
+              #{super()} # inserts mention from team
+            TEXT
+          },
+          query: -> { "avg(last_5m):avg:system.load.5{hostgroup:api} by {pod} > #{critical}" },
+          critical: -> { 20 }
+        )
+      ]
+    }
+  )
+end
+```
+
 <!-- NOT IN template/Readme.md  -->
-## Install
+## Installation
 
  - create a new private `kennel` repo for your organization (do not fork this repo)
  - use the template folder as starting point:
@@ -22,8 +63,8 @@ Manage datadog monitors/dashboards/slos as code
     cd kennel && git add . && git commit -m 'initial'
     ```
  - add a basic projects and teams so others can copy-paste to get started
- - setup travis build for your repo
- - uncomment `.travis.yml` section for automated PR planing and datadog updates on merge
+ - setup travis (CI) build for your repo
+ - uncomment `.travis.yml` section for datadog updates on merge
  - follow `Setup` in your repos Readme.md
 <!-- NOT IN -->
 
@@ -176,25 +217,7 @@ To link to existing monitors via their kennel_id
  - figure out project name by converting the class name to snake-case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
 
-### Listing un-muted alerts
-
-Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
-
-### Validating mentions work
-
-`rake kennel:validate_mentions` should run as part of CI
-
-### Grepping through all of datadog
-
-`TYPE=monitor rake kennel:dump`
-
-### Find all monitors with No-Data
-
-`rake kennel:nodata TAG=team:foo`
-
-## Examples
-
-### Reusable monitors/dashes/etc
+### Reuse
 
 Add to `parts/<folder>`.
 
@@ -221,7 +244,29 @@ class Database < Kennel::Models::Project
   )
 end
 ```
+
+## Helpers
+
+### Listing un-muted alerts
+
+Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
+
+### Validating mentions work
+
+`rake kennel:validate_mentions` should run as part of CI
+
+### Grepping through all of datadog
+
+`TYPE=monitor rake kennel:dump`
+
+### Find all monitors with No-Data
+
+`rake kennel:nodata TAG=team:foo`
+
 <!-- NOT IN template/Readme.md -->
+
+
+## Development
 
 ### Integration testing
 
