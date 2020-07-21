@@ -25,7 +25,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay
+        :threshold_windows, :new_host_delay, :groupby_simple_monitor
       )
 
       defaults(
@@ -44,7 +44,8 @@ module Kennel
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
-        threshold_windows: -> { nil }
+        threshold_windows: -> { nil },
+        groupby_simple_monitor: -> { nil }
       )
 
       def as_json
@@ -92,6 +93,11 @@ module Kennel
             # metric and query values are stored as float by datadog
             thresholds.each { |k, v| thresholds[k] = Float(v) }
           end
+        end
+
+        # option randomly pops up and cannot be removed
+        unless (group = groupby_simple_monitor).nil?
+          options[:groupby_simple_monitor] = group
         end
 
         if windows = threshold_windows

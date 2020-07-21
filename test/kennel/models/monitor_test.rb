@@ -105,6 +105,10 @@ describe Kennel::Models::Monitor do
       monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
     end
 
+    it "can set groupby_simple_monitor" do
+      monitor(groupby_simple_monitor: -> { false }).as_json[:options][:groupby_simple_monitor].must_equal false
+    end
+
     describe "query alert" do
       it "converts threshold values to floats to avoid api diff" do
         monitor(critical: -> { 234 }).as_json
