@@ -1,5 +1,5 @@
 language: ruby
-if: type = push # only build pushes, not theoretical merge commits so commenting works
+if: type = push
 cache:
   bundler: true
   directories:
@@ -16,7 +16,7 @@ matrix:
     # automated planing for PRs + updating for merges
     # fill this out with datadog credentials
 #   - env:
-#     - TASK="kennel:travis --trace"
+#     - TASK="kennel:ci --trace"
 #     - DATADOG_SUBDOMAIN=app
 #     - secure: "FILL-IN" # travis encrypt DATADOG_API_KEY=?
 #     - secure: "FILL-IN" # travis encrypt DATADOG_APP_KEY=?

@@ -42,7 +42,7 @@ describe "Readme.md" do
       .gsub("kennel:generate", "generate") # alias in template/Rakefile
     available = rake_tasks(output)
     available -= ["rake kennel:no_diff"] # in template/.travis.yml
-    available -= ["rake kennel:travis"] # in template/.travis.yml
+    available -= ["rake kennel:ci"] # in template/.travis.yml
 
     assert available == documented, "Documented and available rake tasks are not the same:\n#{documented}\n#{available}"
   end

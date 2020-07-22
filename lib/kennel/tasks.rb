@@ -68,15 +68,16 @@ namespace :kennel do
     Kennel.update
   end
 
-  desc "update if this is a push to the default branch, otherwise plan"
-  task :travis do
-    on_default_branch = (ENV["TRAVIS_BRANCH"] == (ENV["DEFAULT_BRANCH"] || "master"))
-    is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false")
+  desc "update on push to the default branch, otherwise show plan"
+  task :ci do
+    branch = (ENV["TRAVIS_BRANCH"] || ENV["GITHUB_REF"]).to_s.sub(/^refs\/heads\//, "")
+    on_default_branch = (branch == (ENV["DEFAULT_BRANCH"] || "master"))
+    is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push")
     task_name =
       if on_default_branch && is_push
         "kennel:update_datadog"
       else
-        "kennel:plan" # show plan in travis logs
+        "kennel:plan" # show plan in CI logs
       end
 
     Rake::Task[task_name].invoke

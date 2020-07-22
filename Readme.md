@@ -63,8 +63,8 @@ end
     cd kennel && git add . && git commit -m 'initial'
     ```
  - add a basic projects and teams so others can copy-paste to get started
- - setup travis (CI) build for your repo
- - uncomment `.travis.yml` section for datadog updates on merge
+ - setup CI build for your repo (travis and Github Actions supported)
+ - uncomment `.travis.yml` section for datadog updates on merge (TODO: example setup for Github Actions)
  - follow `Setup` in your repos Readme.md
 <!-- NOT IN -->
 
@@ -150,7 +150,7 @@ end
  - alternatively: `bundle exec rake generate` to only locally update the generated `json` files
  - review changes then `git commit`
  - make a PR ... get reviewed ... merge
- - datadog is updated by travis
+ - datadog is updated by CI
 
 ### Adding a new dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard

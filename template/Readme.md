@@ -132,7 +132,7 @@ end
  - alternatively: `bundle exec rake generate` to only locally update the generated `json` files
  - review changes then `git commit`
  - make a PR ... get reviewed ... merge
- - datadog is updated by travis
+ - datadog is updated by CI
 
 ### Adding a new dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard
