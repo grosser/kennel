@@ -239,7 +239,8 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 
 ### Grepping through all of datadog
 
-`TYPE=monitor rake kennel:dump`
+`rake kennel:dump`
+focus on a single type: `TYPE=monitors`
 
 ### Find all monitors with No-Data
 

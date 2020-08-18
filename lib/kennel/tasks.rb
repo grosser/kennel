@@ -124,10 +124,18 @@ namespace :kennel do
     Kennel.out.puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
   end
 
-  desc "Dump ALL of datadog config as raw json ... useful for grep/search TYPE=slo|monitor|dashboard"
+  desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
   task dump: :environment do
-    Kennel.send(:api).list(ENV.fetch("TYPE")).each do |r|
-      Kennel.out.puts JSON.pretty_generate(r)
+    resources =
+      if type = ENV["TYPE"]
+        [type]
+      else
+        Kennel::Models::Record.subclasses.map(&:api_resource)
+      end
+    resources.each do |resource|
+      Kennel.send(:api).list(resource).each do |r|
+        Kennel.out.puts JSON.pretty_generate(r)
+      end
     end
   end
 

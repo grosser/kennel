@@ -67,6 +67,21 @@ describe "tasks" do
         }
       JSON
     end
+
+    it "dumps all" do
+      execute
+      stdout.string.must_equal <<~JSON
+        {
+          "foo": "bar"
+        }
+        {
+          "foo": "bar"
+        }
+        {
+          "foo": "bar"
+        }
+      JSON
+    end
   end
 
   describe "kennel:import" do
