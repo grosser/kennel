@@ -42,10 +42,14 @@ module Kennel
 
       case resource
       when "monitor"
-        # flatten monitor options so they are all on the base
+        # flatten monitor options so they are all on the base which is how Monitor builds them
         data.merge!(data.delete(:options))
         data.merge!(data.delete(:thresholds) || {})
+
+        # clean up values that are the default
         [:notify_no_data, :notify_audit].each { |k| data.delete(k) if data[k] } # monitor uses true by default
+
+        # keep all values that are settable
         data = data.slice(*model.instance_methods)
 
         # make query use critical method if it matches
@@ -60,6 +64,8 @@ module Kennel
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
         widgets&.each { |widget| dry_up_query!(widget) }
       end
+
+      data.delete(:tags) if data[:tags] == [] # do not create super + [] call
 
       # simplify template_variables to array of string when possible
       if vars = data[:template_variables]

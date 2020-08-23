@@ -101,8 +101,22 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "ignores empty tags" do
+      response = { id: 123, name: "hello", options: {}, tags: [] }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      dash = importer.import("monitor", 123)
+      dash.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" }
+        )
+      RUBY
+    end
+
     it "can import a slo" do
-      response = { data: { id: 123, name: "hello", tags: [] } }
+      response = { data: { id: 123, name: "hello", tags: ["foo"] } }
       stub_datadog_request(:get, "slo/123").to_return(body: response.to_json)
       dash = importer.import("slo", 123)
       dash.must_equal <<~RUBY
@@ -111,7 +125,7 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "hello" },
-          tags: -> { super() + [] }
+          tags: -> { super() + ["foo"] }
         )
       RUBY
     end
