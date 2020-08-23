@@ -32,7 +32,7 @@ GEM
     net-http-persistent (4.0.0)
       connection_pool (~> 2.2)
     parallel (1.19.2)
-    parallel_tests (2.32.0)
+    parallel_tests (3.1.0)
       parallel
     parser (2.7.1.4)
       ast (~> 2.4.1)

@@ -180,7 +180,7 @@ describe Kennel::Importer do
     end
 
     it "removes monitor default" do
-      response = { id: 123, name: "hello", options: { notify_audit: true } }
+      response = { id: 123, name: "hello", options: { notify_audit: false, notify_no_data: true } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       code = importer.import("monitor", "123")
       code.must_equal <<~RUBY
@@ -194,7 +194,7 @@ describe Kennel::Importer do
     end
 
     it "keeps monitor values that are not the default" do
-      response = { id: 123, name: "hello", options: { notify_audit: false } }
+      response = { id: 123, name: "hello", options: { notify_audit: true, notify_no_data: false } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       code = importer.import("monitor", "123")
       code.must_equal <<~RUBY
@@ -203,7 +203,8 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "hello" },
-          notify_audit: -> { false }
+          notify_audit: -> { true },
+          notify_no_data: -> { false }
         )
       RUBY
     end
@@ -213,7 +214,7 @@ describe Kennel::Importer do
         id: 123,
         name: "hello",
         options: {
-          notify_audit: true,
+          notify_audit: false,
           locked: false,
           timeout_h: 0,
           include_tags: true,

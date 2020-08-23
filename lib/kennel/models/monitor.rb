@@ -18,6 +18,7 @@ module Kennel
         new_host_delay: 300,
         timeout_h: 0,
         renotify_interval: 0,
+        notify_audit: false,
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         groupby_simple_monitor: false
       }.freeze
@@ -36,9 +37,9 @@ module Kennel
         warning: -> { nil },
         ok: -> { nil },
         id: -> { nil },
-        notify_no_data: -> { true },
+        notify_no_data: -> { true }, # datadog sets this to false by default, but true is the safer
         no_data_timeframe: -> { 60 },
-        notify_audit: -> { true },
+        notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },

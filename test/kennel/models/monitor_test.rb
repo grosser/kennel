@@ -36,7 +36,7 @@ describe Kennel::Models::Monitor do
         timeout_h: 0,
         notify_no_data: true,
         no_data_timeframe: 60,
-        notify_audit: true,
+        notify_audit: false,
         require_full_window: true,
         new_host_delay: 300,
         include_tags: true,
@@ -398,12 +398,12 @@ describe Kennel::Models::Monitor do
       Kennel::Models::Monitor.normalize({}, options: {})
     end
 
-    it "does not ignore notify_audit/notify_no_data since that would make import incorrect" do
-      actual = { options: { notify_audit: false, notify_no_data: false } }
-      expected = { options: { notify_audit: false, notify_no_data: false } }
+    it "does not ignore notify_no_data false since default is true and that would make import incorrect" do
+      actual = { options: { notify_no_data: false } }
+      expected = { options: { notify_no_data: false } }
       Kennel::Models::Monitor.normalize(expected, actual)
-      expected.must_equal(options: { notify_audit: false, notify_no_data: false })
-      actual.must_equal(options: { notify_audit: false, notify_no_data: false })
+      expected.must_equal(options: { notify_no_data: false })
+      actual.must_equal(options: { notify_no_data: false })
     end
 
     it "ignores defaults" do
