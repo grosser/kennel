@@ -113,6 +113,10 @@ module Kennel
         end
       end
 
+      def silence!
+        as_json[:options][:silenced] = {}
+      end
+
       def self.api_resource
         "monitor"
       end

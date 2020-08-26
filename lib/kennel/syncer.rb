@@ -39,18 +39,18 @@ module Kennel
 
     def update
       changed = (@create + @update).map { |_, e| e } unless @create.empty?
+      silence_monitors! if @project_filter
 
       @create.each do |_, e|
         e.resolve_linked_tracking_ids!({}, force: true)
 
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
+        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
 
         # resolve ids we could previously no resolve
         changed.delete e
         resolve_linked_tracking_ids! from: [reply], to: changed
-
-        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
       @update.each do |id, e|
@@ -225,6 +225,11 @@ module Kennel
         id = tracking_id(a)
         !id || id.start_with?("#{@project_filter}:")
       end
+    end
+
+    # TODO: this will never get removed since kennel does not manage silenced :(
+    def silence_monitors!
+      (@create + @update).each { |_, e| e.silence! if e.class == Models::Monitor }
     end
 
     def add_tracking_id(e)
