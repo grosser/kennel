@@ -15,8 +15,10 @@ module Kennel
     def initialize(token, git_sha)
       @token = token
       @git_sha = git_sha
-      origin = ENV["PROJECT_REPOSITORY"] || Utils.capture_sh("git remote -v").split("\n").first
-      @repo_part = origin[%r{github\.com[:/](.+?)(\.git|$)}, 1] || raise("no origin found")
+      @repo_part = ENV["GITHUB_REPOSITORY"] || begin
+        origin = ENV["PROJECT_REPOSITORY"] || Utils.capture_sh("git remote -v").split("\n").first
+        origin[%r{github\.com[:/](\S+?)(\.git|$)}, 1] || raise("no origin found in #{origin}")
+      end
     end
 
     def report(&block)

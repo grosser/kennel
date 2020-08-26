@@ -69,6 +69,15 @@ describe Kennel::GithubReporter do
       end
     end
 
+    it "can take remote from env as github actions provides it" do
+      Kennel::Utils.unstub(:capture_sh)
+      Kennel::Utils.expects(:capture_sh).never
+
+      with_env GITHUB_REPOSITORY: "bar/baz" do
+        reporter.instance_variable_get(:@repo_part).must_equal "bar/baz"
+      end
+    end
+
     it "shows user errors" do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with(body: { body: "```\nError:\nwhoops\n```" }.to_json)
