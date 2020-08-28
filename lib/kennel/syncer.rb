@@ -38,8 +38,8 @@ module Kennel
     end
 
     def update
-      changed = (@create + @update).map { |_, e| e } unless @create.empty?
-      silence_monitors! if @project_filter
+      changed = (@create + @update).map { |_, e| e }
+      toggle_partial_update_silence changed
 
       @create.each do |_, e|
         e.resolve_linked_tracking_ids!({}, force: true)
@@ -227,9 +227,18 @@ module Kennel
       end
     end
 
-    # TODO: this will never get removed since kennel does not manage silenced :(
-    def silence_monitors!
-      (@create + @update).each { |_, e| e.silence! if e.class == Models::Monitor }
+    def toggle_partial_update_silence
+      if @project_filter
+        @created.each do |_, e|
+          next unless e.class == Models::Monitor
+          e.toggle_silence_for_partial_update! true
+        end
+      else
+        @update.each do |_, e|
+          next unless e.class == Models::Monitor
+          e.toggle_silence_for_partial_update! false
+        end
+      end
     end
 
     def add_tracking_id(e)

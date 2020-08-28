@@ -113,8 +113,20 @@ module Kennel
         end
       end
 
-      def silence!
-        as_json[:options][:silenced] = {}
+      # add global silence (:*) if this is a partial create and remove it when updating
+      # careful to always remove global silence only when we added it
+      # and never leave it around or delete it when it was there before
+      # need to leave tag marker in so a full run triggers an update
+      # TODO: still won't work when doing partial create and then partial update
+      def toggle_silence_for_partial_update!(on)
+        marker = "kennel_silence_for_partial_update"
+        if on
+          as_json[:tags] += [marker] # mark for later removal, add without causing diff
+          as_json[:options][:silenced] = {"*": nil}
+        elsif @actual_tags.include?(marker)
+          @actual_silenced.delete :*
+          as_json[:options][:silenced] = @actual_silenced
+        end
       end
 
       def self.api_resource
@@ -134,7 +146,8 @@ module Kennel
       def self.normalize(expected, actual)
         super
         options = actual.fetch(:options)
-        options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
+        @actual_silenced = options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
+        @actual_tags = actual[:tags]
 
         # fields are not returned when set to true
         if ["service check", "event alert"].include?(actual[:type])
