@@ -215,7 +215,7 @@ To link to existing monitors via their kennel_id `projects kennel_id` + `:` + `m
 
  - rebase on updated `master` to not undo other changes
  - figure out project name by converting the class name to snake-case
- - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project
+ - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project (monitors: remove mentions while debugging to avoid alert spam)
 
 ### Reuse
 
