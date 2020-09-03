@@ -142,6 +142,11 @@ describe Kennel::Models::Slo do
       Kennel::Models::Slo.parse_url(url).must_equal "foo"
     end
 
+    it "parses when other query strings are present" do
+      url = "https://app.datadoghq.com/slo?query=\"bar\"&slo_id=foo&timeframe=7d&tab=status_and_history"
+      Kennel::Models::Slo.parse_url(url).must_equal "foo"
+    end
+
     it "fails to parse other" do
       url = "https://app.datadoghq.com/dashboard/bet-foo-bar?from_ts=1585064592575&to_ts=1585068192575&live=true"
       Kennel::Models::Slo.parse_url(url).must_be_nil
