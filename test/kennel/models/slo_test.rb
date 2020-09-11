@@ -98,6 +98,12 @@ describe Kennel::Models::Slo do
   end
 
   describe "#resolve_linked_tracking_ids!" do
+    it "ignores empty caused by ignore_default" do
+      slo = slo(monitor_ids: -> { nil })
+      slo.resolve_linked_tracking_ids!({}, force: false)
+      refute slo.as_json[:monitor_ids]
+    end
+
     it "does nothing for hardcoded ids" do
       slo = slo(monitor_ids: -> { [123] })
       slo.resolve_linked_tracking_ids!({}, force: false)
