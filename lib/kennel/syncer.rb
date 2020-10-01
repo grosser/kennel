@@ -38,7 +38,7 @@ module Kennel
     end
 
     def update
-      changed = (@create + @update).map { |_, e| e } unless @create.empty?
+      changed = (@create + @update).map { |_, e| e }
 
       @create.each do |_, e|
         e.resolve_linked_tracking_ids!({}, force: true)
@@ -188,7 +188,7 @@ module Kennel
     end
 
     # Do not add tracking-id when working with existing ids on a branch,
-    # so resource do not get deleted fr:om merges to master.
+    # so resource do not get deleted from running an update on master (for example merge->CI).
     # Also make sure the diff still makes sense, by kicking out the now noop-update.
     #
     # Note: ideally we'd never add tracking in the first place, but at that point we do not know the diff yet
