@@ -192,7 +192,7 @@ module Kennel
         end
 
         if type == "query alert"
-          # verify interval is valud
+          # verify interval is valid
           interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
           if interval && !QUERY_INTERVALS.include?(interval)
             invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
@@ -202,11 +202,15 @@ module Kennel
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
           # verify is_match/is_exact_match uses available variables
           message = data.fetch(:message)
-          used = message.scan(/{{\s*[#^]is(?:_exact)?_match\s*"([a-zA-Z\d_.-]+).name"/).flatten.uniq
-          allowed = data.fetch(:query)[/by\s*[({]([^})]+)[})]/, 1].to_s.gsub(/["']/, "").split(/\s*,\s*/)
-          unsupported = used - allowed
-          if unsupported.any?
-            invalid! "is_match/is_exact_match used with #{unsupported}, but metric is only grouped by #{allowed}"
+          used = message.scan(/{{\s*([#^]is(?:_exact)?_match)\s*([^\s}]+)/)
+          if used.any?
+            allowed = data.fetch(:query)[/by\s*[({]([^})]+)[})]/, 1]
+              .to_s.gsub(/["']/, "").split(/\s*,\s*/)
+              .map! { |w| %("#{w}.name") }
+            used.uniq.each do |match, group|
+              next if allowed.include?(group)
+              invalid! "#{match} used with #{group}, but can only be used with #{allowed.join(", ")}. Add more groupings or fix the #{match}"
+            end
           end
         end
       end

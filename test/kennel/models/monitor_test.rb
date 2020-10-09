@@ -225,19 +225,31 @@ describe Kennel::Models::Monitor do
         it "fails when using invalid is_match" do
           mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
           e = assert_raises(RuntimeError) { mon.as_json }
-          e.message.must_equal "test_project:m1 is_match/is_exact_match used with [\"environment\"], but metric is only grouped by [\"env\"]"
+          e.message.must_equal "test_project:m1 #is_match used with \"environment.name\", but can only be used with \"env.name\". Add more groupings or fix the #is_match"
         end
 
         it "fails when using invalid negative is_match" do
           mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
           e = assert_raises(RuntimeError) { mon.as_json }
-          e.message.must_equal "test_project:m1 is_match/is_exact_match used with [\"environment\"], but metric is only grouped by [\"env\"]"
+          e.message.must_equal "test_project:m1 ^is_match used with \"environment.name\", but can only be used with \"env.name\". Add more groupings or fix the ^is_match"
         end
 
         it "fails when using invalid is_exact_match" do
           mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
           e = assert_raises(RuntimeError) { mon.as_json }
-          e.message.must_equal "test_project:m1 is_match/is_exact_match used with [\"environment\"], but metric is only grouped by [\"env\"]"
+          e.message.must_equal "test_project:m1 #is_exact_match used with \"environment.name\", but can only be used with \"env.name\". Add more groupings or fix the #is_exact_match"
+        end
+
+        it "fails when not using .name" do
+          mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
+          e = assert_raises(RuntimeError) { mon.as_json }
+          e.message.must_equal "test_project:m1 #is_match used with \"env\", but can only be used with \"env.name\". Add more groupings or fix the #is_match"
+        end
+
+        it "fails when not using quotes" do
+          mon.stubs(:message).returns('{{#is_match env.name "production"}}TEST{{/is_match}}')
+          e = assert_raises(RuntimeError) { mon.as_json }
+          e.message.must_equal "test_project:m1 #is_match used with env.name, but can only be used with \"env.name\". Add more groupings or fix the #is_match"
         end
 
         it "passes when using valid is_match" do
@@ -256,7 +268,7 @@ describe Kennel::Models::Monitor do
         it "fails when using invalid is_match" do
           mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
           e = assert_raises(RuntimeError) { mon.as_json }
-          e.message.must_equal "test_project:m1 is_match/is_exact_match used with [\"environment\"], but metric is only grouped by [\"env\"]"
+          e.message.must_equal "test_project:m1 #is_match used with \"environment.name\", but can only be used with \"env.name\". Add more groupings or fix the #is_match"
         end
 
         it "passes when using valid is_match" do
