@@ -200,13 +200,13 @@ module Kennel
         end
 
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
-          # verify is_match uses available variables
+          # verify is_match/is_exact_match uses available variables
           message = data.fetch(:message)
-          used = message.scan(/{{\s*#is_match\s*"([a-zA-Z\d_.-]+).name"/).flatten.uniq
+          used = message.scan(/{{\s*[#^]is(?:_exact)?_match\s*"([a-zA-Z\d_.-]+).name"/).flatten.uniq
           allowed = data.fetch(:query)[/by\s*[({]([^})]+)[})]/, 1].to_s.gsub(/["']/, "").split(/\s*,\s*/)
           unsupported = used - allowed
           if unsupported.any?
-            invalid! "is_match used with #{unsupported}, but metric is only grouped by #{allowed}"
+            invalid! "is_match/is_exact_match used with #{unsupported}, but metric is only grouped by #{allowed}"
           end
         end
       end
