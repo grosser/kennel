@@ -198,6 +198,18 @@ end
   end
  ```
 
+### Problems updating existing resources
+
+Specifying an `id` on your monitor / screen is only useful when you want kennel to adopt an existing (manually created) datadog resource.
+
+If you're importing a resource simply as a way to seed the kennel definition, you should drop the `id:` attribute and only use `kennel_id`.
+
+If you do have `id` and the original monitor gets deleted, kennel will get stuck with the error: "Unable to find existing monitor with id 123456"
+
+In this case you should simply remove the `id: 12345` attribute - the item has been deleted in datadog, there's no way to restore it.
+Removing the explicit `id` will cause kennel to create a new entity and only care about the `kennel_id` in the future (which is more robust).
+
+
 ### Skipping validations
 
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
