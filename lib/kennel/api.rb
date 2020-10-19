@@ -42,8 +42,11 @@ module Kennel
       request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
     end
 
+    # - force=true to not dead-lock on dependent monitors+slos
+    #   external dependency on kennel managed resources is their problem, we don't block on it
+    #   (?force=true did not work, force for dashboard is not documented but does not blow up)
     def delete(api_resource, id)
-      request :delete, "/api/v1/#{api_resource}/#{id}", ignore_404: true
+      request :delete, "/api/v1/#{api_resource}/#{id}", params: { force: "true" }, ignore_404: true
     end
 
     private

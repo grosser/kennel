@@ -109,19 +109,18 @@ describe Kennel::Api do
 
   describe "#delete" do
     it "deletes a monitor" do
-      stub_request(:delete, "monitor/123")
-        .with(body: nil).to_return(body: "{}")
+      stub_request(:delete, "monitor/123", "&force=true").to_return(body: "{}")
       api.delete("monitor", 123).must_equal({})
     end
 
     it "deletes a dash" do
-      stub_request(:delete, "dash/123")
+      stub_request(:delete, "dash/123", "&force=true")
         .with(body: nil).to_return(body: "")
       api.delete("dash", 123).must_equal({})
     end
 
     it "shows a descriptive failure when request fails, without including api keys" do
-      stub_request(:delete, "monitor/123")
+      stub_request(:delete, "monitor/123", "&force=true")
         .with(body: nil).to_return(body: "{}", status: 300)
       e = assert_raises(RuntimeError) { api.delete("monitor", 123) }
       e.message.must_equal <<~TEXT.strip
@@ -131,7 +130,7 @@ describe Kennel::Api do
     end
 
     it "ignores 404" do
-      stub_request(:delete, "monitor/123").to_return(status: 404)
+      stub_request(:delete, "monitor/123", "&force=true").to_return(status: 404)
       api.delete("monitor", 123).must_equal({})
     end
   end
@@ -152,7 +151,8 @@ describe Kennel::Api do
     end
 
     it "does not retry non-gets" do
-      request = stub_request(:delete, "monitor/1234").to_return(body: { bar: "foo" }.to_json, status: 400)
+      request = stub_request(:delete, "monitor/1234", "&force=true")
+        .to_return(body: { bar: "foo" }.to_json, status: 400)
       assert_raises(RuntimeError) { api.delete("monitor", 1234) }
       assert_requested request
     end
