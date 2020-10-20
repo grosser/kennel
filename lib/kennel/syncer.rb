@@ -139,7 +139,8 @@ module Kennel
     def ensure_all_ids_found
       @expected.each do |e|
         next unless id = e.id
-        raise "Unable to find existing #{e.class.api_resource} with id #{id}"
+        resource = e.class.api_resource
+        raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{e.id} }` line."
       end
     end
 

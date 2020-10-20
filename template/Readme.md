@@ -180,6 +180,15 @@ end
   end
  ```
 
+### Updating existing resources with id
+
+Setting `id` makes kennel take over a manually created datadog resource.
+When manually creating to import, it is best to remove the `id` and delete the manually created resource.
+
+When an `id` is set and the original resource is deleted, kennel will fail to update,
+removing the `id` will cause kennel to create a new resource in datadog.
+
+
 ### Skipping validations
 
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and

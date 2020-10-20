@@ -335,7 +335,7 @@ describe Kennel::Syncer do
       it "complains when id was not found" do
         monitors.pop
         e = assert_raises(RuntimeError) { syncer.plan }
-        e.message.must_equal "Unable to find existing monitor with id 234"
+        e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
       end
     end
   end
@@ -437,7 +437,7 @@ describe Kennel::Syncer do
         monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel b:b")
         e = assert_raises(RuntimeError) { output }
         # NOTE: we never reach the actual raise since updating tracking ids is not supported
-        e.message.must_equal "Unable to find existing monitor with id 123"
+        e.message.must_equal "Unable to find existing monitor with id 123\nIf the monitor was deleted, remove the `id: -> { 123 }` line."
       end
 
       it "removes tracking from partial updates with ids if they would be deleted by other branches" do
