@@ -209,7 +209,10 @@ module Kennel
               .map! { |w| %("#{w}.name") }
             used.uniq.each do |match, group|
               next if allowed.include?(group)
-              invalid! "#{match} used with #{group}, but can only be used with #{allowed.join(", ")}. Add more groupings or fix the #{match}"
+              invalid!(
+                "#{match} used with #{group}, but can only be used with #{allowed.join(", ")}. " \
+                "Group the query by #{group.sub(".name", "").tr('"', "")} or change the #{match}"
+              )
             end
           end
         end
