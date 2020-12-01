@@ -178,7 +178,7 @@ module Kennel
       def validate_json(data)
         super
 
-        validate_template_variables data, :widgets
+        validate_template_variables data
 
         # Avoid diff from datadog presets sorting.
         presets = data[:template_variable_presets]

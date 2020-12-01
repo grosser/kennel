@@ -34,10 +34,10 @@ describe Kennel::TemplateVariables do
     def validate(value, list)
       data = {
         template_variables: value.map { |v| { name: v } },
-        graphs: list
+        widgets: list
       }
       v = TestVariables.new(TestProject.new, template_variables: -> { value })
-      v.send(:validate_template_variables, data, :graphs)
+      v.send(:validate_template_variables, data)
     end
 
     it "is valid when empty" do
@@ -56,6 +56,16 @@ describe Kennel::TemplateVariables do
       assert_raises Kennel::ValidationError do
         validate ["a"], [{ definition: { requests: [{ q: "$b" }] } }]
       end
+    end
+
+    it "is invalid when some vars are not used" do
+      assert_raises Kennel::ValidationError do
+        validate ["a", "b"], [{ definition: { requests: [{ q: "$b" }] } }]
+      end
+    end
+
+    it "is valid when all vars are used" do
+      validate ["a", "b"], [{ definition: { requests: [{ q: "$a,$b" }] } }]
     end
 
     it "is invalid when nested vars are not used" do

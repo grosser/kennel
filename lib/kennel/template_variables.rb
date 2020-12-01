@@ -16,18 +16,22 @@ module Kennel
 
     # check for queries that do not use the variables and would be misleading
     # TODO: do the same check for apm_query and their group_by
-    def validate_template_variables(data, key)
+    def validate_template_variables(data)
       variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
-      queries = data[key].flat_map do |widget|
+      return if variables.empty?
+
+      queries = data[:widgets].flat_map do |widget|
         ([widget] + (widget.dig(:definition, :widgets) || [])).flat_map { |w| widget_queries(w) }
       end.compact
-      bad = queries.grep_v(/(#{variables.map { |v| Regexp.escape(v) }.join("|")})\b/)
-      if bad.any?
-        invalid!(
-          "queries #{bad.join(", ")} must use the template variables #{variables.join(", ")}\n" \
-          "If that is not possible, add `validate: -> { false } # query foo in bar does not have baz tag`"
-        )
-      end
+
+      matches = variables.map { |v| Regexp.new "#{Regexp.escape(v)}\\b" }
+      queries.reject! { |q| matches.all? { |m| q.match? m } }
+      return if queries.empty?
+
+      invalid!(
+        "queries #{queries.join(", ")} must use the template variables #{variables.join(", ")}\n" \
+        "If that is not possible, add `validate: -> { false } # query foo in bar does not have baz tag`"
+      )
     end
 
     def widget_queries(widget)
