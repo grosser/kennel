@@ -83,7 +83,7 @@ end
  - `gem install bundler && bundle install`
  - `cp .env.example .env`
  - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
- - copy any `API Key` and add it to `.env` as `DATADOG_API_KEY`
+ - create a `API Key` or get an existing one from an admin, then add it to `.env` as `DATADOG_API_KEY`
  - find or create (check last page) your personal "Application Key" and add it to `.env` as `DATADOG_APP_KEY=`
  - change the `DATADOG_SUBDOMAIN=app` in `.env` to your companies subdomain if you have one
  - verify it works by running `rake plan`, it might show some diff, but should not crash
