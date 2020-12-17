@@ -105,7 +105,7 @@ module Kennel
 
       def as_json
         return @json if @json
-        all_widgets = render_definitions + widgets
+        all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
 
         @json = {
@@ -185,7 +185,7 @@ module Kennel
         invalid! "template_variable_presets must be sorted by name" if presets && presets != presets.sort_by { |p| p[:name] }
       end
 
-      def render_definitions
+      def render_definitions(definitions)
         definitions.map do |title, type, display_type, queries, options = {}, ignored = nil|
           # validate inputs
           if ignored || (!title || !type || !queries || !options.is_a?(Hash))
