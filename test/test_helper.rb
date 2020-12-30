@@ -4,7 +4,9 @@ require "bundler/setup"
 require "single_cov"
 SingleCov.setup :minitest
 
-ENV.delete("CI") # make travis and local behave the same
+# make CI and local behave the same
+ENV.delete("CI")
+ENV.delete("GITHUB_REPOSITORY")
 
 require "maxitest/global_must"
 require "maxitest/autorun"

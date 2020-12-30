@@ -90,6 +90,8 @@ describe Kennel do
   end
 
   describe ".update" do
+    before { STDIN.expects(:tty?).returns(true) }
+
     it "update" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
