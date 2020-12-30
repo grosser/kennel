@@ -43,6 +43,6 @@ end
 
 # make sure we always run what travis runs
 require "yaml"
-travis = YAML.load_file(".travis.yml").fetch("env").map { |v| v.delete("TASK=") }
-raise if travis.empty?
-task default: travis
+ci = YAML.load_file(".github/workflows/actions.yml").dig("jobs", "build", "strategy", "matrix", "task")
+raise if ci.empty?
+task default: ci

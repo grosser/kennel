@@ -296,5 +296,5 @@ Author
 [Michael Grosser](http://grosser.it)<br/>
 michael@grosser.it<br/>
 License: MIT<br/>
-[![Build Status](https://travis-ci.org/grosser/kennel.png)](https://travis-ci.org/grosser/kennel)
+![CI](https://github.com/grosser/kennel/workflows/CI/badge.svg)
 <!-- NOT IN -->
