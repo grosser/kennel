@@ -12,6 +12,10 @@ module Kennel
         :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles
       ]
 
+      MONITOR_DEFAULTS = {
+        priority: nil
+      }.freeze
+
       # defaults that datadog uses when options are not sent, so safe to leave out if our values match their defaults
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
@@ -27,7 +31,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay
+        :threshold_windows, :new_host_delay, :priority
       )
 
       defaults(
@@ -46,7 +50,8 @@ module Kennel
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
-        threshold_windows: -> { nil }
+        threshold_windows: -> { nil },
+        priority: -> { MONITOR_DEFAULTS.fetch(:priority) }
       )
 
       def as_json
@@ -57,6 +62,7 @@ module Kennel
           query: query.strip,
           message: message.strip,
           tags: tags.uniq,
+          priority: priority,
           options: {
             timeout_h: timeout_h,
             notify_no_data: notify_no_data,
@@ -129,6 +135,9 @@ module Kennel
 
       def self.normalize(expected, actual)
         super
+
+        ignore_default(expected, actual, MONITOR_DEFAULTS)
+
         options = actual.fetch(:options)
         options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
 
