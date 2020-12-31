@@ -73,8 +73,12 @@ module Kennel
           parts = Models::Project.recursive_subclasses.flat_map do |project_class|
             project_class.new.validated_parts
           end
-          parts.map(&:tracking_id).group_by { |id| id }.select do |id, same|
-            raise "#{id} is defined #{same.size} times" if same.size != 1
+          parts.group_by(&:tracking_id).each do |tracking_id, same|
+            next if same.size == 1
+            raise <<~ERROR
+              #{tracking_id} is defined #{same.size} times
+              use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
+            ERROR
           end
           parts
         end

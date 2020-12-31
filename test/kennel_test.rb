@@ -77,7 +77,10 @@ describe Kennel do
         end
       RUBY
       e = assert_raises(RuntimeError) { Kennel.generate }
-      e.message.must_equal "foo:bar is defined 2 times"
+      e.message.must_equal <<~ERROR
+        foo:bar is defined 2 times
+        use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
+      ERROR
     end
   end
 
