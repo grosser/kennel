@@ -43,6 +43,7 @@ describe "Integration" do
     result = Kennel::Utils.strip_shell_control(result)
     result.must_equal <<~TXT
       Generating ... 0.00s
+      Storing ... 0.00s
       Downloading definitions ... 0.00s
       Diffing ... 0.00s
       Plan:

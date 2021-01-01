@@ -56,6 +56,23 @@ describe Kennel do
       json[:query].must_equal "avg(last_5m) > 1"
     end
 
+    it "keeps same" do
+      old = Time.now - 10
+      Kennel.generate
+      FileUtils.touch "generated/temp_project/foo.json", mtime: old
+      Kennel.generate
+      File.mtime("generated/temp_project/foo.json").must_equal old
+    end
+
+    it "overrides different" do
+      old = Time.now - 10
+      Kennel.generate
+      FileUtils.touch "generated/temp_project/foo.json", mtime: old
+      File.write "generated/temp_project/foo.json", "x"
+      Kennel.generate
+      File.mtime("generated/temp_project/foo.json").wont_equal old
+    end
+
     it "requires in order" do
       write "teams/a.rb", "AAA = 1"
       write "parts/a.rb", "BBB = AAA"

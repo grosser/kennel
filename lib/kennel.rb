@@ -39,12 +39,7 @@ module Kennel
     attr_accessor :out, :err
 
     def generate
-      FileUtils.rm_rf("generated")
-      generated.each do |part|
-        path = "generated/#{part.tracking_id.sub(":", "/")}.json"
-        FileUtils.mkdir_p(File.dirname(path))
-        File.write(path, JSON.pretty_generate(part.as_json) << "\n")
-      end
+      store generated
     end
 
     def plan
@@ -57,6 +52,35 @@ module Kennel
     end
 
     private
+
+    def store(parts)
+      Progress.progress "Storing" do
+        old = Dir["generated/**/*"]
+        used = []
+
+        Utils.parallel(parts, max: 2) do |part|
+          path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
+          used << File.dirname(path) # only 1 level of sub folders, so this is safe
+          used << path
+          write_file_if_necessary(path, JSON.pretty_generate(part.as_json) << "\n")
+        end
+
+        # deleting all is slow, so only delete the extras
+        (old - used).each { |p| FileUtils.rm_rf(p) }
+      end
+    end
+
+    def write_file_if_necessary(path, content)
+      # 99% case
+      begin
+        return if File.read(path) == content
+      rescue Errno::ENOENT
+        FileUtils.mkdir_p(File.dirname(path))
+      end
+
+      # slow 1% case
+      File.write(path, content)
+    end
 
     def syncer
       @syncer ||= Syncer.new(api, generated, project: ENV["PROJECT"])
