@@ -112,9 +112,11 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
-        if as_json[:type] == "composite"
-          as_json[:query] = as_json[:query].gsub(/%\{(.*?)\}/) do
-            resolve_link($1, :monitor, id_map, **args)
+        case as_json[:type]
+        when "composite", "slo alert"
+          type = (as_json[:type] == "composite" ? :monitor : :slo)
+          as_json[:query] = as_json[:query].gsub(/%{(.*?)}/) do
+            resolve_link($1, type, id_map, **args)
           end
         end
       end

@@ -219,6 +219,7 @@ To link to existing monitors via their kennel_id `projects kennel_id` + `:` + `m
  - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
  - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
  - Monitors `composite` can use `query: -> { "%{foo:bar} || %{foo:baz}" }`
+ - Monitors `slo alert` can use `query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`
  - Slos can use `monitor_ids: -> ["foo:bar"]` 
 
 ### Debugging changes locally

@@ -307,6 +307,24 @@ describe Kennel::Models::Monitor do
         mon.as_json[:query].must_equal("1 || !2")
       end
     end
+
+    describe "slo alert monitor" do
+      let(:mon) do
+        monitor(type: -> { "slo alert" }, query: -> { "error_budget(\"%{foo:slo_a}\").over(\"7d\") > #{critical}" })
+      end
+
+      it "fails when matching monitor is missing" do
+        e = assert_raises Kennel::ValidationError do
+          mon.resolve_linked_tracking_ids!({}, force: false)
+        end
+        e.message.must_include "test_project:m1 Unable to find slo foo:slo_a"
+      end
+
+      it "resolves correctly with a matching monitor" do
+        mon.resolve_linked_tracking_ids!({ "foo:slo_x" => 3, "foo:slo_a" => 1, "bar:slo_b" => 2 }, force: false)
+        mon.as_json[:query].must_equal("error_budget(\"1\").over(\"7d\") > 123.0")
+      end
+    end
   end
 
   describe "#diff" do
