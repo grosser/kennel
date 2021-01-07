@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.79.0)
+    kennel (1.80.0)
       faraday
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
@@ -18,9 +18,11 @@ GEM
     connection_pool (2.2.3)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
-    faraday (1.2.0)
+    faraday (1.3.0)
+      faraday-net_http (~> 1.0)
       multipart-post (>= 1.2, < 3)
       ruby2_keywords
+    faraday-net_http (1.0.0)
     forking_test_runner (1.6.0)
       parallel_tests (>= 1.3.7)
     hashdiff (1.0.1)
