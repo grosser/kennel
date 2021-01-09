@@ -196,13 +196,17 @@ to unblock use the `validate: -> { false }` option.
 
 ### Linking with kennel_ids
 
-To link to existing monitors via their kennel_id `projects kennel_id` + `:` + `monitors kennel id`
+Link resources via their kennel_id `projects kennel_id` + `:` + `monitors kennel id`,
+this should be used to create dependent resources like monitor + slos. 
 
- - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
- - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
- - Monitors `composite` can use `query: -> { "%{foo:bar} || %{foo:baz}" }`
- - Monitors `slo alert` can use `query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`
- - Slos can use `monitor_ids: -> ["foo:bar"]` 
+|Resource|Type|Syntax|
+|---|---|---|
+|Dashboard|uptime|`monitor: {id: "foo:bar"}`|
+|Dashboard|alert_graph|`alert_id: "foo:bar"`|
+|Dashboard|slo|`slo_id: "foo:bar"`|
+|Monitor|composite|`query: -> { "%{foo:bar} && %{foo:baz}" }`|
+|Monitor|slo alert|`query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`|
+|Slo|monitor|`monitor_ids: -> ["foo:bar"]`|
 
 ### Debugging changes locally
 

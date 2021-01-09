@@ -212,15 +212,20 @@ removing the `id` will cause kennel to create a new resource in datadog.
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
-### Linking with kennel_ids
+### Linking resources with kennel_id
 
-To link to existing monitors via their kennel_id `projects kennel_id` + `:` + `monitors kennel id`
+Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
+this should be used to create dependent resources like monitor + slos,
+so they can be created in a single update and can be re-created if any of them is deleted. 
 
- - Screens `uptime` widgets can use `monitor: {id: "foo:bar"}`
- - Screens `alert_graph` widgets can use `alert_id: "foo:bar"`
- - Monitors `composite` can use `query: -> { "%{foo:bar} || %{foo:baz}" }`
- - Monitors `slo alert` can use `query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`
- - Slos can use `monitor_ids: -> ["foo:bar"]` 
+|Resource|Type|Syntax|
+|---|---|---|
+|Dashboard|uptime|`monitor: {id: "foo:bar"}`|
+|Dashboard|alert_graph|`alert_id: "foo:bar"`|
+|Dashboard|slo|`slo_id: "foo:bar"`|
+|Monitor|composite|`query: -> { "%{foo:bar} && %{foo:baz}" }`|
+|Monitor|slo alert|`query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`|
+|Slo|monitor|`monitor_ids: -> ["foo:bar"]`|
 
 ### Debugging changes locally
 
