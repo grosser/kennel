@@ -413,20 +413,35 @@ describe Kennel::Syncer do
     end
 
     it "can create multiple dependent resources" do
-      expected << monitor("a", "b")
-      expected << slo("a", "c", monitor_ids: ["a:b"])
+      monitor = monitor("a", "b")
+      slo = slo("a", "c", monitor_ids: ["a:b"])
+      expected << slo
+      expected << monitor
       api.expects(:create)
-        .with("monitor", expected.first.as_json)
-        .returns(expected.first.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
+        .with("monitor", monitor.as_json)
+        .returns(monitor.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
       api.expects(:create)
         .with(
           "slo",
-          expected.last.as_json.merge(
+          slo.as_json.merge(
             monitor_ids: [1],
             description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
           )
         ).returns(id: 2)
       output.must_equal "Created monitor a:b /monitors#1/edit\nCreated slo a:c /slo?slo_id=2\n"
+    end
+
+    it "fails on circular dependencies" do
+      monitor1 = monitor("a", "a", query: "%{a:b}", type: "composite")
+      monitor2 = monitor("a", "b", query: "%{a:a}", type: "composite")
+      expected << monitor1
+      expected << monitor2
+      assert_raises(Kennel::ValidationError) { output }.message.must_include "circular dependency"
+    end
+
+    it "fails on missing dependencies" do
+      expected << monitor("a", "a", query: "%{a:nope}", type: "composite")
+      assert_raises(Kennel::ValidationError) { output }.message.must_include "Unable to find"
     end
 
     describe "with project_filter" do

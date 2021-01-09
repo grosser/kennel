@@ -65,19 +65,18 @@ module Kennel
 
       private
 
-      def resolve_link(id, type, id_map, force:)
-        value = id_map[id]
-        if value == :new
+      def resolve_link(tracking_id, type, id_map, force:)
+        id = id_map[tracking_id]
+        if id == :new
           if force
-            # TODO: remove the need for this by sorting monitors by missing resolutions
-            invalid! "#{id} needs to already exist, try again"
+            invalid! "#{type} #{tracking_id} was referenced but is also created by the current run.\nIt could not be created because of a circular dependency, try creating only some of the resources"
           else
-            id # will be re-resolved by syncer after the linked object was created
+            nil # will be re-resolved after the linked object was created
           end
-        elsif value
-          value
+        elsif id
+          id
         else
-          invalid! "Unable to find #{type} #{id} (does not exist and is not being created by the current run)"
+          invalid! "Unable to find #{type} #{tracking_id} (does not exist and is not being created by the current run)"
         end
       end
 

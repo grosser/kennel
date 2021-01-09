@@ -36,22 +36,22 @@ describe Kennel::Models::Record do
   describe "#resolve_link" do
     let(:base) { Kennel::Models::Monitor.new(TestProject.new, kennel_id: -> { "test" }) }
 
-    it "resolves" do
+    it "resolves existing" do
       base.send(:resolve_link, "foo", :monitor, { "foo" => 2 }, force: false).must_equal 2
     end
 
-    it "warns when new but not required" do
-      base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: false).must_equal "foo"
+    it "warns when trying to resolve" do
+      base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: false).must_be_nil
     end
 
-    it "fails when new but required" do
+    it "fails when forcing resolve because of a circular dependency" do
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: true)
       end
-      e.message.must_include "needs to already exist, try again"
+      e.message.must_include "circular dependency"
     end
 
-    it "fails when missing" do
+    it "fails when trying to resolve but it is unresolvable" do
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve_link, "foo", :monitor, { "bar" => 1 }, force: false)
       end

@@ -38,23 +38,14 @@ module Kennel
     end
 
     def update
-      changed = (@create + @update).map { |_, e| e }
-
-      @create.each do |_, e|
-        e.resolve_linked_tracking_ids!({}, force: true)
-
+      each_resolved @create do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
-
-        # resolve ids we could previously no resolve
-        changed.delete e
-        resolve_linked_tracking_ids! from: [reply], to: changed
-
+        populate_id_map [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
 
-      @update.each do |id, e|
-        e.resolve_linked_tracking_ids!({}, force: true)
+      each_resolved @update do |id, e|
         @api.update e.class.api_resource, id, e.as_json
         Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
       end
@@ -67,6 +58,37 @@ module Kennel
 
     private
 
+    # loop over items until everything is resolved or crash when we get stuck
+    # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
+    def each_resolved(list)
+      list = list.dup
+      loop do
+        return if list.empty?
+        list.reject! do |id, e|
+          if resolved?(e)
+            yield id, e
+            true
+          else
+            false
+          end
+        end ||
+          assert_resolved(list[0][1]) # resolve something or show a circular dependency error
+      end
+    end
+
+    # TODO: optimize by storing an instance variable if already resolved
+    def resolved?(e)
+      assert_resolved e
+      true
+    rescue ValidationError
+      false
+    end
+
+    # raises ValidationError when not resolved
+    def assert_resolved(e)
+      resolve_linked_tracking_ids! [e], force: true
+    end
+
     def noop?
       @create.empty? && @update.empty? && @delete.empty?
     end
@@ -74,9 +96,15 @@ module Kennel
     def calculate_diff
       @update = []
       @delete = []
+      @id_map = {}
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
-      resolve_linked_tracking_ids! from: actual, to: @expected
+
+      # resolve dependencies to avoid diff
+      populate_id_map actual
+      @expected.each { |e| @id_map[e.tracking_id] ||= :new }
+      resolve_linked_tracking_ids! @expected
+
       filter_by_project! actual
 
       Progress.progress "Diffing" do
@@ -107,7 +135,6 @@ module Kennel
 
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
-        @create.sort_by! { |_, e| -DELETE_ORDER.index(e.class.api_resource) }
       end
 
       @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:api_resource) }
@@ -214,10 +241,12 @@ module Kennel
       end
     end
 
-    def resolve_linked_tracking_ids!(from:, to:)
-      map = from.each_with_object({}) { |a, lookup| lookup[tracking_id(a)] = a.fetch(:id) }
-      to.each { |e| map[e.tracking_id] ||= :new }
-      to.each { |e| e.resolve_linked_tracking_ids!(map, force: false) }
+    def populate_id_map(actual)
+      actual.each { |a| @id_map[tracking_id(a)] = a.fetch(:id) }
+    end
+
+    def resolve_linked_tracking_ids!(list, force: false)
+      list.each { |e| e.resolve_linked_tracking_ids!(@id_map, force: force) }
     end
 
     def filter_by_project!(definitions)

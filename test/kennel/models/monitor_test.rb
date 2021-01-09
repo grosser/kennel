@@ -302,6 +302,11 @@ describe Kennel::Models::Monitor do
         e.message.must_include "test_project:m1 Unable to find monitor foo:mon_a"
       end
 
+      it "does not fail when unable to try to resolve" do
+        mon.resolve_linked_tracking_ids!({ "foo:mon_a" => :new, "bar:mon_b" => :new }, force: false)
+        mon.as_json[:query].must_equal "%{foo:mon_a} || !%{bar:mon_b}", "query not modified"
+      end
+
       it "resolves correctly with a matching monitor" do
         mon.resolve_linked_tracking_ids!({ "foo:mon_x" => 3, "foo:mon_a" => 1, "bar:mon_b" => 2 }, force: false)
         mon.as_json[:query].must_equal("1 || !2")
