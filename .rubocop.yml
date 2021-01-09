@@ -99,3 +99,6 @@ Layout/EmptyLineAfterGuardClause:
 
 Style/FormatStringToken:
   EnforcedStyle: unannotated
+
+Style/EmptyElse:
+  Enabled: false

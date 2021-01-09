@@ -156,7 +156,7 @@ describe Kennel::Models::Dashboard do
         e = assert_raises Kennel::ValidationError do
           resolve({ "missing:the_id" => :new }, force: true)
         end
-        e.message.must_include "missing:the_id needs to already exist"
+        e.message.must_include "circular dependency"
       end
     end
 
