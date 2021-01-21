@@ -18,6 +18,12 @@ describe Kennel::Utils do
     end
   end
 
+  describe ".title_case" do
+    it "converts snake case" do
+      Kennel::Utils.title_case("foo_bar").must_equal "Foo Bar"
+    end
+  end
+
   describe ".parameterize" do
     {
       "--" => "",

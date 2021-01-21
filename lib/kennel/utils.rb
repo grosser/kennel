@@ -23,6 +23,11 @@ module Kennel
           .downcase
       end
 
+      # for child projects, not used internally
+      def title_case(string)
+        string.split(/[\s_]/).map(&:capitalize) * " "
+      end
+
       # simplified version of https://apidock.com/rails/ActiveSupport/Inflector/parameterize
       def parameterize(string)
         string
