@@ -90,6 +90,11 @@ describe Kennel::Models::Dashboard do
         json[:widgets][0][:definition][:requests][0].must_equal q: "foo"
       end
 
+      it "can add raw widgets to mix into definitions" do
+        json = dashboard(definitions: -> { [{ leave: "this" }] }).as_json
+        json[:widgets][0].must_equal leave: "this"
+      end
+
       it "fails with too little args" do
         assert_raises ArgumentError do
           dashboard(definitions: -> { [["bar", "timeseries", "area"]] }).as_json

@@ -194,10 +194,11 @@ removing the `id` will cause kennel to create a new resource in datadog.
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
-### Linking with kennel_ids
+### Linking resources with kennel_id
 
-Link resources via their kennel_id `projects kennel_id` + `:` + `monitors kennel id`,
-this should be used to create dependent resources like monitor + slos. 
+Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
+this should be used to create dependent resources like monitor + slos,
+so they can be created in a single update and can be re-created if any of them is deleted.
 
 |Resource|Type|Syntax|
 |---|---|---|

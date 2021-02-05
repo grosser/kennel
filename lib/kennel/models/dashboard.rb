@@ -186,22 +186,26 @@ module Kennel
       end
 
       def render_definitions(definitions)
-        definitions.map do |title, type, display_type, queries, options = {}, ignored = nil|
-          # validate inputs
-          if ignored || (!title || !type || !queries || !options.is_a?(Hash))
-            raise ArgumentError, "Expected exactly 5 arguments for each definition (title, type, display_type, queries, options)"
-          end
-          if (SUPPORTED_DEFINITION_OPTIONS | options.keys) != SUPPORTED_DEFINITION_OPTIONS
-            raise ArgumentError, "Supported options are: #{SUPPORTED_DEFINITION_OPTIONS.map(&:inspect).join(", ")}"
-          end
+        definitions.map do |title, type, display_type, queries, options = {}, too_many_args = nil|
+          if title.is_a?(Hash) && !type
+            title # user gave a full widget, just use it
+          else
+            # validate inputs
+            if too_many_args || (!title || !type || !queries || !options.is_a?(Hash))
+              raise ArgumentError, "Expected exactly 5 arguments for each definition (title, type, display_type, queries, options)"
+            end
+            if (SUPPORTED_DEFINITION_OPTIONS | options.keys) != SUPPORTED_DEFINITION_OPTIONS
+              raise ArgumentError, "Supported options are: #{SUPPORTED_DEFINITION_OPTIONS.map(&:inspect).join(", ")}"
+            end
 
-          # build definition
-          requests = Array(queries).map do |q|
-            request = { q: q }
-            request[:display_type] = display_type if display_type
-            request
+            # build definition
+            requests = Array(queries).map do |q|
+              request = { q: q }
+              request[:display_type] = display_type if display_type
+              request
+            end
+            { definition: { title: title, type: type, requests: requests, **options } }
           end
-          { definition: { title: title, type: type, requests: requests, **options } }
         end
       end
     end

@@ -216,7 +216,7 @@ to unblock use the `validate: -> { false }` option.
 
 Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
 this should be used to create dependent resources like monitor + slos,
-so they can be created in a single update and can be re-created if any of them is deleted. 
+so they can be created in a single update and can be re-created if any of them is deleted.
 
 |Resource|Type|Syntax|
 |---|---|---|
