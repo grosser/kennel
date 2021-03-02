@@ -135,6 +135,37 @@ describe Kennel::Api do
     end
   end
 
+  describe "#fill_details!" do
+    in_temp_dir # uses file-cache
+
+    it "does nothing when not needed" do
+      api.fill_details!("monitor", {})
+    end
+
+    it "fills dashboards" do
+      stub_request(:get, "dashboard/123").to_return(body: { bar: "foo" }.to_json)
+      list = [{ id: "123", modified_at: "123" }]
+      api.fill_details!("dashboard", list)
+      list.must_equal [{ id: "123", modified_at: "123", bar: "foo" }]
+    end
+
+    it "caches" do
+      show = stub_request(:get, "dashboard/123").to_return(body: "{}")
+      2.times do
+        api.fill_details!("dashboard", [{ id: "123", modified_at: "123" }])
+      end
+      assert_requested show, times: 1
+    end
+
+    it "does not cache when modified" do
+      show = stub_request(:get, "dashboard/123").to_return(body: "{}")
+      2.times do |i|
+        api.fill_details!("dashboard", [{ id: "123", modified_at: i }])
+      end
+      assert_requested show, times: 2
+    end
+  end
+
   describe "retries" do
     capture_all
 

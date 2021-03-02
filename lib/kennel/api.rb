@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 module Kennel
+  # encapsulates knowledge around how the api works
   class Api
+    CACHE_FILE = "tmp/cache/details"
+
     def initialize(app_key, api_key)
       @app_key = app_key
       @api_key = api_key
@@ -49,7 +52,26 @@ module Kennel
       request :delete, "/api/v1/#{api_resource}/#{id}", params: { force: "true" }, ignore_404: true
     end
 
+    def fill_details!(api_resource, list)
+      return unless api_resource == "dashboard"
+      details_cache do |cache|
+        Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }
+      end
+    end
+
     private
+
+    # Make diff work even though we cannot mass-fetch definitions
+    def fill_detail!(api_resource, a, cache)
+      args = [api_resource, a.fetch(:id)]
+      full = cache.fetch(args, a.fetch(:modified_at)) { show(*args) }
+      a.merge!(full)
+    end
+
+    def details_cache(&block)
+      cache = FileCache.new CACHE_FILE, Kennel::VERSION
+      cache.open(&block)
+    end
 
     def request(method, path, body: nil, params: {}, ignore_404: false)
       params = params.merge(application_key: @app_key, api_key: @api_key)

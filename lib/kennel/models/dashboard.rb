@@ -5,7 +5,6 @@ module Kennel
       include TemplateVariables
       include OptionalValidations
 
-      API_LIST_INCOMPLETE = true
       DASHBOARD_DEFAULTS = { template_variables: [] }.freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list

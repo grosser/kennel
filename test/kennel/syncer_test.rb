@@ -87,6 +87,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("slo", anything).returns(data: slos)
+    api.stubs(:fill_details!)
   end
 
   capture_all # TODO: pass an IO to syncer so we don't have to capture all output
@@ -262,8 +263,6 @@ describe Kennel::Syncer do
     end
 
     describe "dashboards" do
-      in_temp_dir # uses file-cache
-
       it "can plan for dashboards" do
         expected << dashboard("a", "b", id: "abc")
         dashboards << {
@@ -272,7 +271,7 @@ describe Kennel::Syncer do
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
           modified_at: "2015-12-17T23:12:26.726234+00:00"
         }
-        api.expects(:show).with("dashboard", "abc").returns(widgets: [])
+        api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }
         output.must_equal "Plan:\nNothing to do\n"
       end
     end
@@ -485,8 +484,6 @@ describe Kennel::Syncer do
     end
 
     describe "dashboards" do
-      in_temp_dir # uses file-cache
-
       it "can update dashboards" do
         expected << dashboard("a", "b", id: "abc")
         dashboards << {
@@ -495,7 +492,6 @@ describe Kennel::Syncer do
           modified: "2015-12-17T23:12:26.726234+00:00",
           graphs: []
         }
-        api.expects(:show).with("dashboard", "abc").returns(dashboard: {})
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
         output.must_equal "Updated dashboard a:b /dashboard/abc\n"
       end

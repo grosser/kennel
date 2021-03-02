@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module Kennel
   class Syncer
-    CACHE_FILE = "tmp/cache/details" # keep in sync with .travis.yml caching
     TRACKING_FIELDS = [:message, :description].freeze
     DELETE_ORDER = ["dashboard", "slo", "monitor"].freeze # dashboards references monitors + slos, slos reference monitors
 
@@ -117,10 +116,10 @@ module Kennel
           end
         end
 
-        details_cache do |cache|
-          # fill details of things we need to compare (only do this part in parallel for safety & balancing)
-          Utils.parallel(items.select { |e, _| e && e.class::API_LIST_INCOMPLETE }) { |_, a| fill_details(a, cache) }
-        end
+        # fill details of things we need to compare
+        detailed = Hash.new { |h, k| h[k] = [] }
+        items.each { |e, a| detailed[a[:api_resource]] << a if e }
+        detailed.each { |api_resource, actuals| @api.fill_details! api_resource, actuals }
 
         # pick out things to update or delete
         items.each do |e, a|
@@ -138,21 +137,6 @@ module Kennel
       end
 
       @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:api_resource) }
-    end
-
-    # Make diff work even though we cannot mass-fetch definitions
-    def fill_details(a, cache)
-      resource = a.fetch(:api_resource)
-      args = [resource, a.fetch(:id)]
-      full = cache.fetch(args, a[:modified] || a.fetch(:modified_at)) do
-        @api.show(*args)
-      end
-      a.merge!(full)
-    end
-
-    def details_cache(&block)
-      cache = FileCache.new CACHE_FILE, Kennel::VERSION
-      cache.open(&block)
     end
 
     def download_definitions

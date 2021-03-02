@@ -55,32 +55,44 @@ describe "tasks" do
   end
 
   describe "kennel:dump" do
-    let(:task) { "kennel:dump" }
+    in_temp_dir # uses file-cache
 
-    before { Kennel.send(:api).stubs(:list).returns [{ foo: "bar" }] }
+    let(:task) { "kennel:dump" }
+    let(:api) { Kennel.send(:api) }
+
+    before do
+      list = [{ id: 1, modified_at: 2 }]
+      api.stubs(:list).returns list, deep_dup(list), deep_dup(list)
+    end
 
     it "dumps" do
       execute(TYPE: "monitor")
       stdout.string.must_equal <<~JSON
         {
-          "foo": "bar"
+          "id": 1,
+          "modified_at": 2
         }
       JSON
     end
 
     it "dumps all" do
+      api.expects(:show).returns foo: "bar"
       execute
-      stdout.string.must_equal <<~JSON
+      stdout.string.must_equal <<~TXT
         {
+          "id": 1,
+          "modified_at": 2,
           "foo": "bar"
         }
         {
-          "foo": "bar"
+          "id": 1,
+          "modified_at": 2
         }
         {
-          "foo": "bar"
+          "id": 1,
+          "modified_at": 2
         }
-      JSON
+      TXT
     end
   end
 

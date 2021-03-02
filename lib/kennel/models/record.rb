@@ -6,7 +6,6 @@ module Kennel
       READONLY_ATTRIBUTES = [
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at, :api_resource
       ].freeze
-      API_LIST_INCOMPLETE = false
 
       settings :id, :kennel_id
 

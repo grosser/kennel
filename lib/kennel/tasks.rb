@@ -132,8 +132,15 @@ namespace :kennel do
       else
         Kennel::Models::Record.subclasses.map(&:api_resource)
       end
+    api = Kennel.send(:api)
+    list = nil
+
     resources.each do |resource|
-      Kennel.send(:api).list(resource).each do |r|
+      Kennel::Progress.progress("Downloading #{resource}") do
+        list = api.list(resource)
+        api.fill_details!(resource, list)
+      end
+      list.each do |r|
         Kennel.out.puts JSON.pretty_generate(r)
       end
     end
