@@ -58,7 +58,7 @@ module Kennel
         "slo"
       end
 
-      def url(id)
+      def self.url(id)
         Utils.path_to_url "/slo?slo_id=#{id}"
       end
 

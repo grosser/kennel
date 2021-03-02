@@ -314,12 +314,12 @@ describe Kennel::Models::Dashboard do
 
   describe "#url" do
     it "shows path" do
-      dashboard.url(111).must_equal "/dashboard/111"
+      Kennel::Models::Dashboard.url(111).must_equal "/dashboard/111"
     end
 
     it "shows full url" do
       with_env DATADOG_SUBDOMAIN: "foobar" do
-        dashboard.url(111).must_equal "https://foobar.datadoghq.com/dashboard/111"
+        Kennel::Models::Dashboard.url(111).must_equal "https://foobar.datadoghq.com/dashboard/111"
       end
     end
   end

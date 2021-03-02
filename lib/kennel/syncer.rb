@@ -41,12 +41,12 @@ module Kennel
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
         populate_id_map [reply] # allow resolving ids we could previously no resolve
-        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
+        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.class.url(id)}"
       end
 
       each_resolved @update do |id, e|
         @api.update e.class.api_resource, id, e.as_json
-        Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.url(id)}"
+        Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.class.url(id)}"
       end
 
       @delete.each do |id, _, a|

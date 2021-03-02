@@ -125,7 +125,7 @@ module Kennel
         "monitor"
       end
 
-      def url(id)
+      def self.url(id)
         Utils.path_to_url "/monitors##{id}/edit"
       end
 

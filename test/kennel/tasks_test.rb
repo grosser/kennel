@@ -17,6 +17,27 @@ describe "tasks" do
 
   capture_all
 
+  let(:dump_output) do
+    <<~TXT
+      {
+        "id": 1,
+        "modified_at": 2,
+        "foo": "bar",
+        "api_resource": "dashboard"
+      }
+      {
+        "id": 1,
+        "modified_at": 2,
+        "api_resource": "monitor"
+      }
+      {
+        "id": 1,
+        "modified_at": 2,
+        "api_resource": "slo"
+      }
+    TXT
+  end
+
   describe "kennel:nodata" do
     let(:task) { "kennel:nodata" }
     let(:monitors) do
@@ -70,7 +91,8 @@ describe "tasks" do
       stdout.string.must_equal <<~JSON
         {
           "id": 1,
-          "modified_at": 2
+          "modified_at": 2,
+          "api_resource": "monitor"
         }
       JSON
     end
@@ -78,21 +100,37 @@ describe "tasks" do
     it "dumps all" do
       api.expects(:show).returns foo: "bar"
       execute
-      stdout.string.must_equal <<~TXT
+      stdout.string.must_equal dump_output
+    end
+  end
+
+  describe "kennel:dump_grep" do
+    in_temp_dir
+
+    let(:task) { "kennel:dump_grep" }
+
+    before { File.write("dump", dump_output) }
+
+    it "can grep json" do
+      with_env(DUMP: "dump", PATTERN: "foo") { execute }
+      stdout.string.must_equal <<~JSON
         {
           "id": 1,
           "modified_at": 2,
-          "foo": "bar"
+          "foo": "bar",
+          "api_resource": "dashboard"
         }
-        {
-          "id": 1,
-          "modified_at": 2
-        }
-        {
-          "id": 1,
-          "modified_at": 2
-        }
-      TXT
+      JSON
+    end
+
+    it "can grep urls" do
+      with_env(DUMP: "dump", PATTERN: "foo", URLS: "true") { execute }
+      stdout.string.must_equal "/dashboard/1\n"
+    end
+
+    it "fails when nothing matches" do
+      e = assert_raises(RuntimeError) { with_env(DUMP: "dump", PATTERN: "nope") { execute } }
+      e.message.must_equal "Aborted exit"
     end
   end
 

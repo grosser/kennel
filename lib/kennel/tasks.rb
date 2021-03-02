@@ -130,7 +130,7 @@ namespace :kennel do
       if type = ENV["TYPE"]
         [type]
       else
-        Kennel::Models::Record.subclasses.map(&:api_resource)
+        Kennel::Models::Record.api_resource_map.keys
       end
     api = Kennel.send(:api)
     list = nil
@@ -141,7 +141,26 @@ namespace :kennel do
         api.fill_details!(resource, list)
       end
       list.each do |r|
+        r[:api_resource] = resource
         Kennel.out.puts JSON.pretty_generate(r)
+      end
+    end
+  end
+
+  desc "Find items from dump by pattern DUMP= PATTERN= [URLS=true]"
+  task dump_grep: :environment do
+    file = ENV.fetch("DUMP")
+    pattern = Regexp.new ENV.fetch("PATTERN")
+    items = File.read(file).gsub("}\n{", "}--SPLIT--{").split("--SPLIT--")
+    models = Kennel::Models::Record.api_resource_map
+    found = items.grep(pattern)
+    exit 1 if found.empty?
+    found.each do |resource|
+      if ENV["URLS"]
+        parsed = JSON.parse(resource)
+        Kennel.out.puts models[parsed.fetch("api_resource")].url(parsed.fetch("id"))
+      else
+        Kennel.out.puts resource
       end
     end
   end

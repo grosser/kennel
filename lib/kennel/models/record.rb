@@ -18,6 +18,10 @@ module Kennel
           end
         end
 
+        def api_resource_map
+          subclasses.map { |s| [s.api_resource, s] }.to_h
+        end
+
         private
 
         def normalize(_expected, actual)

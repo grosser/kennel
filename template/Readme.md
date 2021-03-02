@@ -255,8 +255,18 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 
 ### Grepping through all of datadog
 
-`rake kennel:dump`
+```Bash
+rake kennel:dump > tmp/dump
+cat tmp/dump | grep foo
+```
 focus on a single type: `TYPE=monitors`
+
+Show full resources or just their urls by pattern:
+```Bash
+rake kennel:dump_grep DUMP=tmp/dump PATTERN=foo URLS=true
+https://foo.datadog.com/dasboard/123
+https://foo.datadog.com/monitor/123
+```
 
 ### Find all monitors with No-Data
 

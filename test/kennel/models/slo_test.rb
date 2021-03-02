@@ -130,9 +130,9 @@ describe Kennel::Models::Slo do
     end
   end
 
-  describe "#url" do
+  describe ".url" do
     it "shows path" do
-      slo.url(111).must_equal "/slo?slo_id=111"
+      Kennel::Models::Slo.url(111).must_equal "/slo?slo_id=111"
     end
   end
 

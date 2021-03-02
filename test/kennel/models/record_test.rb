@@ -12,6 +12,10 @@ describe Kennel::Models::Record do
       override: -> { "parent" }
     )
 
+    def self.api_resource
+      "test"
+    end
+
     def self.parse_url(*)
       nil
     end
@@ -156,6 +160,17 @@ describe Kennel::Models::Record do
         TestRecord.new(TestProject.new).send(:raise_with_location, ArgumentError, "hey")
       end
       e.message.must_include "hey for project test_project on lib/kennel/"
+    end
+  end
+
+  describe ".api_resource_map" do
+    it "builds" do
+      Kennel::Models::Record.api_resource_map.must_equal(
+        "dashboard" => Kennel::Models::Dashboard,
+        "monitor" => Kennel::Models::Monitor,
+        "slo" => Kennel::Models::Slo,
+        "test" => TestRecord
+      )
     end
   end
 end

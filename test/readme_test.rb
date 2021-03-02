@@ -44,6 +44,11 @@ describe "Readme.md" do
     available -= ["rake kennel:no_diff"] # in template/.travis.yml
     available -= ["rake kennel:ci"] # in template/.travis.yml
 
-    assert available == documented, "Documented and available rake tasks are not the same:\n#{documented}\n#{available}"
+    assert available == documented, <<~MSG
+      Documented and available rake tasks are not the same:
+      #{documented}
+      #{available}
+      ~#{(Set.new(documented) ^ Set.new(available)).to_a}
+    MSG
   end
 end

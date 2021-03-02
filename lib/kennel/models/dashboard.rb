@@ -123,7 +123,7 @@ module Kennel
         @json
       end
 
-      def url(id)
+      def self.url(id)
         Utils.path_to_url "/dashboard/#{id}"
       end
 
