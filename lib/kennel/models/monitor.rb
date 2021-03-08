@@ -5,8 +5,6 @@ module Kennel
       include OptionalValidations
 
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
-      # 2d and 1w are valid timeframes for anomaly monitors
-      QUERY_INTERVALS = ["1m", "5m", "10m", "15m", "30m", "1h", "2h", "4h", "1d", "2d", "1w"].freeze
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles
@@ -200,14 +198,6 @@ module Kennel
         # verify renotify interval is valid
         unless RENOTIFY_INTERVALS.include? data.dig(:options, :renotify_interval)
           invalid! "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
-        end
-
-        if type == "query alert"
-          # verify interval is valid
-          interval = data.fetch(:query)[/\(last_(\S+?)\)/, 1]
-          if interval && !QUERY_INTERVALS.include?(interval)
-            invalid! "query interval was #{interval}, but must be one of #{QUERY_INTERVALS.join(", ")}"
-          end
         end
 
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
