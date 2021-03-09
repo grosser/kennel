@@ -22,17 +22,20 @@ describe "tasks" do
       {
         "id": 1,
         "modified_at": 2,
+        "name": "N",
         "foo": "bar",
         "api_resource": "dashboard"
       }
       {
         "id": 1,
         "modified_at": 2,
+        "name": "N",
         "api_resource": "monitor"
       }
       {
         "id": 1,
         "modified_at": 2,
+        "name": "N",
         "api_resource": "slo"
       }
     TXT
@@ -82,7 +85,7 @@ describe "tasks" do
     let(:api) { Kennel.send(:api) }
 
     before do
-      list = [{ id: 1, modified_at: 2 }]
+      list = [{ id: 1, modified_at: 2, name: "N" }]
       api.stubs(:list).returns list, deep_dup(list), deep_dup(list)
     end
 
@@ -92,6 +95,7 @@ describe "tasks" do
         {
           "id": 1,
           "modified_at": 2,
+          "name": "N",
           "api_resource": "monitor"
         }
       JSON
@@ -117,6 +121,7 @@ describe "tasks" do
         {
           "id": 1,
           "modified_at": 2,
+          "name": "N",
           "foo": "bar",
           "api_resource": "dashboard"
         }
@@ -125,7 +130,7 @@ describe "tasks" do
 
     it "can grep urls" do
       with_env(DUMP: "dump", PATTERN: "foo", URLS: "true") { execute }
-      stdout.string.must_equal "/dashboard/1\n"
+      stdout.string.must_equal "/dashboard/1 # N\n"
     end
 
     it "fails when nothing matches" do

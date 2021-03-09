@@ -158,7 +158,9 @@ namespace :kennel do
     found.each do |resource|
       if ENV["URLS"]
         parsed = JSON.parse(resource)
-        Kennel.out.puts models[parsed.fetch("api_resource")].url(parsed.fetch("id"))
+        url = models[parsed.fetch("api_resource")].url(parsed.fetch("id"))
+        title = parsed["title"] || parsed["name"]
+        Kennel.out.puts "#{url} # #{title}"
       else
         Kennel.out.puts resource
       end
