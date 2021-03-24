@@ -14,12 +14,13 @@ describe Kennel::Models::Dashboard do
   let(:project) { TestProject.new }
   let(:expected_json) do
     {
-      title: "Hello🔒",
       layout_type: "ordered",
+      title: "Hello🔒",
       description: "",
       template_variables: [],
       template_variable_presets: nil,
-      widgets: []
+      widgets: [],
+      reflow_type: "auto"
     }
   end
   let(:dashboard_with_requests) do

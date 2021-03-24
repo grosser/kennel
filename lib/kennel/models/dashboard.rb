@@ -5,7 +5,6 @@ module Kennel
       include TemplateVariables
       include OptionalValidations
 
-      DASHBOARD_DEFAULTS = { template_variables: [] }.freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list
       ]
@@ -19,16 +18,18 @@ module Kennel
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
       DEFAULTS = {
-        template_variable_presets: nil
+        template_variable_presets: nil,
+        reflow_type: "auto"
       }.freeze
 
-      settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets
+      settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type
 
       defaults(
         description: -> { "" },
         definitions: -> { [] },
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
+        reflow_type: -> { DEFAULTS.fetch(:reflow_type) },
         id: -> { nil }
       )
 
@@ -111,6 +112,7 @@ module Kennel
           layout_type: layout_type,
           title: "#{title}#{LOCK}",
           description: description,
+          reflow_type: reflow_type,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
           widgets: all_widgets
