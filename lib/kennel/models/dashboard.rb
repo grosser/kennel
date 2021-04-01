@@ -18,8 +18,7 @@ module Kennel
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
       DEFAULTS = {
-        template_variable_presets: nil,
-        reflow_type: "auto"
+        template_variable_presets: nil
       }.freeze
 
       settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type
@@ -29,7 +28,7 @@ module Kennel
         definitions: -> { [] },
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
-        reflow_type: -> { DEFAULTS.fetch(:reflow_type) },
+        reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
         id: -> { nil }
       )
 
@@ -42,6 +41,7 @@ module Kennel
           super
 
           ignore_default(expected, actual, DEFAULTS)
+          ignore_default(expected, actual, reflow_type: "auto") if expected[:layout_type] == "ordered"
 
           widgets_pairs(expected, actual).each do |pair|
             # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
@@ -112,11 +112,12 @@ module Kennel
           layout_type: layout_type,
           title: "#{title}#{LOCK}",
           description: description,
-          reflow_type: reflow_type,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
           widgets: all_widgets
         }
+
+        @json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
 
         @json[:id] = id if id
 

@@ -81,6 +81,12 @@ describe Kennel::Models::Dashboard do
       ).as_json.must_equal(expected_json_with_requests)
     end
 
+    it "does not add reflow for free" do
+      expected_json[:layout_type] = "free"
+      expected_json.delete(:reflow_type)
+      dashboard(layout_type: -> { "free" }).as_json.must_equal(expected_json)
+    end
+
     describe "definitions" do
       it "can add definitions" do
         dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests
@@ -278,21 +284,6 @@ describe Kennel::Models::Dashboard do
       formats.must_equal old, "not in-place modified"
     end
 
-    describe "with missing default" do
-      let(:json) { expected_json_with_requests }
-      before { json[:widgets][0][:definition][:show_legend] = false }
-
-      it "ignores timeseries defaults" do
-        dashboard_with_requests.diff(json).must_equal []
-      end
-
-      it "does not ignore diff for different types" do
-        json[:widgets][0][:definition][:show_legend] = false
-        json[:widgets][0][:definition][:type] = "note"
-        dashboard_with_requests.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
-      end
-    end
-
     it "ignores note defaults" do
       json = expected_json
       json[:widgets] << {
@@ -310,6 +301,32 @@ describe Kennel::Models::Dashboard do
       dashboard(
         widgets: -> { [{ definition: { type: "note", content: "C" } }] }
       ).diff(json).must_equal []
+    end
+
+    describe "reflow" do
+      it "ignore reflow on ordered" do
+        dashboard(reflow_type: -> { "auto" }).diff(expected_json).must_equal []
+      end
+
+      it "does not ignore reflow on free" do
+        d = dashboard(layout_type: -> { "free" }, reflow_type: -> { "auto" })
+        d.diff(expected_json).must_equal [["~", "layout_type", "ordered", "free"]]
+      end
+    end
+
+    describe "with missing default" do
+      let(:json) { expected_json_with_requests }
+      before { json[:widgets][0][:definition][:show_legend] = false }
+
+      it "ignores timeseries defaults" do
+        dashboard_with_requests.diff(json).must_equal []
+      end
+
+      it "does not ignore diff for different types" do
+        json[:widgets][0][:definition][:show_legend] = false
+        json[:widgets][0][:definition][:type] = "note"
+        dashboard_with_requests.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
+      end
     end
   end
 
