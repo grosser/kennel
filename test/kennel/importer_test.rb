@@ -244,7 +244,7 @@ describe Kennel::Importer do
     end
 
     it "adds critical replacement" do
-      response = { id: 123, name: "hello", query: "foo = 5", options: { critical: 5 } }
+      response = { id: 123, name: "hello", query: "foo = 5", options: { thresholds: { critical: 5 } } }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
       monitor = importer.import("monitor", 123)
       monitor.must_equal <<~RUBY
@@ -430,6 +430,23 @@ describe Kennel::Importer do
               }
             ]
           }
+        )
+      RUBY
+    end
+
+    it "imports event monitors critical as int because float is invalid" do
+      response = { id: 123, name: "hello", query: "foo = 5", type: "event alert", options: { thresholds: { critical: 5.0 } } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      monitor = importer.import("monitor", 123)
+      monitor.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          type: -> { \"event alert\" },
+          query: -> { \"foo = \#{critical}\" },
+          critical: -> { 5 }
         )
       RUBY
     end

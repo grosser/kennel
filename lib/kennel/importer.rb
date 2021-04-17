@@ -60,6 +60,9 @@ module Kennel
           query.sub!(/([><=]) (#{Regexp.escape(critical.to_f.to_s)}|#{Regexp.escape(critical.to_i.to_s)})$/, "\\1 \#{critical}")
         end
 
+        # using float in query is not allowed, so convert here
+        data[:critical] = data[:critical].to_i if data[:type] == "event alert"
+
         data[:type] = "query alert" if data[:type] == "metric alert"
       when "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
