@@ -10,7 +10,7 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.homepage = "https://github.com/grosser/#{name}"
   s.files = `git ls-files lib Readme.md template/Readme.md`.split("\n")
   s.license = "MIT"
-  s.required_ruby_version = ">= 2.5.0"
+  s.required_ruby_version = ">= 2.6.0"
   s.add_runtime_dependency "faraday"
   s.add_runtime_dependency "hashdiff", "~> 1.0"
   s.add_runtime_dependency "net-http-persistent", "~> 4.0"
