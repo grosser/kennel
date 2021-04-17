@@ -1,5 +1,14 @@
 # frozen_string_literal: true
 require "bundler/setup"
+
+require "bootsnap"
+Bootsnap.setup(
+  cache_dir: "tmp/bootsnap", # Path to your cache
+  development_mode: true, # do not pre-compile
+  load_path_cache: true, # optimizes the LOAD_PATH with a cache
+  compile_cache_iseq: true # compiles Ruby code into ISeq cache .. breaks coverage reporting
+)
+
 require "kennel/tasks"
 
 task generate: "kennel:generate"

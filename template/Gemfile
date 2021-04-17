@@ -6,3 +6,4 @@ ruby File.read(".ruby-version").strip
 gem "kennel"
 gem "dotenv"
 gem "rake"
+gem "bootsnap"
