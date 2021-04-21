@@ -144,13 +144,18 @@ describe Kennel::Models::Slo do
 
   describe ".parse_url" do
     it "parses" do
-      url = "https://app.datadoghq.com/slo?slo_id=foo&timeframe=7d&tab=status_and_history"
-      Kennel::Models::Slo.parse_url(url).must_equal "foo"
+      url = "https://app.datadoghq.com/slo?slo_id=123456789123&timeframe=7d&tab=status_and_history"
+      Kennel::Models::Slo.parse_url(url).must_equal "123456789123"
     end
 
     it "parses when other query strings are present" do
-      url = "https://app.datadoghq.com/slo?query=\"bar\"&slo_id=foo&timeframe=7d&tab=status_and_history"
-      Kennel::Models::Slo.parse_url(url).must_equal "foo"
+      url = "https://app.datadoghq.com/slo?query=\"bar\"&slo_id=123456789123&timeframe=7d&tab=status_and_history"
+      Kennel::Models::Slo.parse_url(url).must_equal "123456789123"
+    end
+
+    it "parses url with id" do
+      url = "https://app.datadoghq.com/slo/edit/123456789123"
+      Kennel::Models::Slo.parse_url(url).must_equal "123456789123"
     end
 
     it "fails to parse other" do
