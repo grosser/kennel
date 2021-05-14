@@ -66,7 +66,10 @@ module Kennel
         data[:type] = "query alert" if data[:type] == "metric alert"
       when "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
-        widgets&.each { |widget| dry_up_query!(widget) }
+        widgets&.each do |widget|
+          dry_up_query!(widget)
+          (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
+        end
       end
 
       data.delete(:tags) if data[:tags] == [] # do not create super + [] call

@@ -170,6 +170,33 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "removes dashboard marker label noise" do
+      response = { id: "abc", title: "a", widgets: [{ definition: { markers: [{ label: " TEST " }] } }] }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "a" },
+          id: -> { "abc" },
+          kennel_id: -> { "a" },
+          widgets: -> {
+            [
+              {
+                definition: {
+                  markers: [
+                    {
+                      label: "TEST"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        )
+      RUBY
+    end
+
     it "removes lock so we do not double it" do
       response = { id: 123, name: "hello#{Kennel::Models::Record::LOCK}", options: {} }
       stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
