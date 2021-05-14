@@ -361,7 +361,7 @@ describe Kennel::Models::Dashboard do
   end
 
   describe ".ignore_request_defaults" do
-    let(:valid) { [{ definition: { requests: [{ c: 1 }] } }] }
+    let(:valid) { { definition: { requests: [{ c: 1 }] } } }
     let(:default_style) { { line_width: "normal", palette: "dog_classic", line_type: "solid" } }
 
     it "does not change valid" do
@@ -372,7 +372,7 @@ describe Kennel::Models::Dashboard do
 
     it "removes defaults" do
       copy = deep_dup(valid)
-      valid.dig(0, :definition, :requests, 0)[:style] = default_style
+      valid.dig(:definition, :requests, 0)[:style] = default_style
       Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid)
       valid.must_equal copy
     end
@@ -380,14 +380,14 @@ describe Kennel::Models::Dashboard do
     it "removes defaults when only a single side is given" do
       copy = deep_dup(valid)
       other = deep_dup(valid)
-      copy.dig(0, :definition, :requests, 0)[:style] = default_style
-      other.dig(0, :definition, :requests).pop
+      copy.dig(:definition, :requests, 0)[:style] = default_style
+      other.dig(:definition, :requests).pop
       Kennel::Models::Dashboard.send(:ignore_request_defaults, copy, other)
       copy.must_equal valid
     end
 
     it "does not remove non-defaults" do
-      valid.dig(0, :definition, :requests, 0)[:style] = { foo: "bar" }
+      valid.dig(:definition, :requests, 0)[:style] = { foo: "bar" }
       copy = deep_dup(valid)
       Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, valid)
       valid.must_equal copy
@@ -395,10 +395,10 @@ describe Kennel::Models::Dashboard do
 
     it "skips newly added requests" do
       copy = deep_dup(valid)
-      copy.dig(0, :definition, :requests).clear
+      copy.dig(:definition, :requests).clear
       Kennel::Models::Dashboard.send(:ignore_request_defaults, valid, copy)
-      valid.must_equal [{ definition: { requests: [{ c: 1 }] } }]
-      copy.must_equal [{ definition: { requests: [] } }]
+      valid.must_equal definition: { requests: [{ c: 1 }] }
+      copy.must_equal definition: { requests: [] }
     end
   end
 end

@@ -44,49 +44,39 @@ module Kennel
           ignore_default(expected, actual, reflow_type: "auto") if expected[:layout_type] == "ordered"
 
           widgets_pairs(expected, actual).each do |pair|
-            # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
-            pair.each do |widgets|
-              widgets.each do |widget|
-                if formats = widget.dig(:definition, :conditional_formats)
-                  widget[:definition][:conditional_formats] = formats.sort_by(&:hash)
-                end
-              end
-            end
-
-            ignore_widget_defaults pair
-
+            pair.each { |w| sort_conditional_formats w }
+            ignore_widget_defaults(*pair)
             ignore_request_defaults(*pair)
-
-            # ids are kinda random so we always discard them
-            pair.each { |widgets| widgets.each { |w| w.delete(:id) } }
+            pair.each { |widget| widget&.delete(:id) } # ids are kinda random so we always discard them
           end
         end
 
         private
 
-        def ignore_widget_defaults(pair)
-          pair.map(&:size).max.times do |i|
-            types = pair.map { |w| w.dig(i, :definition, :type) }.uniq
-            next unless types.size == 1
-            next unless defaults = WIDGET_DEFAULTS[types.first]
-            ignore_defaults(pair[0], pair[1], defaults, nesting: :definition)
+        # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
+        def sort_conditional_formats(widget)
+          if formats = widget&.dig(:definition, :conditional_formats)
+            widget[:definition][:conditional_formats] = formats.sort_by(&:hash)
           end
+        end
+
+        def ignore_widget_defaults(expected, actual)
+          types = [expected&.dig(:definition, :type), actual&.dig(:definition, :type)].uniq
+          return unless types.size == 1
+          return unless defaults = WIDGET_DEFAULTS[types.first]
+          ignore_default expected[:definition] || {}, actual[:definition] || {}, defaults
         end
 
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
         def ignore_request_defaults(expected, actual)
-          [expected.size, actual.size].max.times do |i|
-            a_r = actual.dig(i, :definition, :requests) || []
-            e_r = expected.dig(i, :definition, :requests) || []
-            ignore_defaults e_r, a_r, REQUEST_DEFAULTS
-          end
+          a_r = actual&.dig(:definition, :requests) || []
+          e_r = expected&.dig(:definition, :requests) || []
+          ignore_defaults e_r, a_r, REQUEST_DEFAULTS
         end
 
-        def ignore_defaults(expected, actual, defaults, nesting: nil)
+        def ignore_defaults(expected, actual, defaults)
           [expected.size, actual.size].max.times do |i|
-            e = expected.dig(i, *nesting) || {}
-            a = actual.dig(i, *nesting) || {}
-            ignore_default(e, a, defaults)
+            ignore_default expected[i] || {}, actual[i] || {}, defaults
           end
         end
 
@@ -99,7 +89,7 @@ module Kennel
             nested = pair.map { |d| d.dig(:widgets, i, :definition, :widgets) || [] }
             result << nested if nested.any?(&:any?)
           end
-          result
+          result.flat_map { |a, e| [a.size, e.size].max.times.map { |i| [a[i], e[i]] } }
         end
       end
 
