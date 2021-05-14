@@ -316,7 +316,7 @@ describe Kennel::Models::Dashboard do
 
     describe "with missing default" do
       let(:json) { expected_json_with_requests }
-      before { json[:widgets][0][:definition][:show_legend] = false }
+      before { json[:widgets][0][:definition][:show_legend] = true }
 
       it "ignores timeseries defaults" do
         dashboard_with_requests.diff(json).must_equal []
@@ -327,6 +327,15 @@ describe Kennel::Models::Dashboard do
         json[:widgets][0][:definition][:type] = "note"
         dashboard_with_requests.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
       end
+    end
+  end
+
+  describe ".normalize" do
+    it "can clean up import" do
+      actual = expected_json_with_requests
+      actual[:widgets][0][:definition][:legend_size] = "0"
+      Kennel::Models::Dashboard.normalize({}, actual)
+      refute actual[:widgets][0][:definition].key?(:legend_size)
     end
   end
 

@@ -12,8 +12,56 @@ module Kennel
         style: { line_width: "normal", palette: "dog_classic", line_type: "solid" }
       }.freeze
       WIDGET_DEFAULTS = {
-        "timeseries" => { show_legend: false, legend_size: "0" },
-        "note" => { background_color: "white", font_size: "14", show_tick: false, tick_edge: "left", tick_pos: "50%", text_align: "left" }
+        "timeseries" => {
+          legend_size: "0",
+          markers: [],
+          legend_columns: [
+            "avg",
+            "min",
+            "max",
+            "value",
+            "sum"
+          ],
+          legend_layout: "auto",
+          yaxis: {
+            include_zero: true,
+            label: "",
+            scale: "linear",
+            min: "auto",
+            max: "auto"
+          },
+          show_legend: true,
+          time: {},
+          title_align: "left",
+          title_size: "16"
+        },
+        "note" => {
+          show_tick: false,
+          tick_edge: "left",
+          tick_pos: "50%",
+          text_align: "left",
+          has_padding: true,
+          background_color: "white",
+          font_size: "14"
+        },
+        "query_value" => {
+          autoscale: true,
+          time: {},
+          title_align: "left",
+          title_size: "16"
+        },
+        "free_text" => {
+          font_size: "auto"
+        },
+        "check_status" => {
+          title_align: "left",
+          title_size: "16"
+        },
+        "slo" => {
+          global_time_target: "0",
+          title_align: "left",
+          title_size: "16"
+        }
       }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
 
@@ -40,8 +88,8 @@ module Kennel
         def normalize(expected, actual)
           super
 
-          ignore_default(expected, actual, DEFAULTS)
-          ignore_default(expected, actual, reflow_type: "auto") if expected[:layout_type] == "ordered"
+          ignore_default expected, actual, DEFAULTS
+          ignore_default expected, actual, reflow_type: "auto" if expected[:layout_type] == "ordered"
 
           widgets_pairs(expected, actual).each do |pair|
             pair.each { |w| sort_conditional_formats w }
@@ -61,10 +109,10 @@ module Kennel
         end
 
         def ignore_widget_defaults(expected, actual)
-          types = [expected&.dig(:definition, :type), actual&.dig(:definition, :type)].uniq
+          types = [expected&.dig(:definition, :type), actual&.dig(:definition, :type)].uniq.compact
           return unless types.size == 1
           return unless defaults = WIDGET_DEFAULTS[types.first]
-          ignore_default expected[:definition] || {}, actual[:definition] || {}, defaults
+          ignore_default expected&.[](:definition) || {}, actual&.[](:definition) || {}, defaults
         end
 
         # discard styles/conditional_formats/aggregator if nothing would change when we applied (both are default or nil)
