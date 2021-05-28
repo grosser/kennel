@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 module Kennel
   class Syncer
-    TRACKING_FIELDS = [:message, :description].freeze
     DELETE_ORDER = ["dashboard", "slo", "monitor"].freeze # dashboards references monitors + slos, slos reference monitors
 
     def initialize(api, expected, project: nil)
@@ -16,7 +15,7 @@ module Kennel
           raise "#{@project_filter} does not match any projects, try any of these:\n#{possible.join("\n")}"
         end
       end
-      @expected.each { |e| add_tracking_id e }
+      @expected.each(&:add_tracking_id)
       calculate_diff
       prevent_irreversible_partial_updates
     end
@@ -39,19 +38,22 @@ module Kennel
     def update
       each_resolved @create do |_, e|
         reply = @api.create e.class.api_resource, e.as_json
+        reply[:klass] = e.class # store api resource class for later use
         id = reply.fetch(:id)
         populate_id_map [reply] # allow resolving ids we could previously no resolve
-        Kennel.out.puts "Created #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.class.url(id)}"
+        Kennel.out.puts "Created #{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
       end
 
       each_resolved @update do |id, e|
         @api.update e.class.api_resource, id, e.as_json
-        Kennel.out.puts "Updated #{e.class.api_resource} #{tracking_id(e.as_json)} #{e.class.url(id)}"
+        Kennel.out.puts "Updated #{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
       end
 
       @delete.each do |id, _, a|
-        @api.delete a.fetch(:api_resource), id
-        Kennel.out.puts "Deleted #{a.fetch(:api_resource)} #{tracking_id(a)} #{id}"
+        klass = a.fetch(:klass)
+        @api.delete klass.api_resource, id
+        tracking_id = klass.parse_tracking_id(a)
+        Kennel.out.puts "Deleted #{klass.api_resource} #{tracking_id} #{id}"
       end
     end
 
@@ -118,8 +120,8 @@ module Kennel
 
         # fill details of things we need to compare
         detailed = Hash.new { |h, k| h[k] = [] }
-        items.each { |e, a| detailed[a[:api_resource]] << a if e }
-        detailed.each { |api_resource, actuals| @api.fill_details! api_resource, actuals }
+        items.each { |e, a| detailed[a[:klass]] << a if e }
+        detailed.each { |klass, actuals| @api.fill_details! klass.api_resource, actuals }
 
         # pick out things to update or delete
         items.each do |e, a|
@@ -127,7 +129,7 @@ module Kennel
           if e
             diff = e.diff(a)
             @update << [id, e, a, diff] if diff.any?
-          elsif tracking_id(a) # was previously managed
+          elsif a.fetch(:klass).parse_tracking_id(a) # was previously managed
             @delete << [id, nil, a]
           end
         end
@@ -136,14 +138,14 @@ module Kennel
         @create = @expected.map { |e| [nil, e] }
       end
 
-      @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:api_resource) }
+      @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
     end
 
     def download_definitions
-      Utils.parallel(Models::Record.subclasses.map(&:api_resource)) do |api_resource|
-        results = @api.list(api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+      Utils.parallel(Models::Record.subclasses) do |klass|
+        results = @api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
         results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
-        results.each { |c| c[:api_resource] = api_resource } # store api resource for later diffing
+        results.each { |c| c[:klass] = klass } # store api resource for later diffing
       end.flatten(1)
     end
 
@@ -158,7 +160,7 @@ module Kennel
     def matching_expected(a)
       # index list by all the thing we look up by: tracking id and actual id
       @lookup_map ||= @expected.each_with_object({}) do |e, all|
-        keys = [tracking_id(e.as_json)]
+        keys = [e.tracking_id]
         keys << "#{e.class.api_resource}:#{e.id}" if e.id
         keys.compact.each do |key|
           raise "Lookup #{key} is duplicated" if all[key]
@@ -166,14 +168,15 @@ module Kennel
         end
       end
 
-      @lookup_map["#{a.fetch(:api_resource)}:#{a.fetch(:id)}"] || @lookup_map[tracking_id(a)]
+      klass = a.fetch(:klass)
+      @lookup_map["#{klass.api_resource}:#{a.fetch(:id)}"] || @lookup_map[klass.parse_tracking_id(a)]
     end
 
     def print_plan(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
-        api_resource = (e ? e.class.api_resource : a.fetch(:api_resource))
-        Kennel.out.puts Utils.color(color, "#{step} #{api_resource} #{e&.tracking_id || tracking_id(a)}")
+        klass = (e ? e.class : a.fetch(:klass))
+        Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || klass.parse_tracking_id(a)}")
         print_diff(diff) if diff # only for update
       end
     end
@@ -211,12 +214,13 @@ module Kennel
 
         diff.select! do |field_diff|
           (_, field, old, new) = field_diff
-          next true unless tracking_field?(field)
+          # TODO: refactor this so tracking field stays record-private
+          next true unless e.class::TRACKING_FIELD == field.to_sym # need to sym here because Hashdiff produces strings
 
-          if (old_tracking = tracking_value(old))
-            old_tracking == tracking_value(new) || raise("do not update! (atm unreachable)")
+          if (old_tracking = e.class.parse_tracking_id(e.class::TRACKING_FIELD => old))
+            old_tracking == e.class.parse_tracking_id(e.class::TRACKING_FIELD => new) || raise("do not update! (atm unreachable)")
           else
-            field_diff[3] = remove_tracking_id(e) # make plan output match update
+            field_diff[3] = e.remove_tracking_id # make plan output match update
             old != field_diff[3]
           end
         end
@@ -226,7 +230,7 @@ module Kennel
     end
 
     def populate_id_map(actual)
-      actual.each { |a| @id_map[tracking_id(a)] = a.fetch(:id) }
+      actual.each { |a| @id_map[a.fetch(:klass).parse_tracking_id(a)] = a.fetch(:id) }
     end
 
     def resolve_linked_tracking_ids!(list, force: false)
@@ -236,39 +240,9 @@ module Kennel
     def filter_by_project!(definitions)
       return unless @project_filter
       definitions.select! do |a|
-        id = tracking_id(a)
+        id = a.fetch(:klass).parse_tracking_id(a)
         !id || id.start_with?("#{@project_filter}:")
       end
-    end
-
-    def add_tracking_id(e)
-      json = e.as_json
-      field = tracking_field(json)
-      raise "remove \"-- Managed by kennel\" line it from #{field} to copy a resource" if tracking_value(json[field])
-      json[field] = "#{json[field]}\n-- Managed by kennel #{e.tracking_id} in #{e.project.class.file_location}, do not modify manually".lstrip
-    end
-
-    def remove_tracking_id(e)
-      json = e.as_json
-      field = tracking_field(json)
-      value = json[field]
-      json[field] = value.dup.sub!(/\n?-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
-    end
-
-    def tracking_id(a)
-      tracking_value a[tracking_field(a)]
-    end
-
-    def tracking_value(content)
-      content.to_s[/-- Managed by kennel (\S+:\S+)/, 1]
-    end
-
-    def tracking_field(a)
-      TRACKING_FIELDS.detect { |f| a.key?(f) }
-    end
-
-    def tracking_field?(field)
-      TRACKING_FIELDS.include?(field.to_sym)
     end
   end
 end

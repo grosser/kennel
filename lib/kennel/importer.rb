@@ -3,7 +3,7 @@
 module Kennel
   class Importer
     TITLES = [:name, :title].freeze
-    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, *Syncer::TRACKING_FIELDS, :template_variables].freeze
+    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, *Models::Record.subclasses.map { |k| k::TRACKING_FIELDS }, :template_variables].freeze
 
     def initialize(api)
       @api = api
@@ -31,11 +31,10 @@ module Kennel
       title.tr!(Kennel::Models::Record::LOCK, "") # avoid double lock icon
 
       # calculate or reuse kennel_id
-      # TODO: this is copy-pasted from syncer, need to find a nice way to reuse it
-      tracking_field = Syncer::TRACKING_FIELDS.detect { |f| data[f] }
       data[:kennel_id] =
-        if tracking_field && data[tracking_field].sub!(/\n?-- Managed by kennel (\S+:\S+).*/, "")
-          $1.split(":").last
+        if tracking_id = model.parse_tracking_id(data)
+          model.remove_tracking_id(data)
+          tracking_id.split(":").last
         else
           Kennel::Utils.parameterize(title)
         end
@@ -70,6 +69,8 @@ module Kennel
           dry_up_query!(widget)
           (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
         end
+      else
+        # noop
       end
 
       data.delete(:tags) if data[:tags] == [] # do not create super + [] call

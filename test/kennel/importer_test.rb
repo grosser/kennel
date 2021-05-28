@@ -535,6 +535,7 @@ describe Kennel::Importer do
         response = {
           id: "abc",
           title: "hello",
+          description: "",
           widgets: [{ definition: { widgets: [{ definition: { requests: { a: 1 } } }] } }]
         }
         stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
@@ -545,6 +546,7 @@ describe Kennel::Importer do
         response = {
           id: "abc",
           title: "hello",
+          description: "",
           widgets: [{ definition: { widgets: [{ definition: { requests: [{ q: "x", metadata: [{}] }] } }] } }]
         }
         stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)

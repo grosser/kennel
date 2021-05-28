@@ -4,17 +4,13 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::TemplateVariables do
-  class TestVariables < Kennel::Models::Record
-    include Kennel::TemplateVariables
-  end
-
   it "adds settings" do
-    TestVariables.new(TestProject.new, template_variables: -> { ["xxx"] }).template_variables.must_equal ["xxx"]
+    Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, template_variables: -> { ["xxx"] }).template_variables.must_equal ["xxx"]
   end
 
   describe "#render_template_variables" do
     def var(value)
-      TestVariables.new(TestProject.new, template_variables: -> { value }).send(:render_template_variables)
+      Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, template_variables: -> { value }).send(:render_template_variables)
     end
 
     it "leaves empty alone" do
@@ -36,7 +32,7 @@ describe Kennel::TemplateVariables do
         template_variables: value.map { |v| { name: v } },
         widgets: list
       }
-      v = TestVariables.new(TestProject.new, template_variables: -> { value })
+      v = Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, template_variables: -> { value })
       v.send(:validate_template_variables, data)
     end
 

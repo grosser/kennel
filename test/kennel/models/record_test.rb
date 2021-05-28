@@ -21,6 +21,19 @@ describe Kennel::Models::Record do
     end
   end
 
+  # pretend that TestRecord doesn't exist so as not to break other tests
+  Kennel::Models::Record.subclasses.pop
+
+  let(:monitor) do
+    Kennel::Models::Monitor.new(
+      TestProject.new,
+      kennel_id: -> { "test" },
+      type: -> { "query" },
+      query: -> { "meh" },
+      critical: -> { 10 }
+    )
+  end
+
   describe "#initialize" do
     it "complains when passing invalid project" do
       e = assert_raises(ArgumentError) { TestRecord.new(123) }
@@ -63,6 +76,28 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "#add_tracking_id" do
+    it "adds" do
+      monitor.as_json[:message].wont_include "kennel"
+      monitor.add_tracking_id
+      monitor.as_json[:message].must_include "kennel"
+    end
+
+    it "fails when it would have been added twice (user already added it by mistake)" do
+      monitor.add_tracking_id
+      assert_raises(Kennel::ValidationError) { monitor.add_tracking_id }
+    end
+  end
+
+  describe "#remove_tracking_id" do
+    it "removes" do
+      old = monitor.as_json[:message].dup
+      monitor.add_tracking_id
+      monitor.remove_tracking_id
+      monitor.as_json[:message].must_equal old
+    end
+  end
+
   describe ".diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
@@ -84,8 +119,8 @@ describe Kennel::Models::Record do
       diff_resource({ id: 123 }, id: 234).must_equal []
     end
 
-    it "ignores api_resource that syncer adds as a hack to get delete to work" do
-      diff_resource({}, api_resource: 234).must_equal []
+    it "ignores klass attribute that syncer adds" do
+      diff_resource({}, klass: TestRecord).must_equal []
     end
 
     it "makes tag diffs look neat" do
@@ -168,8 +203,7 @@ describe Kennel::Models::Record do
       Kennel::Models::Record.api_resource_map.must_equal(
         "dashboard" => Kennel::Models::Dashboard,
         "monitor" => Kennel::Models::Monitor,
-        "slo" => Kennel::Models::Slo,
-        "test" => TestRecord
+        "slo" => Kennel::Models::Slo
       )
     end
   end

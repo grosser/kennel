@@ -8,6 +8,7 @@ module Kennel
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list
       ]
+      TRACKING_FIELD = :description
       REQUEST_DEFAULTS = {
         style: { line_width: "normal", palette: "dog_classic", line_type: "solid" }
       }.freeze
