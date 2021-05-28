@@ -9,6 +9,7 @@ module Kennel
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles
       ]
+      TRACKING_FIELD = :message
 
       MONITOR_DEFAULTS = {
         priority: nil

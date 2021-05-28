@@ -3,8 +3,10 @@ module Kennel
   module Models
     class Record < Base
       LOCK = "\u{1F512}"
+      TRACKING_FIELDS = [:message, :description].freeze
       READONLY_ATTRIBUTES = [
-        :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at, :api_resource
+        :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at,
+        :klass # added by syncer.rb
       ].freeze
 
       settings :id, :kennel_id
@@ -20,6 +22,10 @@ module Kennel
 
         def api_resource_map
           subclasses.map { |s| [s.api_resource, s] }.to_h
+        end
+
+        def parse_tracking_id(a)
+          a[self::TRACKING_FIELD].to_s[/-- Managed by kennel (\S+:\S+)/, 1]
         end
 
         private
@@ -64,6 +70,18 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(*)
+      end
+
+      def add_tracking_id
+        json = as_json
+        raise "remove \"-- Managed by kennel\" line it from #{self.class::TRACKING_FIELD} to copy a resource" if self.class.parse_tracking_id(json)
+        json[self.class::TRACKING_FIELD] = "#{json[self.class::TRACKING_FIELD]}\n-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
+      end
+
+      def remove_tracking_id
+        json = as_json
+        value = json[self.class::TRACKING_FIELD]
+        json[self.class::TRACKING_FIELD] = value.dup.sub!(/\n?-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
       end
 
       private

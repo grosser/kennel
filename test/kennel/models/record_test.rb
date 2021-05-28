@@ -21,6 +21,9 @@ describe Kennel::Models::Record do
     end
   end
 
+  # pretend that TestRecord doesn't exist so as not to break other tests
+  Kennel::Models::Record.subclasses.pop
+
   describe "#initialize" do
     it "complains when passing invalid project" do
       e = assert_raises(ArgumentError) { TestRecord.new(123) }
@@ -84,8 +87,8 @@ describe Kennel::Models::Record do
       diff_resource({ id: 123 }, id: 234).must_equal []
     end
 
-    it "ignores api_resource that syncer adds as a hack to get delete to work" do
-      diff_resource({}, api_resource: 234).must_equal []
+    it "ignores klass attribute that syncer adds" do
+      diff_resource({}, klass: TestRecord).must_equal []
     end
 
     it "makes tag diffs look neat" do
@@ -168,8 +171,7 @@ describe Kennel::Models::Record do
       Kennel::Models::Record.api_resource_map.must_equal(
         "dashboard" => Kennel::Models::Dashboard,
         "monitor" => Kennel::Models::Monitor,
-        "slo" => Kennel::Models::Slo,
-        "test" => TestRecord
+        "slo" => Kennel::Models::Slo
       )
     end
   end

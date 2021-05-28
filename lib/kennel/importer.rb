@@ -3,7 +3,7 @@
 module Kennel
   class Importer
     TITLES = [:name, :title].freeze
-    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, *Syncer::TRACKING_FIELDS, :template_variables].freeze
+    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, *Models::Record.subclasses.map { |k| k::TRACKING_FIELDS }, :template_variables].freeze
 
     def initialize(api)
       @api = api
@@ -32,9 +32,9 @@ module Kennel
 
       # calculate or reuse kennel_id
       # TODO: this is copy-pasted from syncer, need to find a nice way to reuse it
-      tracking_field = Syncer::TRACKING_FIELDS.detect { |f| data[f] }
+      # can probably use parse_tracking_field here
       data[:kennel_id] =
-        if tracking_field && data[tracking_field].sub!(/\n?-- Managed by kennel (\S+:\S+).*/, "")
+        if data[model::TRACKING_FIELD].to_s.sub!(/\n?-- Managed by kennel (\S+:\S+).*/, "")
           $1.split(":").last
         else
           Kennel::Utils.parameterize(title)

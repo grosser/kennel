@@ -11,7 +11,7 @@ describe Kennel::Syncer do
     project
   end
 
-  def component(pid, cid, extra = {})
+  def monitor_api_response(pid, cid, extra = {})
     {
       tags: extra.delete(:tags) || ["service:a", "team:test_team"],
       message: "@slack-foo\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
@@ -71,7 +71,7 @@ describe Kennel::Syncer do
 
   def add_identical
     expected << monitor("a", "b")
-    monitors << component("a", "b")
+    monitors << monitor_api_response("a", "b")
   end
 
   let(:api) { stub("Api") }
@@ -115,19 +115,19 @@ describe Kennel::Syncer do
 
     it "ignores readonly attributes since we do not generate them" do
       expected << monitor("a", "b")
-      monitors << component("a", "b", created: true)
+      monitors << monitor_api_response("a", "b", created: true)
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "ignores silencing since that is managed via the UI" do
       expected << monitor("a", "b")
-      monitors << component("a", "b", options: { silenced: { "*" => 1 } })
+      monitors << monitor_api_response("a", "b", options: { silenced: { "*" => 1 } })
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "updates when changed" do
       expected << monitor("a", "b", foo: "bar", bar: "foo", nested: { foo: "bar" })
-      monitors << component("a", "b", foo: "baz", baz: "foo", nested: { foo: "baz" })
+      monitors << monitor_api_response("a", "b", foo: "baz", baz: "foo", nested: { foo: "baz" })
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
@@ -143,7 +143,7 @@ describe Kennel::Syncer do
 
       it "updates without tracking when previously unmanaged" do
         expected << monitor("a", "b", id: 123)
-        monitors << component("a", "", id: 123, message: "old stuff")
+        monitors << monitor_api_response("a", "", id: 123, message: "old stuff")
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
@@ -153,14 +153,14 @@ describe Kennel::Syncer do
 
       it "can plan when linked only by id during update" do
         expected << monitor("a", "b", id: 123, message: "")
-        monitors << component("a", "b", id: 123, message: "")
+        monitors << monitor_api_response("a", "b", id: 123, message: "")
         output.must_equal "Plan:\nNothing to do\n"
       end
     end
 
     it "shows long updates nicely" do
       expected << monitor("a", "b", foo: "something very long but not too long I do not know")
-      monitors << component("a", "b", foo: "something shorter but still very long but also different")
+      monitors << monitor_api_response("a", "b", foo: "something shorter but still very long but also different")
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
@@ -172,7 +172,7 @@ describe Kennel::Syncer do
 
     it "shows added tags nicely" do
       expected << monitor("a", "b", tags: ["foo", "bar"])
-      monitors << component("a", "b", tags: ["foo", "baz"])
+      monitors << monitor_api_response("a", "b", tags: ["foo", "baz"])
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
@@ -181,26 +181,32 @@ describe Kennel::Syncer do
     end
 
     it "deletes when removed from code" do
-      monitors << component("a", "b")
+      monitors << monitor_api_response("a", "b")
       output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
     it "deletes in logical order" do
-      monitors << component("a", "a")
-      dashboards << component("a", "b")
-      slos << component("a", "c", id: 1)
+      monitors << monitor_api_response("a", "a")
+      dashboards << {
+        id: "abc",
+        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+      }
+      slos << {
+        id: "1",
+        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
+      }
       output.must_equal "Plan:\nDelete dashboard a:b\nDelete slo a:c\nDelete monitor a:a\n"
     end
 
     it "deletes newest when existing monitor was copied" do
       expected << monitor("a", "b")
-      monitors << component("a", "b")
-      monitors << component("a", "b", tags: ["old"])
+      monitors << monitor_api_response("a", "b")
+      monitors << monitor_api_response("a", "b", tags: ["old"])
       output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
     it "does not break on nil tracking field (dashboards can have nil description)" do
-      monitors << component("a", "b", message: nil)
+      monitors << monitor_api_response("a", "b", message: nil)
       output.must_equal "Plan:\nNothing to do\n"
     end
 
@@ -211,7 +217,7 @@ describe Kennel::Syncer do
 
     it "notifies about duplicate components since they would be ignored otherwise" do
       expected << monitor("a", "b") << monitor("a", "b")
-      monitors << component("a", "c") # need something to trigger lookup_map to initialize
+      monitors << monitor_api_response("a", "c") # need something to trigger lookup_map to initialize
       e = assert_raises(RuntimeError) { output }
       e.message.must_equal "Lookup a:b is duplicated"
     end
@@ -224,7 +230,7 @@ describe Kennel::Syncer do
 
     it "fails when user copy-pasted existing message with kennel id since that would lead to bad updates" do
       expected << monitor("a", "b", id: 234, foo: "bar", message: "foo\n-- Managed by kennel foo:bar in foo.rb")
-      monitors << component("a", "b", id: 234)
+      monitors << monitor_api_response("a", "b", id: 234)
       assert_raises(RuntimeError) { output }.message.must_equal(
         "remove \"-- Managed by kennel\" line it from message to copy a resource"
       )
@@ -294,7 +300,7 @@ describe Kennel::Syncer do
     describe "replacement" do
       before do
         expected << monitor("a", "b", id: 234, foo: "bar")
-        monitors << component("a", "b", id: 234)
+        monitors << monitor_api_response("a", "b", id: 234)
       end
 
       it "updates via replace" do
@@ -400,13 +406,13 @@ describe Kennel::Syncer do
 
     it "updates" do
       expected << monitor("a", "b", foo: "bar")
-      monitors << component("a", "b", id: 123)
+      monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal "Updated monitor a:b /monitors#123/edit\n"
     end
 
     it "deletes" do
-      monitors << component("a", "b", id: 123)
+      monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:delete).with("monitor", 123).returns({})
       output.must_equal "Deleted monitor a:b 123\n"
     end
@@ -448,7 +454,7 @@ describe Kennel::Syncer do
 
       it "refuses to update tracking on resources with ids since they would be deleted by other updates" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel b:b")
+        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel b:b")
         e = assert_raises(RuntimeError) { output }
         # NOTE: we never reach the actual raise since updating tracking ids is not supported
         e.message.must_equal "Unable to find existing monitor with id 123\nIf the monitor was deleted, remove the `id: -> { 123 }` line."
@@ -456,28 +462,28 @@ describe Kennel::Syncer do
 
       it "removes tracking from partial updates with ids if they would be deleted by other branches" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor")
+        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor")
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
-        output.must_equal "Updated monitor  /monitors#123/edit\n"
+        output.must_equal "Updated monitor a:b /monitors#123/edit\n"
       end
 
       it "allows partial updates on monitors with ids when it does not modify tracking field" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << component("a", "b", id: 123)
+        monitors << monitor_api_response("a", "b", id: 123)
         api.expects(:update)
         output
       end
 
       it "allows partial updates on monitors with ids when it does not update tracking id" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << component("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel a:b")
+        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel a:b")
         api.expects(:update)
         output
       end
 
       it "allows partial updates on monitors without ids" do
         expected << monitor("a", "b", foo: "bar")
-        monitors << component("a", "b", id: 123)
+        monitors << monitor_api_response("a", "b", id: 123)
         api.expects(:update)
         output
       end
