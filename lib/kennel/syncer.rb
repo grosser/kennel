@@ -215,7 +215,7 @@ module Kennel
         diff.select! do |field_diff|
           (_, field, old, new) = field_diff
           # TODO: refactor this so tracking field stays record-private
-          next true unless e.class::TRACKING_FIELD == field.to_sym # TODO: to_sym should not be necessary
+          next true unless e.class::TRACKING_FIELD == field.to_sym # need to sym here because Hashdiff produces strings
 
           if (old_tracking = e.class.parse_tracking_id(e.class::TRACKING_FIELD => old))
             old_tracking == e.class.parse_tracking_id(e.class::TRACKING_FIELD => new) || raise("do not update! (atm unreachable)")

@@ -28,6 +28,14 @@ module Kennel
           a[self::TRACKING_FIELD].to_s[/-- Managed by kennel (\S+:\S+)/, 1]
         end
 
+        # TODO: combine with parse into a single method or a single regex
+        def remove_tracking_id(a)
+          value = a[self::TRACKING_FIELD]
+          a[self::TRACKING_FIELD] =
+            value.dup.sub!(/\n?-- Managed by kennel .*/, "") ||
+            raise("did not find tracking id in #{value}")
+        end
+
         private
 
         def normalize(_expected, actual)
@@ -83,11 +91,7 @@ module Kennel
       end
 
       def remove_tracking_id
-        json = as_json
-        value = json[self.class::TRACKING_FIELD]
-        json[self.class::TRACKING_FIELD] =
-          value.dup.sub!(/\n?-- Managed by kennel .*/, "") ||
-          raise("did not find tracking id in #{value}")
+        self.class.remove_tracking_id(as_json)
       end
 
       private

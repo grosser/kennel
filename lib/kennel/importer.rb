@@ -31,11 +31,10 @@ module Kennel
       title.tr!(Kennel::Models::Record::LOCK, "") # avoid double lock icon
 
       # calculate or reuse kennel_id
-      # TODO: this is copy-pasted from syncer, need to find a nice way to reuse it
-      # can probably use parse_tracking_field here
       data[:kennel_id] =
-        if data[model::TRACKING_FIELD].to_s.sub!(/\n?-- Managed by kennel (\S+:\S+).*/, "")
-          $1.split(":").last
+        if tracking_id = model.parse_tracking_id(data)
+          model.remove_tracking_id(data)
+          tracking_id.split(":").last
         else
           Kennel::Utils.parameterize(title)
         end
@@ -70,6 +69,8 @@ module Kennel
           dry_up_query!(widget)
           (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
         end
+      else
+        # noop
       end
 
       data.delete(:tags) if data[:tags] == [] # do not create super + [] call
