@@ -189,11 +189,11 @@ describe Kennel::Syncer do
       monitors << monitor_api_response("a", "a")
       dashboards << {
         id: "abc",
-        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
       }
       slos << {
         id: "1",
-        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
+        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
       }
       output.must_equal "Plan:\nDelete dashboard a:b\nDelete slo a:c\nDelete monitor a:a\n"
     end
@@ -232,7 +232,7 @@ describe Kennel::Syncer do
       expected << monitor("a", "b", id: 234, foo: "bar", message: "foo\n-- Managed by kennel foo:bar in foo.rb")
       monitors << monitor_api_response("a", "b", id: 234)
       assert_raises(RuntimeError) { output }.message.must_equal(
-        "remove \"-- Managed by kennel\" line it from message to copy a resource"
+        "a:b remove \"-- Managed by kennel\" line it from message to copy a resource"
       )
     end
 

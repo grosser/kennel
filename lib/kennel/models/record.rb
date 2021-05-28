@@ -74,14 +74,20 @@ module Kennel
 
       def add_tracking_id
         json = as_json
-        raise "remove \"-- Managed by kennel\" line it from #{self.class::TRACKING_FIELD} to copy a resource" if self.class.parse_tracking_id(json)
-        json[self.class::TRACKING_FIELD] = "#{json[self.class::TRACKING_FIELD]}\n-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
+        if self.class.parse_tracking_id(json)
+          invalid! "remove \"-- Managed by kennel\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
+        end
+        json[self.class::TRACKING_FIELD] =
+          "#{json[self.class::TRACKING_FIELD]}\n" \
+          "-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
       end
 
       def remove_tracking_id
         json = as_json
         value = json[self.class::TRACKING_FIELD]
-        json[self.class::TRACKING_FIELD] = value.dup.sub!(/\n?-- Managed by kennel .*/, "") || raise("did not find tracking id in #{value}")
+        json[self.class::TRACKING_FIELD] =
+          value.dup.sub!(/\n?-- Managed by kennel .*/, "") ||
+          raise("did not find tracking id in #{value}")
       end
 
       private
@@ -90,7 +96,10 @@ module Kennel
         id = id_map[tracking_id]
         if id == :new
           if force
-            invalid! "#{type} #{tracking_id} was referenced but is also created by the current run.\nIt could not be created because of a circular dependency, try creating only some of the resources"
+            invalid!(
+              "#{type} #{tracking_id} was referenced but is also created by the current run.\n" \
+              "It could not be created because of a circular dependency, try creating only some of the resources"
+            )
           else
             nil # will be re-resolved after the linked object was created
           end
