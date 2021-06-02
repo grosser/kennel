@@ -58,6 +58,53 @@ namespace :kennel do
     Kennel.generate
   end
 
+  desc "run the 'fragile' report"
+  task report_fragile: :environment do
+    require 'kennel/dependency_checker'
+    require 'kennel/resources'
+
+    everything = Kennel::Resources.cached_each(
+      filename: "tmp/cache/report_fragile.json",
+      max_age: 3600
+    ).to_a
+
+    dependencies = Kennel::DependencyChecker::Collector.new(everything)
+      .collect
+
+    fragile = Kennel::DependencyChecker::Reporter.new(base_url: ENV['BASE_URL'])
+      .report(dependencies)
+
+    out = "tmp/fragile.json"
+    Tempfile.open(out, File.dirname(out)) do |f|
+      f.puts JSON.generate(fragile: fragile)
+      f.flush
+      f.chmod 0o644
+      File.rename f.path, out
+    end
+    puts "Wrote to #{out}"
+  end
+
+  desc "show resources to standard output (like 'dump')"
+  task dump_resources: :environment do
+    require 'json'
+    require 'kennel/resources'
+
+    resources = if ENV.key?('TYPE')
+                  ENV['TYPE'].split(',')
+                end
+
+    Kennel::Resources.each(resources: resources) do |resource|
+      puts JSON.generate(resource)
+    end
+  end
+
+  task dump_resources_cached: :environment do
+    require 'kennel/resources'
+    Kennel::Resources.cached_each(filename: "tmp/cache/dump_resources_cached.json", max_age: 3600) do |r|
+      puts "#{r.fetch(:api_resource)} #{r.fetch(:id)}"
+    end
+  end
+
   # also generate parts so users see and commit updated generated automatically
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :generate do
