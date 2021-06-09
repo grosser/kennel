@@ -202,27 +202,23 @@ module Kennel
       end
     end
 
-    # Do not add tracking-id when working with existing ids on a branch,
-    # so resource do not get deleted from running an update on master (for example merge->CI).
-    # Also make sure the diff still makes sense, by kicking out the now noop-update.
-    #
-    # Note: ideally we'd never add tracking in the first place, but at that point we do not know the diff yet
+    # - do not add tracking-id when working with existing ids on a branch,
+    #   so resource do not get deleted when running an update on master (for example merge->CI)
+    # - make sure the diff is clean, by kicking out the now noop-update
+    # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
     def prevent_irreversible_partial_updates
       return unless @project_filter
       @update.select! do |_, e, _, diff|
-        next true unless e.id # short circuit for performance
+        next true unless e.id # safe to add tracking when not having id
 
         diff.select! do |field_diff|
-          (_, field, old, new) = field_diff
-          # TODO: refactor this so tracking field stays record-private
-          next true unless e.class::TRACKING_FIELD == field.to_sym # need to sym here because Hashdiff produces strings
+          (_, field, actual) = field_diff
+          # TODO: refactor this so TRACKING_FIELD stays record-private
+          next true if e.class::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
+          next true if e.class.parse_tracking_id(field.to_sym => actual) # already has tracking id
 
-          if (old_tracking = e.class.parse_tracking_id(e.class::TRACKING_FIELD => old))
-            old_tracking == e.class.parse_tracking_id(e.class::TRACKING_FIELD => new) || raise("do not update! (atm unreachable)")
-          else
-            field_diff[3] = e.remove_tracking_id # make plan output match update
-            old != field_diff[3]
-          end
+          field_diff[3] = e.remove_tracking_id # make `rake plan` output match what we are sending
+          actual != field_diff[3] # discard diff if now nothing changes
         end
 
         !diff.empty?
