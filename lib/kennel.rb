@@ -21,6 +21,7 @@ require "kennel/models/record"
 
 # records
 require "kennel/models/dashboard"
+require "kennel/models/log_metric"
 require "kennel/models/monitor"
 require "kennel/models/slo"
 
