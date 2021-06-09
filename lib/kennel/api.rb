@@ -11,8 +11,8 @@ module Kennel
     end
 
     def show(api_resource, id, params = {})
-      reply = request :get, "/api/v1/#{api_resource}/#{id}", params: params
-      api_resource == "slo" ? reply[:data] : reply
+      reply = request :get, api_url(api_resource, id), params: params
+      api_resource == "slo" || api_resource == 'logs/config/metrics' ? reply[:data] : reply
     end
 
     def list(api_resource, params = {})
@@ -23,33 +23,42 @@ module Kennel
         all = []
 
         loop do
-          result = request :get, "/api/v1/#{api_resource}", params: params.merge(limit: limit, offset: offset)
+          result = request :get, api_url(api_resource), params: params.merge(limit: limit, offset: offset)
           data = result.fetch(:data)
           all.concat data
           break all if data.size < limit
           offset += limit
         end
       else
-        result = request :get, "/api/v1/#{api_resource}", params: params
+        result = request :get, api_url(api_resource), params: params
         result = result.fetch(:dashboards) if api_resource == "dashboard"
         result
       end
     end
 
     def create(api_resource, attributes)
-      reply = request :post, "/api/v1/#{api_resource}", body: attributes
-      api_resource == "slo" ? reply[:data].first : reply
+      attributes = { data: attributes } if api_resource == 'logs/config/metrics'
+      reply = request :post, api_url(api_resource), body: attributes
+      if api_resource == "slo"
+        reply[:data].first
+      elsif api_resource == 'logs/config/metrics'
+        reply[:data]
+      else
+        reply
+      end
     end
 
     def update(api_resource, id, attributes)
-      request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
+      attributes = { data: attributes } if api_resource == 'logs/config/metrics'
+      reply = request :put, api_url(api_resource, id), body: attributes
+      api_resource == 'logs/config/metrics' ? reply[:data] : reply
     end
 
     # - force=true to not dead-lock on dependent monitors+slos
     #   external dependency on kennel managed resources is their problem, we don't block on it
     #   (?force=true did not work, force for dashboard is not documented but does not blow up)
     def delete(api_resource, id)
-      request :delete, "/api/v1/#{api_resource}/#{id}", params: { force: "true" }, ignore_404: true
+      request :delete, api_url(api_resource, id), params: { force: "true" }, ignore_404: true
     end
 
     def fill_details!(api_resource, list)
@@ -60,6 +69,13 @@ module Kennel
     end
 
     private
+
+    def api_url(api_resource, id = nil)
+      api_version = (api_resource == 'logs/config/metrics') ? 'v2' : 'v1'
+      url = "/api/#{api_version}/#{api_resource}"
+      url += "/#{id}" if id
+      url
+    end
 
     # Make diff work even though we cannot mass-fetch definitions
     def fill_detail!(api_resource, a, cache)

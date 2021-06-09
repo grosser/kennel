@@ -153,7 +153,7 @@ module Kennel
       @expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
-        raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{e.id} }` line."
+        raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{e.id.inspect} }` line." unless e.class::VIRTUAL_ID
       end
     end
 
