@@ -26,6 +26,7 @@ module Kennel
         groupby_simple_monitor: false
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
+      ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -217,6 +218,10 @@ module Kennel
               )
             end
           end
+        end
+
+        unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
+          invalid! "priority needs to be an Integer"
         end
       end
     end
