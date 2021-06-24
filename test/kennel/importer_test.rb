@@ -5,6 +5,16 @@ require "kennel/importer"
 SingleCov.covered!
 
 describe Kennel::Importer do
+  def import_requests(requests)
+    response = {
+      id: "abc",
+      title: "hello",
+      widgets: [{ definition: { widgets: [{ definition: { requests: requests } }] } }]
+    }
+    stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+    importer.import("dashboard", "abc")
+  end
+
   let(:importer) { Kennel::Importer.new(Kennel::Api.new("app", "api")) }
 
   describe "#import" do
@@ -502,55 +512,116 @@ describe Kennel::Importer do
       RUBY
     end
 
+    describe "converting verbose api format to simple" do
+      # regular assert_includes prints inspected strings which makes visual diffing hard
+      def assert_include_with_print(expected, actual)
+        if expected.include?(actual)
+          assert true # count 1 assertion
+        else
+          flunk "Expected:\n#{expected}\nTo include:\n#{actual}"
+        end
+      end
+
+      it "converts simple" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            queries: [{ query: "a:b", data_source: "metrics" }]
+          }]).gsub(/^              /, ""),
+          <<~CODE
+            definition: {
+              requests: [
+                {
+                  type: "timeseries",
+                  q: "a:b"
+                }
+              ]
+            }
+          CODE
+        )
+      end
+
+      it "converts simple with formula" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            formulas: [{ formula: "query1" }],
+            queries: [{ query: "a:b", data_source: "metrics" }]
+          }]).gsub(/^              /, ""),
+          <<~CODE
+            definition: {
+              requests: [
+                {
+                  type: "timeseries",
+                  q: "a:b"
+                }
+              ]
+            }
+        CODE
+        )
+      end
+
+      it "keeps multiple" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            formulas: [{ formula: "query1" }, { formula: "query2" }],
+            queries: [
+              { query: "a:b", data_source: "metrics", name: "query1" },
+              { query: "a:c", data_source: "metrics", name: "query2" }
+            ]
+          }]),
+          "queries"
+        )
+      end
+
+      it "keeps unknown" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            queries: [
+              { query: "a:b", data_source: "wut", name: "query1" }
+            ]
+          }]),
+          "queries"
+        )
+      end
+
+      it "keeps alias" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            formulas: [{ formula: "query1", alias: "test" }],
+            queries: [
+              { query: "a:b", data_source: "wut", name: "query1" }
+            ]
+          }]),
+          "queries"
+        )
+      end
+    end
+
     describe "converting to q: :metadata" do
       it "converts" do
-        request = {
+        import_requests([{
           q: "a,b",
           metadata: [
             { alias_name: "foo", expression: "a" },
             { alias_name: "bar", expression: "b" }
           ]
-        }
-        response = {
-          id: "abc",
-          title: "hello",
-          widgets: [{ definition: { widgets: [{ definition: { requests: [request] } }] } }]
-        }
-        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
-        code = importer.import("dashboard", "abc")
-        code.must_include " q: :metadata,\n"
+        }]).must_include " q: :metadata,\n"
       end
 
       it "ignores bad requests without query" do
-        response = {
-          id: "abc",
-          title: "hello",
-          widgets: [{ definition: { widgets: [{ definition: { requests: [{ metadata: [] }] } }] } }]
-        }
-        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
-        importer.import("dashboard", "abc")
+        import_requests([{ metadata: [] }])
       end
 
       it "ignores requests hash" do
-        response = {
-          id: "abc",
-          title: "hello",
-          description: "",
-          widgets: [{ definition: { widgets: [{ definition: { requests: { a: 1 } } }] } }]
-        }
-        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
-        importer.import("dashboard", "abc")
+        import_requests(a: 1)
       end
 
       it "ignores bad requests without expression" do
-        response = {
-          id: "abc",
-          title: "hello",
-          description: "",
-          widgets: [{ definition: { widgets: [{ definition: { requests: [{ q: "x", metadata: [{}] }] } }] } }]
-        }
-        stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
-        importer.import("dashboard", "abc")
+        import_requests [{ q: "x", metadata: [{}] }]
       end
     end
   end

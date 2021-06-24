@@ -66,7 +66,8 @@ module Kennel
       when "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
         widgets&.each do |widget|
-          dry_up_query!(widget)
+          convert_widget_to_compact_format!(widget)
+          dry_up_widget_metadata!(widget)
           (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
         end
       else
@@ -92,7 +93,7 @@ module Kennel
     private
 
     # reduce duplication in imports by using dry `q: :metadata` when possible
-    def dry_up_query!(widget)
+    def dry_up_widget_metadata!(widget)
       (widget.dig(:definition, :requests) || []).each do |request|
         next unless request.is_a?(Hash)
         next unless metadata = request[:metadata]
@@ -102,6 +103,19 @@ module Kennel
           query.sub!(exp, "")
         end
         request[:q] = :metadata if query.delete(", ") == ""
+      end
+    end
+
+    # new api format is very verbose, so use old dry format when possible
+    def convert_widget_to_compact_format!(widget)
+      (widget.dig(:definition, :requests) || []).each do |request|
+        next unless request.is_a?(Hash)
+        next if request[:formulas]&.any? { |f| f.keys != [:formula] }
+        next if request[:queries]&.size != 1
+        next if request[:queries].any? { |q| q[:data_source] != "metrics" }
+        request.delete(:formulas)
+        request[:type] = request.delete(:response_format)
+        request[:q] = request.delete(:queries).first.fetch(:query)
       end
     end
 
