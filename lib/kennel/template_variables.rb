@@ -36,7 +36,8 @@ module Kennel
 
     def widget_queries(widget)
       requests = widget.dig(:definition, :requests) || []
-      (requests.is_a?(Hash) ? requests.values : requests).map { |r| r[:q] } # hostmap widgets have hash requests
+      return requests.values.map { |r| r[:q] } if requests.is_a?(Hash) # hostmap widgets have hash requests
+      requests.flat_map { |r| r[:q] || r[:queries]&.map { |q| q[:query] } } # old format with q: or queries: [{query:}]
     end
   end
 end

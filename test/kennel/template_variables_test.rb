@@ -75,5 +75,11 @@ describe Kennel::TemplateVariables do
         validate ["a"], [{ definition: { requests: { fill: { q: "x" } } } }]
       end
     end
+
+    it "works with new api format" do
+      assert_raises Kennel::ValidationError do
+        validate ["a"], [{ definition: { requests: [{ queries: [{ query: "x" }] }] } }]
+      end
+    end
   end
 end
