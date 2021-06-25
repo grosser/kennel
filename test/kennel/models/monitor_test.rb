@@ -434,6 +434,11 @@ describe Kennel::Models::Monitor do
       Kennel::Models::Monitor.parse_url(url).must_equal 123
     end
 
+    it "parses SLO alert URLs" do
+      url = "https://app.datadoghq.com/slo/edit/123abc456def123/alerts/789"
+      Kennel::Models::Monitor.parse_url(url).must_equal 789
+    end
+
     it "fails to parse other" do
       url = "https://app.datadoghq.com/dashboard/bet-foo-bar?from_ts=1585064592575&to_ts=1585068192575&live=true"
       Kennel::Models::Monitor.parse_url(url).must_be_nil

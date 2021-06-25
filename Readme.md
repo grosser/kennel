@@ -114,6 +114,7 @@ end
  - use [datadog monitor UI](https://app.datadoghq.com/monitors/manage) to find a monitor
  - get the `id` from the url
  - run `URL='https://app.datadoghq.com/monitors/123' bundle exec rake kennel:import` and copy the output
+ - import task also works with SLO alerts, e.g. `URL='https://app.datadoghq.com/slo/edit/123abc456def123/alerts/789' bundle exec rake kennel:import`
  - find or create a project in `projects/`
  - add the monitor to `parts: [` list, for example:
   ```Ruby

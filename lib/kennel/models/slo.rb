@@ -64,7 +64,7 @@ module Kennel
       end
 
       def self.parse_url(url)
-        url[/\/slo(\?.*slo_id=|\/edit\/)([a-z\d]{10,})/, 2]
+        url[/\/slo(\?.*slo_id=|\/edit\/)([a-z\d]{10,})(&|$)/, 2]
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
