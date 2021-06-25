@@ -2,6 +2,7 @@
 module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor"].freeze # dashboards references monitors + slos, slos reference monitors
+    LINE_UP = "\e[1A"
 
     def initialize(api, expected, project: nil)
       @api = api
@@ -37,23 +38,29 @@ module Kennel
 
     def update
       each_resolved @create do |_, e|
+        message = "#{e.class.api_resource} #{e.tracking_id}"
+        Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
         reply[:klass] = e.class # store api resource class for later use
         id = reply.fetch(:id)
         populate_id_map [reply] # allow resolving ids we could previously no resolve
-        Kennel.out.puts "Created #{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
+        Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
       each_resolved @update do |id, e|
+        message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
+        Kennel.out.puts "Updating #{message}"
         @api.update e.class.api_resource, id, e.as_json
-        Kennel.out.puts "Updated #{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
+        Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
       @delete.each do |id, _, a|
         klass = a.fetch(:klass)
-        @api.delete klass.api_resource, id
         tracking_id = klass.parse_tracking_id(a)
-        Kennel.out.puts "Deleted #{klass.api_resource} #{tracking_id} #{id}"
+        message = "#{klass.api_resource} #{tracking_id} #{id}"
+        Kennel.out.puts "Deleting #{message}"
+        @api.delete klass.api_resource, id
+        Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
     end
 
