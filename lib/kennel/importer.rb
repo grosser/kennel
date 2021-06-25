@@ -110,7 +110,7 @@ module Kennel
     def convert_widget_to_compact_format!(widget)
       (widget.dig(:definition, :requests) || []).each do |request|
         next unless request.is_a?(Hash)
-        next if request[:formulas]&.any? { |f| f.keys != [:formula] }
+        next if request[:formulas] && request[:formulas] != [{ formula: "query1" }]
         next if request[:queries]&.size != 1
         next if request[:queries].any? { |q| q[:data_source] != "metrics" }
         request.delete(:formulas)

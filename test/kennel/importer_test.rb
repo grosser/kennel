@@ -541,6 +541,17 @@ describe Kennel::Importer do
         )
       end
 
+      it "leaves functions alone" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "timeseries",
+            formulas: [{ formula: "default_zero(query1)" }],
+            queries: [{ query: "a:b", data_source: "metrics" }]
+          }]).gsub(/^              /, ""),
+          "queries"
+        )
+      end
+
       it "converts simple with formula" do
         assert_include_with_print(
           import_requests([{
