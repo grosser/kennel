@@ -393,7 +393,10 @@ describe Kennel::Syncer do
     it "creates" do
       expected << monitor("a", "b")
       api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-      output.must_equal "Created monitor a:b /monitors#123/edit\n"
+      output.must_equal <<~TXT
+        Creating monitor a:b
+        \e[1ACreated monitor a:b /monitors#123/edit
+      TXT
     end
 
     it "sets values we do not compare on" do
@@ -401,20 +404,29 @@ describe Kennel::Syncer do
       sent = deep_dup(expected.first.as_json)
       sent[:message] = "@slack-foo\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually".lstrip
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
-      output.must_equal "Created monitor a:b /monitors#123/edit\n"
+      output.must_equal <<~TXT
+        Creating monitor a:b
+        \e[1ACreated monitor a:b /monitors#123/edit
+      TXT
     end
 
     it "updates" do
       expected << monitor("a", "b", foo: "bar")
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-      output.must_equal "Updated monitor a:b /monitors#123/edit\n"
+      output.must_equal <<~TXT
+        Updating monitor a:b /monitors#123/edit
+        \e[1AUpdated monitor a:b /monitors#123/edit
+      TXT
     end
 
     it "deletes" do
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:delete).with("monitor", 123).returns({})
-      output.must_equal "Deleted monitor a:b 123\n"
+      output.must_equal <<~TXT
+        Deleting monitor a:b 123
+        \e[1ADeleted monitor a:b 123
+      TXT
     end
 
     it "can create multiple dependent resources" do
@@ -433,7 +445,12 @@ describe Kennel::Syncer do
             description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
           )
         ).returns(id: 2)
-      output.must_equal "Created monitor a:b /monitors#1/edit\nCreated slo a:c /slo?slo_id=2\n"
+      output.must_equal <<~TXT
+        Creating monitor a:b
+        \e[1ACreated monitor a:b /monitors#1/edit
+        Creating slo a:c
+        \e[1ACreated slo a:c /slo?slo_id=2
+      TXT
     end
 
     it "fails on circular dependencies" do
@@ -464,7 +481,10 @@ describe Kennel::Syncer do
         expected << monitor("a", "b", foo: "bar", id: 123)
         monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor")
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
-        output.must_equal "Updated monitor a:b /monitors#123/edit\n"
+        output.must_equal <<~TXT
+          Updating monitor a:b /monitors#123/edit
+          \e[1AUpdated monitor a:b /monitors#123/edit
+        TXT
       end
 
       it "allows partial updates on monitors with ids when it does not modify tracking field" do
@@ -499,13 +519,19 @@ describe Kennel::Syncer do
           graphs: []
         }
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
-        output.must_equal "Updated dashboard a:b /dashboard/abc\n"
+        output.must_equal <<~TXT
+          Updating dashboard a:b /dashboard/abc
+          \e[1AUpdated dashboard a:b /dashboard/abc
+        TXT
       end
 
       it "can create dashboards" do
         expected << dashboard("a", "b")
         api.expects(:create).with("dashboard", anything).returns(id: "abc")
-        output.must_equal "Created dashboard a:b /dashboard/abc\n"
+        output.must_equal <<~TXT
+          Creating dashboard a:b
+          \e[1ACreated dashboard a:b /dashboard/abc
+        TXT
       end
     end
   end
