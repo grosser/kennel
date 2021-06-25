@@ -129,9 +129,15 @@ module Kennel
         Utils.path_to_url "/monitors##{id}/edit"
       end
 
-      # datadog uses / for show and # for edit as separator in it's links
       def self.parse_url(url)
-        return unless id = url[/\/monitors[\/#](\d+)/, 1]
+        # datadog uses / for show and # for edit as separator in it's links
+        id = url[/\/monitors[\/#](\d+)/, 1]
+
+        # slo alert url
+        id ||= url[/\/slo\/edit\/[a-z\d]{10,}\/alerts\/(\d+)/, 1]
+
+        return unless id
+
         Integer(id)
       end
 
