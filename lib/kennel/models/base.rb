@@ -11,7 +11,7 @@ module Kennel
 
       def kennel_id
         name = self.class.name
-        if name.start_with?("Kennel::")
+        if name.start_with?("Kennel::") # core objects would always generate the same id
           raise_with_location ArgumentError, "Set :kennel_id"
         end
         @kennel_id ||= Utils.snake_case name

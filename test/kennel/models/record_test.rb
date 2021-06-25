@@ -98,7 +98,7 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe ".diff" do
+  describe "#diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
       default = { tags: [] }
@@ -138,10 +138,19 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe ".tracking_id" do
+  describe "#tracking_id" do
     it "combines project and id into a human-readable string" do
       base = TestRecord.new TestProject.new
       base.tracking_id.must_equal "test_project:test_record"
+    end
+
+    it "fails when adding unparsable characters" do
+      project = TestProject.new
+      def project.kennel_id
+        "hey ho"
+      end
+      base = TestRecord.new project
+      assert_raises(Kennel::ValidationError) { base.tracking_id }
     end
   end
 
