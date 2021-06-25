@@ -74,7 +74,11 @@ module Kennel
       end
 
       def tracking_id
-        "#{project.kennel_id}:#{kennel_id}"
+        @tracking_id ||= begin
+          id = "#{project.kennel_id}:#{kennel_id}"
+          raise ValidationError, "#{id} kennel_id cannot include whitespace" if id.match?(/\s/) # <-> parse_tracking_id
+          id
+        end
       end
 
       def resolve_linked_tracking_ids!(*)
