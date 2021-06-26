@@ -81,6 +81,6 @@ Minitest::Test.class_eval do
   end
 
   def stub_datadog_request(method, path, extra = "")
-    stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?api_key=api&application_key=app#{extra}")
+    stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?#{extra}")
   end
 end

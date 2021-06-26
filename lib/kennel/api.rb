@@ -80,7 +80,6 @@ module Kennel
     end
 
     def request(method, path, body: nil, params: {}, ignore_404: false)
-      params = params.merge(application_key: @app_key, api_key: @api_key)
       query = Faraday::FlatParamsEncoder.encode(params)
       response = nil
       tries = 2
@@ -90,6 +89,8 @@ module Kennel
           @client.send(method, "#{path}?#{query}") do |request|
             request.body = JSON.generate(body) if body
             request.headers["Content-type"] = "application/json"
+            request.headers["DD-API-KEY"] = @api_key
+            request.headers["DD-APPLICATION-KEY"] = @app_key
           end
         end
 
