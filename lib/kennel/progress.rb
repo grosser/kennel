@@ -29,6 +29,8 @@ module Kennel
       Kennel.err.print "#{time.round(2)}s\n"
 
       result
+    ensure
+      stop = true
     end
   end
 end
