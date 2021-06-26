@@ -13,34 +13,22 @@ module Kennel
 
     def show(api_resource, id, params = {})
       response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
-      response = response[:data] if api_resource == "slo"
+      response = response.fetch(:data) if api_resource == "slo"
       response
     end
 
     def list(api_resource, params = {})
-      if api_resource == "slo"
-        raise ArgumentError if params[:limit] || params[:offset]
-        limit = 1000
-        offset = 0
-        all = []
-
-        loop do
-          response = request :get, "/api/v1/#{api_resource}", params: params.merge(limit: limit, offset: offset)
-          response = response.fetch(:data)
-          all.concat response
-          break all if response.size < limit
-          offset += limit
-        end
-      else
-        response = request :get, "/api/v1/#{api_resource}", params: params
+      with_pagination api_resource == "slo", params do |paginated_params|
+        response = request :get, "/api/v1/#{api_resource}", params: paginated_params
         response = response.fetch(:dashboards) if api_resource == "dashboard"
+        response = response.fetch(:data) if api_resource == "slo"
         response
       end
     end
 
     def create(api_resource, attributes)
       response = request :post, "/api/v1/#{api_resource}", body: attributes
-      response = response[:data].first if api_resource == "slo"
+      response = response.fetch(:data).first if api_resource == "slo"
       response
     end
 
@@ -63,6 +51,21 @@ module Kennel
     end
 
     private
+
+    def with_pagination(enabled, params)
+      return yield params unless enabled
+      raise ArgumentError if params[:limit] || params[:offset]
+      limit = 1000
+      offset = 0
+      all = []
+
+      loop do
+        response = yield params.merge(limit: limit, offset: offset)
+        all.concat response
+        return all if response.size < limit
+        offset += limit
+      end
+    end
 
     # Make diff work even though we cannot mass-fetch definitions
     def fill_detail!(api_resource, a, cache)
