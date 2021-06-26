@@ -32,9 +32,9 @@ module Kennel
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
-        reply[:klass] = e.class # store api resource class for later use
+        cache_metadata reply, e.class
         id = reply.fetch(:id)
-        populate_id_map [reply] # allow resolving ids we could previously no resolve
+        populate_id_map [], [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
@@ -47,8 +47,7 @@ module Kennel
 
       @delete.each do |id, _, a|
         klass = a.fetch(:klass)
-        tracking_id = klass.parse_tracking_id(a)
-        message = "#{klass.api_resource} #{tracking_id} #{id}"
+        message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete klass.api_resource, id
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
@@ -101,13 +100,9 @@ module Kennel
 
       Progress.progress "Diffing" do
         filter_expected_by_project! @expected
-
-        # resolve dependencies to avoid diff
-        populate_id_map actual
-        @expected.each { |e| @id_map[e.tracking_id] ||= :new }
-        resolve_linked_tracking_ids! @expected
-
+        populate_id_map @expected, actual
         filter_actual_by_project! actual
+        resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
 
         @expected.each(&:add_tracking_id) # avoid diff with actual
 
@@ -121,9 +116,8 @@ module Kennel
         end
 
         # fill details of things we need to compare
-        detailed = Hash.new { |h, k| h[k] = [] }
-        items.each { |e, a| detailed[a[:klass]] << a if e }
-        detailed.each { |klass, actuals| @api.fill_details! klass.api_resource, actuals }
+        details = items.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
+        @api.fill_details! "dashboard", details
 
         # pick out things to update or delete
         items.each do |e, a|
@@ -131,7 +125,7 @@ module Kennel
           if e
             diff = e.diff(a)
             @update << [id, e, a, diff] if diff.any?
-          elsif a.fetch(:klass).parse_tracking_id(a) # was previously managed
+          elsif a.fetch(:tracking_id) # was previously managed
             @delete << [id, nil, a]
           end
         end
@@ -146,8 +140,13 @@ module Kennel
       Utils.parallel(Models::Record.subclasses) do |klass|
         results = @api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
         results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
-        results.each { |c| c[:klass] = klass } # store api resource for later diffing
+        results.each { |a| cache_metadata(a, klass) }
       end.flatten(1)
+    end
+
+    def cache_metadata(a, klass)
+      a[:klass] = klass
+      a[:tracking_id] = a.fetch(:klass).parse_tracking_id(a)
     end
 
     def ensure_all_ids_found
@@ -170,14 +169,14 @@ module Kennel
       end
 
       klass = a.fetch(:klass)
-      @lookup_map["#{klass.api_resource}:#{a.fetch(:id)}"] || @lookup_map[klass.parse_tracking_id(a)]
+      @lookup_map["#{klass.api_resource}:#{a.fetch(:id)}"] || @lookup_map[a.fetch(:tracking_id)]
     end
 
     def print_plan(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
         klass = (e ? e.class : a.fetch(:klass))
-        Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || klass.parse_tracking_id(a)}")
+        Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
         print_diff(diff) if diff # only for update
       end
     end
@@ -226,11 +225,12 @@ module Kennel
       end
     end
 
-    def populate_id_map(actual)
+    def populate_id_map(expected, actual)
       actual.each do |a|
-        next unless tracking_id = a.fetch(:klass).parse_tracking_id(a)
+        next unless tracking_id = a.fetch(:tracking_id)
         @id_map[tracking_id] = a.fetch(:id)
       end
+      expected.each { |e| @id_map[e.tracking_id] ||= :new }
     end
 
     def resolve_linked_tracking_ids!(list, force: false)
@@ -240,8 +240,8 @@ module Kennel
     def filter_actual_by_project!(actual)
       return unless @project_filter
       actual.select! do |a|
-        id = a.fetch(:klass).parse_tracking_id(a)
-        !id || id.start_with?("#{@project_filter}:")
+        tracking_id = a.fetch(:tracking_id)
+        !tracking_id || tracking_id.start_with?("#{@project_filter}:")
       end
     end
 

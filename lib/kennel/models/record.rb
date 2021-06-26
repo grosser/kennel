@@ -6,7 +6,7 @@ module Kennel
       TRACKING_FIELDS = [:message, :description].freeze
       READONLY_ATTRIBUTES = [
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at,
-        :klass # added by syncer.rb
+        :klass, :tracking_id # added by syncer.rb
       ].freeze
 
       settings :id, :kennel_id

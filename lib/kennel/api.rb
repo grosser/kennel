@@ -44,7 +44,6 @@ module Kennel
     end
 
     def fill_details!(api_resource, list)
-      return unless api_resource == "dashboard"
       details_cache do |cache|
         Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }
       end

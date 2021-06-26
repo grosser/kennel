@@ -138,7 +138,7 @@ namespace :kennel do
     resources.each do |resource|
       Kennel::Progress.progress("Downloading #{resource}") do
         list = api.list(resource)
-        api.fill_details!(resource, list)
+        api.fill_details!(resource, list) if resource == "dashboard"
       end
       list.each do |r|
         r[:api_resource] = resource
