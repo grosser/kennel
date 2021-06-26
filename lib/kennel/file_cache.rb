@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # cache that reads everything from a single file
-# to avoid doing multiple disk reads while iterating all definitions
-# it also replaces updated keys and has an overall expiry to not keep deleted things forever
+# - avoids doing multiple disk reads while iterating all definitions
+# - has a global expiry to not keep deleted resources forever
 module Kennel
   class FileCache
     def initialize(file, cache_version)
@@ -22,10 +22,11 @@ module Kennel
 
     def fetch(key, key_version)
       old_value, old_version = @data[key]
-      return old_value if old_version == [key_version, @cache_version]
+      expected_version = [key_version, @cache_version]
+      return old_value if old_version == expected_version
 
       new_value = yield
-      @data[key] = [new_value, [key_version, @cache_version], @expires]
+      @data[key] = [new_value, expected_version, @expires]
       new_value
     end
 
@@ -46,8 +47,11 @@ module Kennel
       File.write(@file, Marshal.dump(@data))
     end
 
+    # keep the cache small to make loading it fast (5MB ~= 100ms)
+    # - delete expired keys
+    # - delete what would be deleted anyway when updating
     def expire_old_data
-      @data.reject! { |_, (_, _, ex)| ex < @now }
+      @data.reject! { |_, (_, (_, cv), expires)| expires < @now || cv != @cache_version }
     end
   end
 end

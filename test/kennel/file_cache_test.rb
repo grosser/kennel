@@ -19,14 +19,21 @@ describe Kennel::FileCache do
     end
 
     it "removes expired" do
-      File.write("foo", Marshal.dump(a: [1, 2, Time.now.to_i - 1]))
+      t = Time.now.to_i - 1
+      File.write("foo", Marshal.dump(a: [1, [2, "1"], t]))
+      cache.open { |c| c.instance_variable_get(:@data).must_equal({}) }
+    end
+
+    it "removes old versions" do
+      t = Time.now.to_i + 123
+      File.write("foo", Marshal.dump(a: [1, [2, "0"], t]))
       cache.open { |c| c.instance_variable_get(:@data).must_equal({}) }
     end
 
     it "keeps fresh" do
       t = Time.now.to_i + 123
-      File.write("foo", Marshal.dump(a: [1, 2, t]))
-      cache.open { |c| c.instance_variable_get(:@data).must_equal(a: [1, 2, t]) }
+      File.write("foo", Marshal.dump(a: [1, [2, "1"], t]))
+      cache.open { |c| c.instance_variable_get(:@data).must_equal(a: [1, [2, "1"], t]) }
     end
 
     it "persists changes" do
