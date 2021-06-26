@@ -8,14 +8,7 @@ module Kennel
       @api = api
       @project_filter = project
       @expected = expected
-      if @project_filter
-        original = @expected
-        @expected = @expected.select { |e| e.project.kennel_id == @project_filter }
-        if @expected.empty?
-          possible = original.map { |e| e.project.kennel_id }.uniq.sort
-          raise "#{@project_filter} does not match any projects, try any of these:\n#{possible.join("\n")}"
-        end
-      end
+      filter_expected_by_project! @expected
       @expected.each(&:add_tracking_id)
       calculate_diff
       prevent_irreversible_partial_updates
@@ -113,7 +106,7 @@ module Kennel
       @expected.each { |e| @id_map[e.tracking_id] ||= :new }
       resolve_linked_tracking_ids! @expected
 
-      filter_by_project! actual
+      filter_actual_by_project! actual
 
       Progress.progress "Diffing" do
         items = actual.map do |a|
@@ -240,11 +233,22 @@ module Kennel
       list.each { |e| e.resolve_linked_tracking_ids!(@id_map, force: force) }
     end
 
-    def filter_by_project!(definitions)
+    def filter_actual_by_project!(actual)
       return unless @project_filter
-      definitions.select! do |a|
+      actual.select! do |a|
         id = a.fetch(:klass).parse_tracking_id(a)
         !id || id.start_with?("#{@project_filter}:")
+      end
+    end
+
+    def filter_expected_by_project!(expected)
+      return unless @project_filter
+      original = expected.dup
+      expected.select! { |e| e.project.kennel_id == @project_filter }
+
+      if expected.empty?
+        possible = original.map { |e| e.project.kennel_id }.uniq.sort
+        raise "#{@project_filter} does not match any projects, try any of these:\n#{possible.join("\n")}"
       end
     end
   end
