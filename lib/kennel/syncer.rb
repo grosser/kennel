@@ -8,8 +8,6 @@ module Kennel
       @api = api
       @project_filter = project
       @expected = expected
-      filter_expected_by_project! @expected
-      @expected.each(&:add_tracking_id)
       calculate_diff
       prevent_irreversible_partial_updates
     end
@@ -101,14 +99,18 @@ module Kennel
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
 
-      # resolve dependencies to avoid diff
-      populate_id_map actual
-      @expected.each { |e| @id_map[e.tracking_id] ||= :new }
-      resolve_linked_tracking_ids! @expected
-
-      filter_actual_by_project! actual
-
       Progress.progress "Diffing" do
+        filter_expected_by_project! @expected
+
+        # resolve dependencies to avoid diff
+        populate_id_map actual
+        @expected.each { |e| @id_map[e.tracking_id] ||= :new }
+        resolve_linked_tracking_ids! @expected
+
+        filter_actual_by_project! actual
+
+        @expected.each(&:add_tracking_id) # avoid diff with actual
+
         items = actual.map do |a|
           e = matching_expected(a)
           if e && @expected.delete(e)
@@ -136,9 +138,8 @@ module Kennel
 
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
+        @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
       end
-
-      @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
     end
 
     def download_definitions
@@ -226,7 +227,10 @@ module Kennel
     end
 
     def populate_id_map(actual)
-      actual.each { |a| @id_map[a.fetch(:klass).parse_tracking_id(a)] = a.fetch(:id) }
+      actual.each do |a|
+        next unless tracking_id = a.fetch(:klass).parse_tracking_id(a)
+        @id_map[tracking_id] = a.fetch(:id)
+      end
     end
 
     def resolve_linked_tracking_ids!(list, force: false)
