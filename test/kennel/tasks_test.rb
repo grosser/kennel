@@ -38,6 +38,12 @@ describe "tasks" do
         "name": "N",
         "api_resource": "slo"
       }
+      {
+        "id": 1,
+        "modified_at": 2,
+        "name": "N",
+        "api_resource": "synthetics/tests"
+      }
     TXT
   end
 
@@ -156,7 +162,7 @@ describe "tasks" do
 
     it "fails when neither is given" do
       e = assert_raises(RuntimeError) { execute(ID: "123") }
-      e.message.must_equal "Aborted Call with URL= or call with RESOURCE=dashboard or monitor or slo and ID="
+      e.message.must_equal "Aborted Call with URL= or call with RESOURCE=dashboard or monitor or slo or synthetics/tests and ID="
     end
   end
 end

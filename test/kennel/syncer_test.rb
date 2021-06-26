@@ -87,6 +87,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("slo", anything).returns(data: slos)
+    api.stubs(:list).with("synthetics/tests", anything).returns([])
     api.stubs(:fill_details!)
   end
 

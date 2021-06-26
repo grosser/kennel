@@ -15,11 +15,8 @@ module Kennel
       end
 
       model =
-        begin
-          Kennel::Models.const_get(resource.capitalize)
-        rescue NameError
-          raise ArgumentError, "#{resource} is not supported"
-        end
+        Kennel::Models::Record.subclasses.detect { |c| c.api_resource == resource } ||
+        raise(ArgumentError, "#{resource} is not supported")
 
       data = @api.show(model.api_resource, id)
       id = data.fetch(:id) # keep native value
@@ -70,6 +67,8 @@ module Kennel
           dry_up_widget_metadata!(widget)
           (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
         end
+      when "synthetics/tests"
+        data[:locations] = :all if data[:locations].sort == Kennel::Models::SyntheticTest::LOCATIONS.sort
       else
         # noop
       end

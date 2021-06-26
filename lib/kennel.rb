@@ -23,6 +23,7 @@ require "kennel/models/record"
 require "kennel/models/dashboard"
 require "kennel/models/monitor"
 require "kennel/models/slo"
+require "kennel/models/synthetic_test"
 
 # settings
 require "kennel/models/project"

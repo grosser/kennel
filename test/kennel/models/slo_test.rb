@@ -7,11 +7,6 @@ describe Kennel::Models::Slo do
   class TestSlo < Kennel::Models::Slo
   end
 
-  # generate readables diffs when things are not equal
-  def assert_json_equal(a, b)
-    JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
-  end
-
   def slo(options = {})
     Kennel::Models::Slo.new(
       options.delete(:project) || project,

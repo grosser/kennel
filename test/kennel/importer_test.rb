@@ -512,6 +512,31 @@ describe Kennel::Importer do
       RUBY
     end
 
+    describe "synthetic test" do
+      it "import basic" do
+        response = { public_id: 123, name: "hello", tags: ["foo"], locations: ["abc"] }
+        stub_datadog_request(:get, "synthetics/tests/123").to_return(body: response.to_json)
+        test = importer.import("synthetics/tests", 123)
+        test.must_equal <<~RUBY
+          Kennel::Models::SyntheticTest.new(
+            self,
+            name: -> { "hello" },
+            id: -> { 123 },
+            kennel_id: -> { "hello" },
+            tags: -> { super() + ["foo"] },
+            locations: -> { [\"abc\"] }
+          )
+        RUBY
+      end
+
+      it "imports all locations as all" do
+        response = { public_id: 123, name: "hello", tags: ["foo"], locations: Kennel::Models::SyntheticTest::LOCATIONS }
+        stub_datadog_request(:get, "synthetics/tests/123").to_return(body: response.to_json)
+        test = importer.import("synthetics/tests", 123)
+        test.must_include "locations: -> { :all }"
+      end
+    end
+
     describe "converting verbose api format to simple" do
       # regular assert_includes prints inspected strings which makes visual diffing hard
       def assert_include_with_print(expected, actual)
