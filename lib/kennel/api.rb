@@ -1,6 +1,7 @@
 # frozen_string_literal: true
+# encapsulates knowledge around how the api works
+# especially 1-off weirdness that should not lak into other parts of the code
 module Kennel
-  # encapsulates knowledge around how the api works
   class Api
     CACHE_FILE = "tmp/cache/details"
 
@@ -11,8 +12,9 @@ module Kennel
     end
 
     def show(api_resource, id, params = {})
-      reply = request :get, "/api/v1/#{api_resource}/#{id}", params: params
-      api_resource == "slo" ? reply[:data] : reply
+      response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
+      response = response[:data] if api_resource == "slo"
+      response
     end
 
     def list(api_resource, params = {})
@@ -23,22 +25,23 @@ module Kennel
         all = []
 
         loop do
-          result = request :get, "/api/v1/#{api_resource}", params: params.merge(limit: limit, offset: offset)
-          data = result.fetch(:data)
-          all.concat data
-          break all if data.size < limit
+          response = request :get, "/api/v1/#{api_resource}", params: params.merge(limit: limit, offset: offset)
+          response = response.fetch(:data)
+          all.concat response
+          break all if response.size < limit
           offset += limit
         end
       else
-        result = request :get, "/api/v1/#{api_resource}", params: params
-        result = result.fetch(:dashboards) if api_resource == "dashboard"
-        result
+        response = request :get, "/api/v1/#{api_resource}", params: params
+        response = response.fetch(:dashboards) if api_resource == "dashboard"
+        response
       end
     end
 
     def create(api_resource, attributes)
-      reply = request :post, "/api/v1/#{api_resource}", body: attributes
-      api_resource == "slo" ? reply[:data].first : reply
+      response = request :post, "/api/v1/#{api_resource}", body: attributes
+      response = response[:data].first if api_resource == "slo"
+      response
     end
 
     def update(api_resource, id, attributes)
