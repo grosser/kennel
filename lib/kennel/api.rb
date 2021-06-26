@@ -80,35 +80,52 @@ module Kennel
     end
 
     def request(method, path, body: nil, params: {}, ignore_404: false)
-      query = Faraday::FlatParamsEncoder.encode(params)
-      response = nil
-      tries = 2
+      path = "#{path}?#{Faraday::FlatParamsEncoder.encode(params)}" if params.any?
+      with_cache ENV["FORCE_GET_CACHE"] && method == :get, path do
+        response = nil
+        tries = 2
 
-      tries.times do |i|
-        response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
-          @client.send(method, "#{path}?#{query}") do |request|
-            request.body = JSON.generate(body) if body
-            request.headers["Content-type"] = "application/json"
-            request.headers["DD-API-KEY"] = @api_key
-            request.headers["DD-APPLICATION-KEY"] = @app_key
+        tries.times do |i|
+          response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
+            @client.send(method, path) do |request|
+              request.body = JSON.generate(body) if body
+              request.headers["Content-type"] = "application/json"
+              request.headers["DD-API-KEY"] = @api_key
+              request.headers["DD-APPLICATION-KEY"] = @app_key
+            end
           end
+
+          break if i == tries - 1 || method != :get || response.status < 500
+          Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
         end
 
-        break if i == tries - 1 || method != :get || response.status < 500
-        Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
-      end
+        if !response.success? && (response.status != 404 || !ignore_404)
+          message = +"Error #{response.status} during #{method.upcase} #{path}\n"
+          message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
+          message << response.body
+          raise message
+        end
 
-      if !response.success? && (response.status != 404 || !ignore_404)
-        message = +"Error #{response.status} during #{method.upcase} #{path}\n"
-        message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
-        message << response.body
-        raise message
+        if response.body.empty?
+          {}
+        else
+          JSON.parse(response.body, symbolize_names: true)
+        end
       end
+    end
 
-      if response.body.empty?
-        {}
+    # allow caching all requests to speedup/benchmark logic that includes repeated requests
+    def with_cache(enabled, key)
+      return yield unless enabled
+      dir = "tmp/cache"
+      FileUtils.mkdir_p(dir) unless File.directory?(dir)
+      file = "#{dir}/#{key.delete("/?=")}" # TODO: encode nicely
+      if File.exist?(file)
+        Marshal.load(File.read(file)) # rubocop:disable Security/MarshalLoad
       else
-        JSON.parse(response.body, symbolize_names: true)
+        result = yield
+        File.write(file, Marshal.dump(result))
+        result
       end
     end
   end

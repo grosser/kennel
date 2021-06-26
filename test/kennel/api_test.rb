@@ -52,7 +52,7 @@ describe Kennel::Api do
       stub_datadog_request(:get, "monitor", "&foo=bar")
         .to_return(status: 300, body: "foo")
       e = assert_raises(RuntimeError) { api.list("monitor", foo: "bar") }
-      e.message.must_equal "Error 300 during GET /api/v1/monitor\nfoo"
+      e.message.must_equal "Error 300 during GET /api/v1/monitor?foo=bar\nfoo"
     end
 
     it "paginates slos" do
@@ -120,7 +120,7 @@ describe Kennel::Api do
         .with(body: nil).to_return(body: "{}", status: 300)
       e = assert_raises(RuntimeError) { api.delete("monitor", 123) }
       e.message.must_equal <<~TEXT.strip
-        Error 300 during DELETE /api/v1/monitor/123
+        Error 300 during DELETE /api/v1/monitor/123?force=true
         {}
       TEXT
     end
@@ -211,6 +211,17 @@ describe Kennel::Api do
       e.message.must_equal "Error 500 during GET /api/v1/monitor/1234\n"
       assert_requested request, times: 2
       stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
+    end
+  end
+
+  describe "force get cache" do
+    in_temp_dir # uses file-cache
+    with_env FORCE_GET_CACHE: "true"
+
+    it "caches" do
+      get = stub_datadog_request(:get, "monitor/1234").to_return(body: "{}")
+      2.times { api.show("monitor", 1234).must_equal({}) }
+      assert_requested get, times: 1
     end
   end
 end

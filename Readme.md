@@ -52,6 +52,7 @@ end
 ```
 
 <!-- NOT IN template/Readme.md  -->
+
 ## Installation
 
  - create a new private `kennel` repo for your organization (do not fork this repo)
@@ -293,8 +294,11 @@ https://foo.datadog.com/monitor/123
 
 <!-- NOT IN template/Readme.md -->
 
-
 ## Development
+
+### Benchmarking
+
+Setting `FORCE_GET_CACHE=true` will cache all get requests, which makes benchmarking improvements more reliable.
 
 ### Integration testing
 
