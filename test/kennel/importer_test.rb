@@ -9,7 +9,7 @@ describe Kennel::Importer do
     response = {
       id: "abc",
       title: "hello",
-      widgets: [{ definition: { widgets: [{ definition: { requests: requests } }] } }]
+      widgets: [{ definition: { widgets: [{ definition: { type: "timeseries", requests: requests } }] } }]
     }
     stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
     importer.import("dashboard", "abc")
@@ -530,9 +530,9 @@ describe Kennel::Importer do
           }]).gsub(/^              /, ""),
           <<~CODE
             definition: {
+              type: "timeseries",
               requests: [
                 {
-                  type: "timeseries",
                   q: "a:b"
                 }
               ]
@@ -552,6 +552,17 @@ describe Kennel::Importer do
         )
       end
 
+      it "leaves mismatching type alone" do
+        assert_include_with_print(
+          import_requests([{
+            response_format: "foobar",
+            formulas: [{ formula: "query1" }],
+            queries: [{ query: "a:b", data_source: "metrics" }]
+          }]).gsub(/^              /, ""),
+          "queries"
+        )
+      end
+
       it "converts simple with formula" do
         assert_include_with_print(
           import_requests([{
@@ -561,9 +572,9 @@ describe Kennel::Importer do
           }]).gsub(/^              /, ""),
           <<~CODE
             definition: {
+              type: "timeseries",
               requests: [
                 {
-                  type: "timeseries",
                   q: "a:b"
                 }
               ]

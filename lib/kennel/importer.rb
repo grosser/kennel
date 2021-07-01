@@ -113,8 +113,9 @@ module Kennel
         next if request[:formulas] && request[:formulas] != [{ formula: "query1" }]
         next if request[:queries]&.size != 1
         next if request[:queries].any? { |q| q[:data_source] != "metrics" }
+        next if widget.dig(:definition, :type) != request[:response_format]
         request.delete(:formulas)
-        request[:type] = request.delete(:response_format)
+        request.delete(:response_format)
         request[:q] = request.delete(:queries).first.fetch(:query)
       end
     end
