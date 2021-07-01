@@ -395,7 +395,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1ACreated monitor a:b /monitors#123/edit
+        \e[1A\033[KCreated monitor a:b /monitors#123/edit
       TXT
     end
 
@@ -406,7 +406,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1ACreated monitor a:b /monitors#123/edit
+        \e[1A\033[KCreated monitor a:b /monitors#123/edit
       TXT
     end
 
@@ -416,7 +416,7 @@ describe Kennel::Syncer do
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
         Updating monitor a:b /monitors#123/edit
-        \e[1AUpdated monitor a:b /monitors#123/edit
+        \e[1A\033[KUpdated monitor a:b /monitors#123/edit
       TXT
     end
 
@@ -425,7 +425,7 @@ describe Kennel::Syncer do
       api.expects(:delete).with("monitor", 123).returns({})
       output.must_equal <<~TXT
         Deleting monitor a:b 123
-        \e[1ADeleted monitor a:b 123
+        \e[1A\033[KDeleted monitor a:b 123
       TXT
     end
 
@@ -447,9 +447,9 @@ describe Kennel::Syncer do
         ).returns(id: 2)
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1ACreated monitor a:b /monitors#1/edit
+        \e[1A\033[KCreated monitor a:b /monitors#1/edit
         Creating slo a:c
-        \e[1ACreated slo a:c /slo?slo_id=2
+        \e[1A\033[KCreated slo a:c /slo?slo_id=2
       TXT
     end
 
@@ -483,7 +483,7 @@ describe Kennel::Syncer do
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
         output.must_equal <<~TXT
           Updating monitor a:b /monitors#123/edit
-          \e[1AUpdated monitor a:b /monitors#123/edit
+          \e[1A\033[KUpdated monitor a:b /monitors#123/edit
         TXT
       end
 
@@ -521,7 +521,7 @@ describe Kennel::Syncer do
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
         output.must_equal <<~TXT
           Updating dashboard a:b /dashboard/abc
-          \e[1AUpdated dashboard a:b /dashboard/abc
+          \e[1A\033[KUpdated dashboard a:b /dashboard/abc
         TXT
       end
 
@@ -530,7 +530,7 @@ describe Kennel::Syncer do
         api.expects(:create).with("dashboard", anything).returns(id: "abc")
         output.must_equal <<~TXT
           Creating dashboard a:b
-          \e[1ACreated dashboard a:b /dashboard/abc
+          \e[1A\033[KCreated dashboard a:b /dashboard/abc
         TXT
       end
     end

@@ -2,7 +2,7 @@
 module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor"].freeze # dashboards references monitors + slos, slos reference monitors
-    LINE_UP = "\e[1A"
+    LINE_UP = "\e[1A\033[K" # go up and clear
 
     def initialize(api, expected, project: nil)
       @api = api
