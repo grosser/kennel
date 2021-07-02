@@ -7,14 +7,17 @@ SingleCov.covered!
 describe Kennel do
   def write(file, content)
     folder = File.dirname(file)
-    FileUtils.mkdir folder unless File.exist?(folder)
+    FileUtils.mkdir_p folder unless File.exist?(folder)
     File.write file, content
   end
 
   let(:models_count) { 3 }
 
   capture_all
-  in_temp_dir do
+  in_temp_dir
+  with_env DATADOG_APP_KEY: "app", DATADOG_API_KEY: "api"
+
+  before do
     write "projects/simple.rb", <<~RUBY
       class TempProject < Kennel::Models::Project
         defaults(
@@ -32,7 +35,6 @@ describe Kennel do
       end
     RUBY
   end
-  with_env DATADOG_APP_KEY: "app", DATADOG_API_KEY: "api"
 
   before do
     Kennel.instance_variable_set(:@generated, nil)
@@ -45,6 +47,7 @@ describe Kennel do
   after do
     Kennel::Models::Project.subclasses.clear
     Object.send(:remove_const, :TempProject) if defined?(TempProject)
+    Object.send(:remove_const, :TempProject2) if defined?(TempProject2)
   end
 
   describe ".generate" do
@@ -82,20 +85,47 @@ describe Kennel do
     end
 
     it "cleans up old stuff" do
-      write "generated/bar.json", "HO"
+      nested = "generated/foo/bar.json"
+      write nested, "HO"
+      plain = "generated/bar.json"
+      write plain, "HO"
       Kennel.generate
-      refute File.exist?("generated/bar.json")
+      refute File.exist?(nested)
+      refute File.exist?(plain)
+    end
+
+    it "can filter by project" do
+      other = "generated/foo/bar.json"
+      write other, "HO"
+      with_env(PROJECT: "temp_project") { Kennel.generate }
+      assert File.exist?(other)
+      assert File.exist?("generated/temp_project/foo.json")
+    end
+
+    it "does not generate for other projects" do
+      write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
+      with_env(PROJECT: "temp_project") { Kennel.generate }
+      refute File.exist?("generated/temp_project2/foo.json")
+      assert File.exist?("generated/temp_project/foo.json")
+    end
+
+    it "complains when everything would be filtered" do
+      e = assert_raises(RuntimeError) { with_env(PROJECT: "foo") { Kennel.generate } }
+      e.message.must_equal <<~TXT.strip
+        foo does not match any projects, try any of these:
+        temp_project
+      TXT
     end
 
     it "complains when duplicates would be written" do
       write "projects/a.rb", <<~RUBY
-        class Foo < Kennel::Models::Project
+        class TestProject2 < Kennel::Models::Project
           defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
         end
       RUBY
       e = assert_raises(RuntimeError) { Kennel.generate }
       e.message.must_equal <<~ERROR
-        foo:bar is defined 2 times
+        test_project2:bar is defined 2 times
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
       ERROR
     end

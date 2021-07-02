@@ -239,12 +239,6 @@ describe Kennel::Syncer do
     describe "filter" do
       let(:syncer) { Kennel::Syncer.new(api, expected, project: "a") }
 
-      it "does nothing when ignores changes" do
-        add_identical
-        expected << monitor("b", "c")
-        output.must_equal "Plan:\nNothing to do\n"
-      end
-
       it "does something when filtered changes" do
         expected << monitor("a", "c")
         output.must_equal "Plan:\nCreate monitor a:c\n"
@@ -254,17 +248,6 @@ describe Kennel::Syncer do
         add_identical
         monitors << { id: 123, message: "foo", tags: [] }
         output.must_equal "Plan:\nNothing to do\n"
-      end
-
-      it "shows correct values when using invalid name" do
-        expected << monitor("b", "a")
-        expected << monitor("c", "a")
-        e = assert_raises(RuntimeError) { output }
-        e.message.must_equal <<~ERROR.strip
-          a does not match any projects, try any of these:
-          b
-          c
-        ERROR
       end
     end
 

@@ -99,7 +99,6 @@ module Kennel
       actual = Progress.progress("Downloading definitions") { download_definitions }
 
       Progress.progress "Diffing" do
-        filter_expected_by_project! @expected
         populate_id_map @expected, actual
         filter_actual_by_project! actual
         resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
@@ -242,17 +241,6 @@ module Kennel
       actual.select! do |a|
         tracking_id = a.fetch(:tracking_id)
         !tracking_id || tracking_id.start_with?("#{@project_filter}:")
-      end
-    end
-
-    def filter_expected_by_project!(expected)
-      return unless @project_filter
-      original = expected.dup
-      expected.select! { |e| e.project.kennel_id == @project_filter }
-
-      if expected.empty?
-        possible = original.map { |e| e.project.kennel_id }.uniq.sort
-        raise "#{@project_filter} does not match any projects, try any of these:\n#{possible.join("\n")}"
       end
     end
   end
