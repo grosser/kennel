@@ -55,7 +55,7 @@ module Kennel
 
     def store(parts)
       Progress.progress "Storing" do
-        old = Dir["generated/**/*"]
+        old = Dir["generated/#{project_filter || "*"}/*"]
         used = []
 
         Utils.parallel(parts, max: 2) do |part|
@@ -95,7 +95,9 @@ module Kennel
         Progress.progress "Generating" do
           load_all
           parts = Models::Project.recursive_subclasses.flat_map do |project_class|
-            project_class.new.validated_parts
+            project = project_class.new
+            next [] if project_filter && project.kennel_id != project_filter
+            project.validated_parts
           end
           parts.group_by(&:tracking_id).each do |tracking_id, same|
             next if same.size == 1
@@ -107,6 +109,10 @@ module Kennel
           parts
         end
       end
+    end
+
+    def project_filter
+      ENV["PROJECT"]
     end
 
     def load_all
