@@ -19,6 +19,11 @@ describe Kennel::Api do
       api.show("slo", "1234").must_equal bar: "foo"
     end
 
+    it "fetches synthetics test" do
+      stub_datadog_request(:get, "synthetics/tests/1234").to_return(body: { public_id: "1234" }.to_json)
+      api.show("synthetics/tests", "1234").must_equal id: "1234"
+    end
+
     it "can pass params so external users can filter" do
       stub_datadog_request(:get, "monitor/1234", "&foo=bar")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
@@ -55,15 +60,22 @@ describe Kennel::Api do
       e.message.must_equal "Error 300 during GET /api/v1/monitor?foo=bar\nfoo"
     end
 
-    it "paginates slos" do
-      stub_datadog_request(:get, "slo", "&limit=1000&offset=0").to_return(body: { data: Array.new(1000) { { bar: "foo" } } }.to_json)
-      stub_datadog_request(:get, "slo", "&limit=1000&offset=1000").to_return(body: { data: [{ bar: "foo"  }] }.to_json)
-      api.list("slo").size.must_equal 1001
+    it "fetches syntetic tests" do
+      stub_datadog_request(:get, "synthetics/tests").to_return(body: { tests: [{ public_id: "123" }] }.to_json)
+      api.list("synthetics/tests").must_equal [{ id: "123" }]
     end
 
-    it "fails when pagination would not work" do
-      assert_raises(ArgumentError) { api.list("slo", limit: 100) }
-      assert_raises(ArgumentError) { api.list("slo", offset: 100) }
+    describe "slo" do
+      it "paginates" do
+        stub_datadog_request(:get, "slo", "&limit=1000&offset=0").to_return(body: { data: Array.new(1000) { { bar: "foo" } } }.to_json)
+        stub_datadog_request(:get, "slo", "&limit=1000&offset=1000").to_return(body: { data: [{ bar: "foo"  }] }.to_json)
+        api.list("slo").size.must_equal 1001
+      end
+
+      it "fails when pagination would not work" do
+        assert_raises(ArgumentError) { api.list("slo", limit: 100) }
+        assert_raises(ArgumentError) { api.list("slo", offset: 100) }
+      end
     end
   end
 
@@ -93,6 +105,11 @@ describe Kennel::Api do
       stub_datadog_request(:post, "slo").to_return(body: { data: [{ bar: "foo" }] }.to_json)
       api.create("slo", foo: "bar").must_equal bar: "foo"
     end
+
+    it "fixes synthetic test public_id" do
+      stub_datadog_request(:post, "synthetics/tests").to_return(body: { public_id: "123" }.to_json)
+      api.create("synthetics/tests", foo: "bar").must_equal id: "123"
+    end
   end
 
   describe "#update" do
@@ -100,6 +117,11 @@ describe Kennel::Api do
       stub_datadog_request(:put, "monitor/123")
         .with(body: "{\"foo\":\"bar\"}").to_return(body: { bar: "foo" }.to_json)
       api.update("monitor", 123, foo: "bar").must_equal bar: "foo"
+    end
+
+    it "updates a synthetics test" do
+      stub_datadog_request(:put, "synthetics/tests/123").to_return(body: { public_id: "123" }.to_json)
+      api.update("synthetics/tests", "123", foo: "bar").must_equal id: "123"
     end
   end
 

@@ -212,7 +212,8 @@ describe Kennel::Models::Record do
       Kennel::Models::Record.api_resource_map.must_equal(
         "dashboard" => Kennel::Models::Dashboard,
         "monitor" => Kennel::Models::Monitor,
-        "slo" => Kennel::Models::Slo
+        "slo" => Kennel::Models::Slo,
+        "synthetics/tests" => Kennel::Models::SyntheticTest
       )
     end
   end

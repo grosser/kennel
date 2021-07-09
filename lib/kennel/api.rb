@@ -14,6 +14,7 @@ module Kennel
     def show(api_resource, id, params = {})
       response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
       response = response.fetch(:data) if api_resource == "slo"
+      response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
       response
     end
 
@@ -22,6 +23,14 @@ module Kennel
         response = request :get, "/api/v1/#{api_resource}", params: paginated_params
         response = response.fetch(:dashboards) if api_resource == "dashboard"
         response = response.fetch(:data) if api_resource == "slo"
+        if api_resource == "synthetics/tests"
+          response = response.fetch(:tests)
+          response.each { |r| r[:id] = r.delete(:public_id) }
+        end
+
+        # ignore monitor synthetics create and that inherit the kennel_id, we do not directly manage them
+        response.reject! { |m| m[:type] == "synthetics alert" } if api_resource == "monitor"
+
         response
       end
     end
@@ -29,11 +38,14 @@ module Kennel
     def create(api_resource, attributes)
       response = request :post, "/api/v1/#{api_resource}", body: attributes
       response = response.fetch(:data).first if api_resource == "slo"
+      response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
       response
     end
 
     def update(api_resource, id, attributes)
-      request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
+      response = request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
+      response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
+      response
     end
 
     # - force=true to not dead-lock on dependent monitors+slos

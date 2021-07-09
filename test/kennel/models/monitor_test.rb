@@ -7,11 +7,6 @@ describe Kennel::Models::Monitor do
   class TestMonitor < Kennel::Models::Monitor
   end
 
-  # generate readables diffs when things are not equal
-  def assert_json_equal(a, b)
-    JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
-  end
-
   def monitor(options = {})
     Kennel::Models::Monitor.new(
       options.delete(:project) || project,

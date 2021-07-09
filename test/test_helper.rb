@@ -83,4 +83,9 @@ Minitest::Test.class_eval do
   def stub_datadog_request(method, path, extra = "")
     stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?#{extra}")
   end
+
+  # generate readables diffs when things are not equal
+  def assert_json_equal(a, b)
+    JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
+  end
 end
