@@ -137,6 +137,13 @@ describe Kennel::Api do
       api.delete("dash", 123).must_equal({})
     end
 
+    it "deletes synthetic" do
+      stub_datadog_request(:post, "synthetics/tests/delete")
+        .with(body: { public_ids: [123] }.to_json)
+        .to_return(body: "")
+      api.delete("synthetics/tests", 123).must_equal({})
+    end
+
     it "shows a descriptive failure when request fails, without including api keys" do
       stub_datadog_request(:delete, "monitor/123", "&force=true")
         .with(body: nil).to_return(body: "{}", status: 300)

@@ -52,7 +52,12 @@ module Kennel
     #   external dependency on kennel managed resources is their problem, we don't block on it
     #   (?force=true did not work, force for dashboard is not documented but does not blow up)
     def delete(api_resource, id)
-      request :delete, "/api/v1/#{api_resource}/#{id}", params: { force: "true" }, ignore_404: true
+      if api_resource == "synthetics/tests"
+        # https://docs.datadoghq.com/api/latest/synthetics/#delete-tests
+        request :post, "/api/v1/#{api_resource}/delete", body: { public_ids: [id] }, ignore_404: true
+      else
+        request :delete, "/api/v1/#{api_resource}/#{id}", params: { force: "true" }, ignore_404: true
+      end
     end
 
     def fill_details!(api_resource, list)
