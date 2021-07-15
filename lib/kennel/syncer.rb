@@ -24,7 +24,14 @@ module Kennel
     end
 
     def confirm
-      ENV["CI"] || !STDIN.tty? || Utils.ask("Execute Plan ?") unless noop?
+      return false if noop?
+      return true if ENV["CI"] || !STDIN.tty?
+      if @delete.any? && @project_filter
+        Kennel.out.puts(
+          Utils.color(:red, "WARNING: deleting resources that had `id: -> { ...` breaks master branch")
+        )
+      end
+      Utils.ask("Execute Plan ?")
     end
 
     def update

@@ -79,8 +79,8 @@ describe Kennel::Syncer do
   let(:dashboards) { [] }
   let(:slos) { [] }
   let(:expected) { [] }
-  let(:project_filter) { nil }
-  let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter) }
+  let(:project_filter) { [nil] }
+  let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter.first) }
 
   before do
     Kennel::Progress.stubs(:print).yields
@@ -140,7 +140,7 @@ describe Kennel::Syncer do
     end
 
     describe "with project filter set" do
-      let(:project_filter) { "a" }
+      let(:project_filter) { ["a"] }
 
       it "updates without tracking when previously unmanaged" do
         expected << monitor("a", "b", id: 123)
@@ -330,13 +330,19 @@ describe Kennel::Syncer do
   end
 
   describe "#confirm" do
+    def expect_gets(answer)
+      STDIN.unstub(:gets)
+      STDIN.stubs(:gets).returns(answer)
+    end
+
     before do
       expected << monitor("a", "b")
       STDIN.stubs(:tty?).returns(true)
+      STDIN.expects(:gets).with { raise "unexpected STDIN.gets called" }.never
     end
 
     it "confirms on y" do
-      STDIN.expects(:gets).returns("y\n")
+      expect_gets("y\n")
       assert syncer.confirm
       stderr.string.must_include "\e[31mExecute Plan ? -  press 'y' to continue: \e[0m"
     end
@@ -353,7 +359,7 @@ describe Kennel::Syncer do
     end
 
     it "denies on n" do
-      STDIN.expects(:gets).returns("n\n")
+      expect_gets("n\n")
       refute syncer.confirm
     end
 
@@ -361,6 +367,27 @@ describe Kennel::Syncer do
       expected.clear
       refute syncer.confirm
       stdout.string.must_equal ""
+    end
+
+    describe "with deletes" do
+      before do
+        expected.clear
+        monitors << monitor_api_response("a", "b", id: 123)
+        expect_gets "y"
+      end
+
+      it "warns about branch deletes that can break master" do
+        project_filter.replace ["a"]
+        assert syncer.confirm
+        stdout.string.must_equal <<~TXT
+          \e[31mWARNING: deleting resources that had `id: -> { ...` breaks master branch\e[0m
+        TXT
+      end
+
+      it "does not warn on master" do
+        assert syncer.confirm
+        stdout.string.must_equal ""
+      end
     end
   end
 
@@ -451,7 +478,7 @@ describe Kennel::Syncer do
     end
 
     describe "with project_filter" do
-      let(:project_filter) { "a" }
+      let(:project_filter) { ["a"] }
 
       it "refuses to update tracking on resources with ids since they would be deleted by other updates" do
         expected << monitor("a", "b", foo: "bar", id: 123)
