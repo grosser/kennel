@@ -588,24 +588,26 @@ describe Kennel::Importer do
         )
       end
 
-      it "converts simple with formula" do
-        assert_include_with_print(
-          import_requests([{
-            response_format: "timeseries",
-            formulas: [{ formula: "query1" }],
-            queries: [{ query: "a:b", data_source: "metrics" }]
-          }]).gsub(/^              /, ""),
-          <<~CODE
-            definition: {
-              type: "timeseries",
-              requests: [
-                {
-                  q: "a:b"
-                }
-              ]
-            }
-        CODE
-        )
+      [0, 1].each do |q|
+        it "converts simple with formula query#{q}" do
+          assert_include_with_print(
+            import_requests([{
+              response_format: "timeseries",
+              formulas: [{ formula: "query#{q}" }],
+              queries: [{ query: "a:b", data_source: "metrics" }]
+            }]).gsub(/^              /, ""),
+            <<~CODE
+              definition: {
+                type: "timeseries",
+                requests: [
+                  {
+                    q: "a:b"
+                  }
+                ]
+              }
+          CODE
+          )
+        end
       end
 
       it "keeps multiple" do

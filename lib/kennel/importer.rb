@@ -106,10 +106,11 @@ module Kennel
     end
 
     # new api format is very verbose, so use old dry format when possible
+    # dd randomly chooses query0 or query1
     def convert_widget_to_compact_format!(widget)
       (widget.dig(:definition, :requests) || []).each do |request|
         next unless request.is_a?(Hash)
-        next if request[:formulas] && request[:formulas] != [{ formula: "query1" }]
+        next if request[:formulas] && ![[{ formula: "query1" }], [{ formula: "query0" }]].include?(request[:formulas])
         next if request[:queries]&.size != 1
         next if request[:queries].any? { |q| q[:data_source] != "metrics" }
         next if widget.dig(:definition, :type) != request[:response_format]
