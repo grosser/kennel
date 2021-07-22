@@ -8,13 +8,15 @@ module Kennel
     class << self
       def report(token, &block)
         return yield unless token
-        new(token, Utils.capture_sh("git rev-parse HEAD").strip).report(&block)
+        new(token).report(&block)
       end
     end
 
-    def initialize(token, git_sha)
+    def initialize(token, ref: "HEAD")
       @token = token
-      @git_sha = git_sha
+      commit = Utils.capture_sh("git show #{ref}")
+      @sha = commit[/^Merge: \S+ (\S+)/, 1] || commit[/\Acommit (\S+)/, 1] || raise("Unable to find commit")
+      @pr = commit[/^\s+.*\(#(\d+)\)/, 1] # from squash
       @repo_part = ENV["GITHUB_REPOSITORY"] || begin
         origin = ENV["PROJECT_REPOSITORY"] || Utils.capture_sh("git remote -v").split("\n").first
         origin[%r{github\.com[:/](\S+?)(\.git|$)}, 1] || raise("no origin found in #{origin}")
@@ -37,13 +39,14 @@ module Kennel
         body = body.byteslice(0, MAX_COMMENT_SIZE - TRUNCATED_MSG.bytesize) + TRUNCATED_MSG
       end
 
-      post "commits/#{@git_sha}/comments", body: body
+      path = (@pr ? "/repos/#{@repo_part}/issues/#{@pr}/comments" : "/repos/#{@repo_part}/commits/#{@sha}/comments")
+      post path, body: body
     end
 
     private
 
     def post(path, data)
-      url = "https://api.github.com/repos/#{@repo_part}/#{path}"
+      url = "https://api.github.com#{path}"
       response = Faraday.post(url, data.to_json, authorization: "token #{@token}")
       raise "failed to POST to github:\n#{url} -> #{response.status}\n#{response.body}" unless response.status == 201
     end

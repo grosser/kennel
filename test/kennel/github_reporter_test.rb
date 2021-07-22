@@ -5,16 +5,14 @@ SingleCov.covered!
 
 describe Kennel::GithubReporter do
   let(:remote_response) { +"origin	git@github.com:foo/bar.git (fetch)" }
+  let(:show_response) { +"commit abcd" }
 
   before do
-    Kennel::Utils.expects(:capture_sh).with("git remote -v").returns(remote_response)
+    @git_remote = Kennel::Utils.expects(:capture_sh).with("git remote -v").returns(remote_response)
+    Kennel::Utils.expects(:capture_sh).with("git show HEAD").returns(show_response)
   end
 
   describe ".report" do
-    before do
-      Kennel::Utils.expects(:capture_sh).with("git rev-parse HEAD").returns("abcd")
-    end
-
     it "does not report when no token was given" do
       Kennel::Utils.unstub(:capture_sh)
       Kennel::Utils.expects(:capture_sh).never
@@ -33,7 +31,7 @@ describe Kennel::GithubReporter do
   end
 
   describe "#report" do
-    let(:reporter) { Kennel::GithubReporter.new("TOKEN", "abcd") }
+    let(:reporter) { Kennel::GithubReporter.new("TOKEN") }
 
     it "reports success" do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
@@ -60,9 +58,22 @@ describe Kennel::GithubReporter do
       reporter.instance_variable_get(:@repo_part).must_equal "foo/bar"
     end
 
-    it "can parse remote from env as samson provides it" do
-      Kennel::Utils.unstub(:capture_sh)
-      Kennel::Utils.expects(:capture_sh).never
+    it "can create PR comments" do
+      show_response << "\n  foo (#123)"
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/issues/123/comments").to_return(status: 201)
+      Kennel::Utils.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
+      assert_requested request
+    end
+
+    it "can create merge comments" do
+      show_response.replace "commit: nope\nMerge: foo abcd"
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments").to_return(status: 201)
+      Kennel::Utils.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
+      assert_requested request
+    end
+
+    it "can parse remote from env via custom var" do
+      @git_remote.never
 
       with_env PROJECT_REPOSITORY: "git@github.com:bar/baz" do
         reporter.instance_variable_get(:@repo_part).must_equal "bar/baz"
@@ -70,8 +81,7 @@ describe Kennel::GithubReporter do
     end
 
     it "can take remote from env as github actions provides it" do
-      Kennel::Utils.unstub(:capture_sh)
-      Kennel::Utils.expects(:capture_sh).never
+      @git_remote.never
 
       with_env GITHUB_REPOSITORY: "bar/baz" do
         reporter.instance_variable_get(:@repo_part).must_equal "bar/baz"
