@@ -207,7 +207,6 @@ module Kennel
     end
 
     def print_plan(step, list, color)
-      return if list.empty?
       list.each do |_, e, a, diff|
         klass = (e ? e.class : a.fetch(:klass))
         Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
