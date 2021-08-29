@@ -46,7 +46,6 @@ module Kennel
           font_size: "14"
         },
         "query_value" => {
-          autoscale: true,
           time: {},
           title_align: "left",
           title_size: "16"
