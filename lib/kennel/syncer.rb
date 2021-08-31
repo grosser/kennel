@@ -3,6 +3,7 @@ module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
+    DEFAULT_BRANCH = "master"
 
     def initialize(api, expected, project: nil)
       @api = api
@@ -26,11 +27,7 @@ module Kennel
     def confirm
       return false if noop?
       return true if ENV["CI"] || !STDIN.tty?
-      if @delete.any? && @project_filter
-        Kennel.out.puts(
-          Utils.color(:red, "WARNING: deleting resources that had `id: -> { ...` breaks master branch")
-        )
-      end
+      warn_about_deleting_resources_with_id if @project_filter
       Utils.ask("Execute Plan ?")
     end
 
@@ -62,6 +59,30 @@ module Kennel
     end
 
     private
+
+    # this is brittle/hacky since it relies on knowledge from the generation + git + branch knowledge
+    def warn_about_deleting_resources_with_id
+      @delete.each do |_, _, a|
+        tracking_id = a.fetch(:tracking_id)
+        api_resource = a.fetch(:klass).api_resource
+
+        file = "generated/#{tracking_id.sub(":", "/")}.json"
+        old = `true && git show #{DEFAULT_BRANCH}:#{file.shellescape} 2>&1` # true && to not crash on missing git
+
+        next unless $?.success?
+        old =
+          begin
+            JSON.parse(old)
+          rescue StandardError
+            false
+          end
+        next if !old || !old["id"]
+
+        Kennel.out.puts(
+          Utils.color(:red, "WARNING: deleting #{api_resource} #{tracking_id} will break #{DEFAULT_BRANCH} branch")
+        )
+      end
+    end
 
     # loop over items until everything is resolved or crash when we get stuck
     # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains

@@ -376,17 +376,43 @@ describe Kennel::Syncer do
         expect_gets "y"
       end
 
-      it "warns about branch deletes that can break master" do
-        project_filter.replace ["a"]
-        assert syncer.confirm
-        stdout.string.must_equal <<~TXT
-          \e[31mWARNING: deleting resources that had `id: -> { ...` breaks master branch\e[0m
-        TXT
-      end
-
       it "does not warn on master" do
         assert syncer.confirm
         stdout.string.must_equal ""
+      end
+
+      describe "when working on a PR" do
+        before do
+          project_filter.replace ["a"]
+          `true` # fill $? reliably
+        end
+
+        it "warns about breaking master" do
+          syncer.expects(:`).returns('{"id":123}')
+          assert syncer.confirm
+          stdout.string.must_equal <<~TXT
+            \e[31mWARNING: deleting monitor a:b will break master branch\e[0m
+          TXT
+        end
+
+        it "does not warn when file did not exist on master" do
+          `false` # fill $? reliably
+          syncer.expects(:`).returns("whoops")
+          assert syncer.confirm
+          stdout.string.must_equal ""
+        end
+
+        it "does not warn on bad json" do
+          syncer.expects(:`).returns("[whoops")
+          assert syncer.confirm
+          stdout.string.must_equal ""
+        end
+
+        it "does not warn when missing id" do
+          syncer.expects(:`).returns("{}")
+          assert syncer.confirm
+          stdout.string.must_equal ""
+        end
       end
     end
   end

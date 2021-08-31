@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require "faraday"
 require "json"
+require "shellwords"
 require "English"
 
 require "kennel/version"
