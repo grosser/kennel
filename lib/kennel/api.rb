@@ -86,7 +86,12 @@ module Kennel
     # Make diff work even though we cannot mass-fetch definitions
     def fill_detail!(api_resource, a, cache)
       args = [api_resource, a.fetch(:id)]
-      full = cache.fetch(args, a.fetch(:modified_at)) { show(*args) }
+      begin
+        full = cache.fetch(args, a.fetch(:modified_at, nil) || a.fetch(:modified)) { show(*args) }
+      rescue KeyError
+        p a
+        raise
+      end
       a.merge!(full)
     end
 

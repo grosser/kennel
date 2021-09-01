@@ -99,9 +99,43 @@ namespace :kennel do
   end
 
   task dump_resources_cached: :environment do
+    all_tags = Set.new
     require 'kennel/resources'
+
     Kennel::Resources.cached_each(filename: "tmp/cache/dump_resources_cached.json", max_age: 3600) do |r|
-      puts "#{r.fetch(:api_resource)} #{r.fetch(:id)}"
+      txt = "#{r[:message]} #{r[:description]}"
+      next unless txt.include?("Managed by kennel")
+
+      next unless txt.include?("enigma")
+
+      tags = r.fetch(:tags, []) + r.fetch(:monitor_tags, [])
+      all_tags += tags
+      # puts "#{r.fetch(:api_resource)} #{r.fetch(:id)} #{tags.inspect}"
+    end
+
+    unspaced = Set.new
+    spaced = Hash.new { |h, k| h[k] = Set.new }
+
+    all_tags.each do |tag|
+      pre, post = tag.split(":", 2)
+      if post.nil?
+        unspaced << pre
+      else
+        spaced[pre] << post
+      end
+    end
+
+    puts "COUNT UNSPACED #{unspaced.count}"
+    unspaced.sort.each do |k|
+      puts "UNSPACED\t#{k}"
+    end
+
+    puts "COUNT SPACED #{spaced.count}"
+    spaced.keys.sort.each do |k|
+      puts "SPACED\t#{k}\tCOUNT #{spaced[k].count}"
+      spaced[k].sort.each do |v|
+        puts "PAIR\t#{k}\t#{v}"
+      end
     end
   end
 
