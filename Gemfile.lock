@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.92.1)
+    kennel (1.92.2)
       faraday
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
@@ -20,7 +20,7 @@ GEM
     connection_pool (2.2.5)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
-    faraday (1.7.0)
+    faraday (1.7.1)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)
