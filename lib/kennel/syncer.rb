@@ -160,6 +160,7 @@ module Kennel
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
         @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
+        @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
     end
 

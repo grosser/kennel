@@ -267,7 +267,7 @@ describe Kennel::Syncer do
     end
 
     describe "slos" do
-      it "can plan for slos" do
+      before do
         expected << slo("a", "b", id: "abc")
         slos << {
           id: "abc",
@@ -277,7 +277,17 @@ describe Kennel::Syncer do
           tags: ["team:test_team", "service:a"],
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
         }
+      end
+
+      it "can plan for slos" do
         output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "updates slos before their monitors" do
+        slos[-1][:tags] << "foo"
+        expected << monitor("a", "c")
+        monitors << monitor_api_response("a", "c", tags: ["foo"])
+        output.scan(/Update \S+/).must_equal ["Update slo", "Update monitor"]
       end
     end
 
