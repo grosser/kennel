@@ -6,7 +6,7 @@ module Kennel
       include OptionalValidations
 
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list
+        :author_handle, :author_name, :modified_at, :url, :is_read_only, :notify_list, :restricted_roles
       ]
       TRACKING_FIELD = :description
       REQUEST_DEFAULTS = {
