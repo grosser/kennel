@@ -696,4 +696,26 @@ describe Kennel::Importer do
       importer.send(:pretty_print, foo: { bar: [] }).must_equal "  foo: -> {\n    {\n      bar: []\n    }\n  }"
     end
   end
+
+  describe "#convert_strings_to_heredoc" do
+    def call(string)
+      importer.send(:convert_strings_to_heredoc, string)
+    end
+
+    it "leaves normal things alone" do
+      call("foo").must_equal "foo"
+    end
+
+    it "converts long strings" do
+      call(%(  a: "b\\nc")).must_equal %(  a: <<~TXT\n    b\n    c\n  TXT)
+    end
+
+    it "leaves commands" do
+      call(%(  a: "b\\nc",)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT)
+    end
+
+    it "removes trailing newlines" do
+      call(%(  a: "b\\nc\\n",)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT)
+    end
+  end
 end

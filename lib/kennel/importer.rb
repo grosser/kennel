@@ -132,8 +132,9 @@ module Kennel
               .gsub(": null", ": nil")
               .gsub(/(^\s*)"([a-zA-Z][a-zA-Z\d_]*)":/, "\\1\\2:") # "foo": 1 -> foo: 1
               .gsub(/: \[\n\s+\]/, ": []") # empty arrays on a single line
-              .gsub(/^/, "    ") # indent
               .gsub('q: "metadata"', "q: :metadata") # bring symbols back
+              .gsub(/^/, "    ") # indent
+            pretty = convert_strings_to_heredoc(pretty)
 
             "\n#{pretty}\n  "
           elsif k == :message
@@ -145,6 +146,16 @@ module Kennel
           end
         "  #{k}: -> {#{pretty_value}}"
       end.join(",\n")
+    end
+
+    def convert_strings_to_heredoc(text)
+      text.gsub(/^(\s*)(.*)"([^"]+\\n[^"]+)"(,)?/) do
+        indent = $1
+        prefix = $2
+        string = $3
+        comma = $4
+        "#{indent}#{prefix}<<~TXT#{comma}\n#{indent}  #{string.gsub("\\n", "\n#{indent}  ").rstrip}\n#{indent}TXT"
+      end
     end
 
     # sort dashboard widgets + nesting
