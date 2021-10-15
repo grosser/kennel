@@ -149,12 +149,12 @@ module Kennel
     end
 
     def convert_strings_to_heredoc(text)
-      text.gsub(/^(\s*)(.*)"([^"]+\\n[^"]+)"(,)?/) do
+      text.gsub(/^( *)([^" ]+ *)"([^"]+\\n[^"]+)"(,)?\n/) do
         indent = $1
         prefix = $2
         string = $3
         comma = $4
-        "#{indent}#{prefix}<<~TXT#{comma}\n#{indent}  #{string.gsub("\\n", "\n#{indent}  ").rstrip}\n#{indent}TXT"
+        "#{indent}#{prefix}<<~TXT#{comma}\n#{indent}  #{string.gsub("\\n", "\n#{indent}  ").rstrip}\n#{indent}TXT\n"
       end
     end
 

@@ -707,15 +707,23 @@ describe Kennel::Importer do
     end
 
     it "converts long strings" do
-      call(%(  a: "b\\nc")).must_equal %(  a: <<~TXT\n    b\n    c\n  TXT)
+      call(%(  a: "b\\nc"\nstuff)).must_equal %(  a: <<~TXT\n    b\n    c\n  TXT\nstuff)
     end
 
     it "leaves commands" do
-      call(%(  a: "b\\nc",)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT)
+      call(%(  a: "b\\nc",\nstuff)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT\nstuff)
     end
 
     it "removes trailing newlines" do
-      call(%(  a: "b\\nc\\n",)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT)
+      call(%(  a: "b\\nc\\n",\nstuff)).must_equal %(  a: <<~TXT,\n    b\n    c\n  TXT\nstuff)
+    end
+
+    it "does not eat newlines" do
+      call(%(  foo: "a\\nb",\n"stuff")).must_equal %(  foo: <<~TXT,\n    a\n    b\n  TXT\n"stuff")
+    end
+
+    it "does not convert just spaces" do
+      call(%(  "stuff"\n)).must_equal %(  "stuff"\n)
     end
   end
 end
