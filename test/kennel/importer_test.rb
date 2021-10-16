@@ -725,5 +725,9 @@ describe Kennel::Importer do
     it "does not convert just spaces" do
       call(%(  "stuff"\n)).must_equal %(  "stuff"\n)
     end
+
+    it "removes trailing spaces" do
+      call(%(  a: "b\\n\\nc  \\nd"\nstuff)).must_equal %(  a: <<~TXT\n    b\n\n    c\n    d\n  TXT\nstuff)
+    end
   end
 end

@@ -154,7 +154,11 @@ module Kennel
         prefix = $2
         string = $3
         comma = $4
-        "#{indent}#{prefix}<<~TXT#{comma}\n#{indent}  #{string.gsub("\\n", "\n#{indent}  ").rstrip}\n#{indent}TXT\n"
+        <<~CODE.gsub(/ +$/, "")
+          #{indent}#{prefix}<<~TXT#{comma}
+          #{indent}  #{string.gsub("\\n", "\n#{indent}  ").rstrip}
+          #{indent}TXT
+        CODE
       end
     end
 
