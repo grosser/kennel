@@ -5,6 +5,7 @@ PATH
       faraday
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
+      zeitwerk
 
 GEM
   remote: https://rubygems.org/
@@ -87,6 +88,7 @@ GEM
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
+    zeitwerk (2.4.2)
 
 PLATFORMS
   ruby

@@ -76,14 +76,6 @@ describe Kennel do
       File.mtime("generated/temp_project/foo.json").wont_equal old
     end
 
-    it "requires in order" do
-      write "teams/a.rb", "AAA = 1"
-      write "parts/a.rb", "BBB = AAA"
-      write "parts/b.rb", "CCC = BBB"
-      write "projects/a.rb", "DDD = CCC"
-      Kennel.generate
-    end
-
     it "cleans up old stuff" do
       nested = "generated/foo/bar.json"
       write nested, "HO"

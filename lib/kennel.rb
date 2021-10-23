@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require "faraday"
 require "json"
+require "zeitwerk"
 require "shellwords"
 require "English"
 
@@ -29,6 +30,10 @@ require "kennel/models/synthetic_test"
 # settings
 require "kennel/models/project"
 require "kennel/models/team"
+
+# need to define early since we autoload the teams/ folder into it
+module Teams
+end
 
 module Kennel
   class ValidationError < RuntimeError
@@ -128,7 +133,13 @@ module Kennel
     end
 
     def load_all
-      ["teams", "parts", "projects"].each do |folder|
+      loader = Zeitwerk::Loader.new
+      Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
+      Dir.exist?("parts") && loader.push_dir("parts")
+      loader.setup
+
+      # TODO: also do projects
+      ["projects"].each do |folder|
         Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" }
       end
     end
