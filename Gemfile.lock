@@ -2,10 +2,10 @@ PATH
   remote: .
   specs:
     kennel (1.95.0)
-      faraday
+      faraday (~> 1.8)
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
-      zeitwerk
+      zeitwerk (~> 2.4)
 
 GEM
   remote: https://rubygems.org/
