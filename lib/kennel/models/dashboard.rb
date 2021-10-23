@@ -69,7 +69,10 @@ module Kennel
         template_variable_presets: nil
       }.freeze
 
-      settings :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type
+      settings(
+        :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
+        :tags
+      )
 
       defaults(
         description: -> { "" },
@@ -77,6 +80,10 @@ module Kennel
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
+        tags: -> do # not inherited by default to make onboarding to using dashboard tags simple
+          team = project.team
+          team.tag_dashboards ? team.tags : []
+        end,
         id: -> { nil }
       )
 
@@ -145,10 +152,12 @@ module Kennel
         return @json if @json
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
+        tags = tags()
+        tags_as_string = (tags.empty? ? "" : " (#{tags.join(" ")})")
 
         @json = {
           layout_type: layout_type,
-          title: "#{title}#{LOCK}",
+          title: "#{title}#{tags_as_string}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,

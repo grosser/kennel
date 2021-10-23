@@ -87,6 +87,11 @@ describe Kennel::Models::Dashboard do
       dashboard(layout_type: -> { "free" }).as_json.must_equal(expected_json)
     end
 
+    it "adds team tags when requested" do
+      project.team.class.any_instance.expects(:tag_dashboards).returns(true)
+      dashboard.as_json[:title].must_equal "Hello (team:test_team)🔒"
+    end
+
     describe "definitions" do
       it "can add definitions" do
         dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests

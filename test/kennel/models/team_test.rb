@@ -19,4 +19,10 @@ describe Kennel::Models::Team do
       Teams::MyTeam.new.renotify_interval.must_equal 0
     end
   end
+
+  describe "#tag_dashboards" do
+    it "is false" do
+      Teams::MyTeam.new.tag_dashboards.must_equal false
+    end
+  end
 end
