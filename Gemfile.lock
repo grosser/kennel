@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.95.0)
+    kennel (1.96.0)
       faraday (~> 1.8)
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
@@ -88,7 +88,7 @@ GEM
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
-    zeitwerk (2.4.2)
+    zeitwerk (2.5.1)
 
 PLATFORMS
   ruby
