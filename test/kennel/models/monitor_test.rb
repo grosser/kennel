@@ -35,6 +35,7 @@ describe Kennel::Models::Monitor do
         notify_audit: false,
         require_full_window: true,
         new_host_delay: 300,
+        new_group_delay: 60,
         include_tags: true,
         escalation_message: nil,
         evaluation_delay: nil,
@@ -194,6 +195,10 @@ describe Kennel::Models::Monitor do
 
     it "can set new_host_delay" do
       monitor(new_host_delay: -> { 300 }).as_json.dig(:options, :new_host_delay).must_equal 300
+    end
+
+    it "can set new_group_delay" do
+      monitor(new_group_delay: -> { 120 }).as_json.dig(:options, :new_group_delay).must_equal 120
     end
 
     it "can set threshold_windows" do
