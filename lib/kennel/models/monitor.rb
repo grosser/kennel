@@ -19,6 +19,7 @@ module Kennel
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
         new_host_delay: 300,
+        new_group_delay: 60,
         timeout_h: 0,
         renotify_interval: 0,
         notify_audit: false,
@@ -31,7 +32,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :priority
+        :threshold_windows, :new_host_delay, :new_group_delay, :priority
       )
 
       defaults(
@@ -45,6 +46,7 @@ module Kennel
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
+        new_group_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_group_delay) },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -70,6 +72,7 @@ module Kennel
             notify_audit: notify_audit,
             require_full_window: require_full_window,
             new_host_delay: new_host_delay,
+            new_group_delay: new_group_delay,
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,

@@ -281,6 +281,7 @@ describe Kennel::Importer do
           include_tags: true,
           no_data_timeframe: nil,
           new_host_delay: 300,
+          new_group_delay: 60,
           require_full_window: false,
           notify_no_data: false,
           renotify_interval: 120,
