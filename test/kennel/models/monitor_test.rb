@@ -217,12 +217,6 @@ describe Kennel::Models::Monitor do
       monitor(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).as_json.dig(:options).key?(:new_host_delay).must_equal(false)
     end
 
-    it "does not allow new_host_delay and new_group_delay to be present in the options" do
-      invalid_options = { type: "", query: "", options: { renotify_interval: 0, new_host_delay: 60, new_group_delay: 60 } }
-      e = assert_raises(Kennel::ValidationError) { monitor.send(:validate_json, invalid_options) }
-      e.message.must_equal("test_project:m1 new_host_delay cannot be set if new_group_delay is set")
-    end
-
     describe "is_match validation" do
       describe "with query alert style queries" do
         let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }

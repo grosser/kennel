@@ -234,8 +234,6 @@ module Kennel
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
         end
-
-        invalid!("new_host_delay cannot be set if new_group_delay is set") if data.dig(:options, :new_group_delay) && data.dig(:options, :new_host_delay)
       end
     end
   end
