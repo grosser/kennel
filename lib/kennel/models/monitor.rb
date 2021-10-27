@@ -109,7 +109,7 @@ module Kennel
         end
 
         # Datadog requires only either new_group_delay or new_host_delay, never both
-        options[:new_group_delay] ? options.tap { |o| o.delete(:new_host_delay) } : options.tap { |o| o.delete(:new_group_delay) }
+        options.delete(options[:new_group_delay] ? :new_host_delay : :new_group_delay)
 
         validate_json(data) if validate
 
