@@ -19,7 +19,6 @@ module Kennel
       MONITOR_OPTION_DEFAULTS = {
         evaluation_delay: nil,
         new_host_delay: 300,
-        new_group_delay: 60,
         timeout_h: 0,
         renotify_interval: 0,
         notify_audit: false,
@@ -46,7 +45,7 @@ module Kennel
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
-        new_group_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_group_delay) },
+        new_group_delay: -> { nil },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -108,6 +107,9 @@ module Kennel
         if windows = threshold_windows
           options[:threshold_windows] = windows
         end
+
+        # Datadog requires only either new_group_delay or new_host_delay, never both
+        options[:new_group_delay] ? options.tap { |o| o.delete(:new_host_delay) } : options.tap { |o| o.delete(:new_group_delay) }
 
         validate_json(data) if validate
 
@@ -232,6 +234,8 @@ module Kennel
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
         end
+
+        invalid!("new_host_delay cannot be set if new_group_delay is set") if data.dig(:options, :new_group_delay) && data.dig(:options, :new_host_delay)
       end
     end
   end
