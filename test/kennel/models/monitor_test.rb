@@ -35,7 +35,6 @@ describe Kennel::Models::Monitor do
         notify_audit: false,
         require_full_window: true,
         new_host_delay: 300,
-        new_group_delay: 60,
         include_tags: true,
         escalation_message: nil,
         evaluation_delay: nil,
@@ -212,6 +211,10 @@ describe Kennel::Models::Monitor do
 
     it "does not allow invalid priority" do
       assert_raises(Kennel::ValidationError) { monitor(priority: -> { 2.0 }).as_json }
+    end
+
+    it "does not include new_host_delay when new_group_delay is provided" do
+      monitor(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).as_json.dig(:options).key?(:new_host_delay).must_equal(false)
     end
 
     describe "is_match validation" do
