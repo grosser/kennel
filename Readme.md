@@ -202,6 +202,25 @@ When manually creating to import, it is best to remove the `id` and delete the m
 When an `id` is set and the original resource is deleted, kennel will fail to update,
 removing the `id` will cause kennel to create a new resource in datadog.
 
+### Organizing large sub-projects / large organiations
+Having many projects (and their sub-resources) can quickly get out of hand.
+
+Use this class structure to keep things organized:
+```ruby
+# projects/project_a/base.rb
+module ProjectA
+  class Base < Kennel::Models::Project
+    defaults(
+      kennel_id: -> { "project_a" },
+      ...
+
+# projects/project_a/monitors/foo_alert.rb
+module ProjectA
+  module Monitors
+    class FooAlert < Kennel::Modesl::Monitor
+      ...
+```
+
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
