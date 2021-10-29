@@ -2,7 +2,7 @@
 module Kennel
   module Models
     class Project < Base
-      settings :team, :parts, :tags, :mention
+      settings :team, :parts, :tags, :mention, :name, :kennel_id
       defaults(
         tags: -> { ["service:#{kennel_id}"] + team.tags },
         mention: -> { team.mention }
