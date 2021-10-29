@@ -16,7 +16,6 @@ Manage Datadog Monitors / Dashboards / Slos as code
 ![](github/screen.png?raw=true)
 
 ### Example code
-
 ```Ruby
 # teams/foo.rb
 module Teams
@@ -53,14 +52,12 @@ end
 
 
 ## Structure
-
  - `projects/` monitors/dashboards/etc scoped by project
  - `teams/` team definitions
  - `parts/` monitors/dashboards/etc that are used by multiple projects
  - `generated/` projects as json, to show current state and proposed changes in PRs
 
 ## Workflows
-
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
@@ -72,7 +69,6 @@ end
  - verify it works by running `rake plan`, it might show some diff, but should not crash
 
 ### Adding a team
-
  - `mention` is used for all team monitors via `super()`
  - `renotify_interval` is used for all team monitors (defaults to `0` / off)
  - `tags` is used for all team monitors/dashboards (defaults to `team:<team-name>`)
@@ -189,14 +185,11 @@ When manually creating to import, it is best to remove the `id` and delete the m
 When an `id` is set and the original resource is deleted, kennel will fail to update,
 removing the `id` will cause kennel to create a new resource in datadog.
 
-
 ### Skipping validations
-
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
 
 ### Linking resources with kennel_id
-
 Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
 this should be used to create dependent resources like monitor + slos,
 so they can be created in a single update and can be re-created if any of them is deleted.
@@ -211,13 +204,11 @@ so they can be created in a single update and can be re-created if any of them i
 |Slo|monitor|`monitor_ids: -> ["foo:bar"]`|
 
 ### Debugging changes locally
-
  - rebase on updated `master` to not undo other changes
  - figure out project name by converting the class name to snake-case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project (monitors: remove mentions while debugging to avoid alert spam)
 
 ### Reuse
-
 Add to `parts/<folder>`.
 
 ```Ruby
@@ -247,15 +238,12 @@ end
 ## Helpers
 
 ### Listing un-muted alerts
-
 Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a given datadog monitor tag.
 
 ### Validating mentions work
-
 `rake kennel:validate_mentions` should run as part of CI
 
 ### Grepping through all of datadog
-
 ```Bash
 rake kennel:dump > tmp/dump
 cat tmp/dump | grep foo
@@ -270,6 +258,5 @@ https://foo.datadog.com/monitor/123
 ```
 
 ### Find all monitors with No-Data
-
 `rake kennel:nodata TAG=team:foo`
 
