@@ -185,7 +185,7 @@ When manually creating to import, it is best to remove the `id` and delete the m
 When an `id` is set and the original resource is deleted, kennel will fail to update,
 removing the `id` will cause kennel to create a new resource in datadog.
 
-### Organizing large sub-projects / large organiations
+### Organizing many projects
 Having many projects (and their sub-resources) can quickly get out of hand.
 
 Use this class structure to keep things organized:
