@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.98.1)
+    kennel (1.98.2)
       faraday (~> 1.8)
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
