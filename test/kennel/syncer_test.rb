@@ -481,9 +481,14 @@ describe Kennel::Syncer do
       slo = slo("a", "c", monitor_ids: ["a:b"])
       expected << slo
       expected << monitor
+
+      # Slightly misleading, since monitor.as_json remains the same object (which
+      # is good enough for api.expects.with), but its contents are mutated by
+      # the syncer.
       api.expects(:create)
         .with("monitor", monitor.as_json)
         .returns(monitor.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
+
       api.expects(:create)
         .with(
           "slo",
