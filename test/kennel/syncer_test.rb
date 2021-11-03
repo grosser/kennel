@@ -40,6 +40,27 @@ describe Kennel::Syncer do
     monitor
   end
 
+  def synthetic(pid, cid, extra = {})
+    synthetic = Kennel::Models::SyntheticTest.new(
+      project(pid),
+      kennel_id: -> { cid },
+      id: -> { extra[:id] },
+      locations: -> { ["aws:us-west-1"] },
+      tags: -> { [] },
+      config: -> { nil },
+      message: -> { nil },
+      subtype: -> { nil },
+      type: -> { nil },
+      name: -> { nil },
+      options: -> { nil }
+    )
+
+    synthetic.as_json.delete_if { |k, _| ![:tags, :message].include?(k) }
+    synthetic.as_json.merge!(extra)
+
+    synthetic
+  end
+
   def dashboard(pid, cid, extra = {})
     dash = Kennel::Models::Dashboard.new(
       project(pid),
@@ -78,6 +99,7 @@ describe Kennel::Syncer do
   let(:monitors) { [] }
   let(:dashboards) { [] }
   let(:slos) { [] }
+  let(:synthetics) { [] }
   let(:expected) { [] }
   let(:project_filter) { [nil] }
   let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter.first) }
@@ -87,7 +109,7 @@ describe Kennel::Syncer do
     api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
     api.stubs(:list).with("monitor", anything).returns(monitors)
     api.stubs(:list).with("slo", anything).returns(data: slos)
-    api.stubs(:list).with("synthetics/tests", anything).returns([])
+    api.stubs(:list).with("synthetics/tests", anything).returns(synthetics)
     api.stubs(:fill_details!)
   end
 
@@ -558,6 +580,30 @@ describe Kennel::Syncer do
         monitors << monitor_api_response("a", "b", id: 123)
         api.expects(:update)
         output
+      end
+    end
+
+    describe "synthetics" do
+      it "can resolve a monitor id from a synthetic" do
+        synthetics << {
+          id: 123,
+          monitor_id: 456,
+          Kennel::Models::SyntheticTest::TRACKING_FIELD => "-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          tags: ["foo"]
+        }
+
+        synthetic = synthetic("a", "b", tags: ["foo"])
+        slo = slo("a", "c", monitor_ids: ["a:b"])
+
+        expected << synthetic
+        expected << slo
+
+        api.expects(:create)
+          .with("slo", slo.as_json)
+          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+
+        output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c /slo?slo_id=1000\n"
+        slo.as_json[:monitor_ids].must_equal [456]
       end
     end
 
