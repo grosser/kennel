@@ -189,26 +189,23 @@ module Kennel
           when "uptime"
             if ids = definition[:monitor_ids]
               definition[:monitor_ids] = ids.map do |id|
-                tracking_id?(id) ? (resolve_link(id, :monitor, id_map, **args) || id) : id
+                resolve(id, :monitor, id_map, **args) || id
               end
             end
           when "alert_graph"
-            if (id = definition[:alert_id]) && tracking_id?(id)
-              definition[:alert_id] = (resolve_link(id, :monitor, id_map, **args) || id).to_s
+            if id = definition[:alert_id]
+              resolved = resolve(id, :monitor, id_map, **args) || id
+              definition[:alert_id] = resolved.to_s # even though it's a monitor id
             end
           when "slo"
-            if (id = definition[:slo_id]) && tracking_id?(id)
-              definition[:slo_id] = (resolve_link(id, :slo, id_map, **args) || id).to_s
+            if id = definition[:slo_id]
+              definition[:slo_id] = resolve(id, :slo, id_map, **args) || id
             end
           end
         end
       end
 
       private
-
-      def tracking_id?(id)
-        id.is_a?(String) && id.include?(":")
-      end
 
       # creates queries from metadata to avoid having to keep q and expression in sync
       #

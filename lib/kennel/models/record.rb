@@ -100,6 +100,18 @@ module Kennel
 
       private
 
+      def resolve(value, type, id_map, force:)
+        if tracking_id?(value)
+          return resolve_link(value, type, id_map, force: force)
+        end
+
+        value
+      end
+
+      def tracking_id?(id)
+        id.is_a?(String) && id.include?(":")
+      end
+
       def resolve_link(tracking_id, type, id_map, force:)
         if id_map.new?(type.to_s, tracking_id)
           if force
