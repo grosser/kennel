@@ -188,11 +188,6 @@ describe Kennel::Models::Dashboard do
         refute resolve.key?(:alert_id)
       end
 
-      it "does not modify regular ids" do
-        definition[:alert_id] = 123
-        resolve[:alert_id].must_equal 123
-      end
-
       it "does not change the alert widget with a string encoded id" do
         definition[:alert_id] = "123"
         resolve[:alert_id].must_equal "123"
