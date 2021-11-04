@@ -20,6 +20,7 @@ describe Kennel::Models::Monitor do
   end
 
   let(:project) { TestProject.new }
+  let(:id_map) { Kennel::IdMap.new }
   let(:expected_basic_json) do
     {
       name: "Kennel::Models::Monitor\u{1F512}",
@@ -288,7 +289,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "does nothing for regular monitors" do
-      mon.resolve_linked_tracking_ids!({}, force: false)
+      mon.resolve_linked_tracking_ids!(id_map, force: false)
       mon.as_json[:query].must_equal "%{#{project.kennel_id}:mon}"
     end
 
@@ -299,18 +300,23 @@ describe Kennel::Models::Monitor do
 
       it "fails when matching monitor is missing" do
         e = assert_raises Kennel::ValidationError do
-          mon.resolve_linked_tracking_ids!({}, force: false)
+          mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
         e.message.must_include "test_project:m1 Unable to find monitor foo:mon_a"
       end
 
       it "does not fail when unable to try to resolve" do
-        mon.resolve_linked_tracking_ids!({ "foo:mon_a" => :new, "bar:mon_b" => :new }, force: false)
+        id_map.add_new("monitor", "foo:mon_a")
+        id_map.add_new("monitor", "bar:mon_b")
+        mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal "%{foo:mon_a} || !%{bar:mon_b}", "query not modified"
       end
 
       it "resolves correctly with a matching monitor" do
-        mon.resolve_linked_tracking_ids!({ "foo:mon_x" => 3, "foo:mon_a" => 1, "bar:mon_b" => 2 }, force: false)
+        id_map.add("monitor", "foo:mon_x", 3)
+        id_map.add("monitor", "foo:mon_a", 1)
+        id_map.add("monitor", "bar:mon_b", 2)
+        mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("1 || !2")
       end
     end
@@ -322,13 +328,16 @@ describe Kennel::Models::Monitor do
 
       it "fails when matching monitor is missing" do
         e = assert_raises Kennel::ValidationError do
-          mon.resolve_linked_tracking_ids!({}, force: false)
+          mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
         e.message.must_include "test_project:m1 Unable to find slo foo:slo_a"
       end
 
       it "resolves correctly with a matching monitor" do
-        mon.resolve_linked_tracking_ids!({ "foo:slo_x" => 3, "foo:slo_a" => 1, "bar:slo_b" => 2 }, force: false)
+        id_map.add("slo", "foo:slo_x", 3)
+        id_map.add("slo", "foo:slo_a", 1)
+        id_map.add("slo", "foo:slo_b", 2)
+        mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("error_budget(\"1\").over(\"7d\") > 123.0")
       end
     end

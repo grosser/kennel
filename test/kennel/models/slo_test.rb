@@ -20,6 +20,7 @@ describe Kennel::Models::Slo do
   end
 
   let(:project) { TestProject.new }
+  let(:id_map) { Kennel::IdMap.new }
   let(:expected_basic_json) do
     {
       name: "Foo\u{1F512}",
@@ -95,32 +96,34 @@ describe Kennel::Models::Slo do
   describe "#resolve_linked_tracking_ids!" do
     it "ignores empty caused by ignore_default" do
       slo = slo(monitor_ids: -> { nil })
-      slo.resolve_linked_tracking_ids!({}, force: false)
+      slo.resolve_linked_tracking_ids!(id_map, force: false)
       refute slo.as_json[:monitor_ids]
     end
 
     it "does nothing for hardcoded ids" do
       slo = slo(monitor_ids: -> { [123] })
-      slo.resolve_linked_tracking_ids!({}, force: false)
+      slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "resolves relative ids" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      slo.resolve_linked_tracking_ids!({ "#{project.kennel_id}:mon" => 123 }, force: false)
+      id_map.add("monitor", "#{project.kennel_id}:mon", 123)
+      slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      slo.resolve_linked_tracking_ids!({ "#{project.kennel_id}:mon" => :new }, force: false)
+      id_map.add_new("monitor", "#{project.kennel_id}:mon")
+      slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
     end
 
     it "fails with typos" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
       assert_raises Kennel::ValidationError do
-        slo.resolve_linked_tracking_ids!({}, force: false)
+        slo.resolve_linked_tracking_ids!(id_map, force: false)
       end
     end
   end

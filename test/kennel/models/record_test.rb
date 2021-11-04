@@ -34,6 +34,8 @@ describe Kennel::Models::Record do
     )
   end
 
+  let(:id_map) { Kennel::IdMap.new }
+
   describe "#initialize" do
     it "complains when passing invalid project" do
       e = assert_raises(ArgumentError) { TestRecord.new(123) }
@@ -54,25 +56,30 @@ describe Kennel::Models::Record do
     let(:base) { Kennel::Models::Monitor.new(TestProject.new, kennel_id: -> { "test" }) }
 
     it "resolves existing" do
-      base.send(:resolve_link, "foo", :monitor, { "foo" => 2 }, force: false).must_equal 2
+      id_map.add("monitor", "foo:bar", 2)
+      id_map.add("monitor", "foo:bar", 2)
+      base.send(:resolve_link, "foo:bar", :monitor, id_map, force: false).must_equal 2
     end
 
     it "warns when trying to resolve" do
-      base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: false).must_be_nil
+      id_map.add_new("monitor", "foo:bar")
+      base.send(:resolve_link, "foo:bar", :monitor, id_map, force: false).must_be_nil
     end
 
     it "fails when forcing resolve because of a circular dependency" do
+      id_map.add_new("monitor", "foo:bar")
       e = assert_raises Kennel::ValidationError do
-        base.send(:resolve_link, "foo", :monitor, { "foo" => :new }, force: true)
+        base.send(:resolve_link, "foo:bar", :monitor, id_map, force: true)
       end
       e.message.must_include "circular dependency"
     end
 
     it "fails when trying to resolve but it is unresolvable" do
+      id_map.add("monitor", "foo:bar", 1)
       e = assert_raises Kennel::ValidationError do
-        base.send(:resolve_link, "foo", :monitor, { "bar" => 1 }, force: false)
+        base.send(:resolve_link, "foo:xyz", :monitor, id_map, force: false)
       end
-      e.message.must_include "test_project:test Unable to find monitor foo"
+      e.message.must_include "test_project:test Unable to find monitor foo:xyz"
     end
   end
 

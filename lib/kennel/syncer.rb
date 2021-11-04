@@ -122,7 +122,7 @@ module Kennel
     def calculate_diff
       @update = []
       @delete = []
-      @id_map = {}
+      @id_map = IdMap.new
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
 
@@ -254,11 +254,14 @@ module Kennel
     end
 
     def populate_id_map(expected, actual)
+      expected.each do |e|
+        @id_map.add_new(e.class.api_resource, e.tracking_id)
+      end
+
       actual.each do |a|
         next unless tracking_id = a.fetch(:tracking_id)
-        @id_map[tracking_id] = a.fetch(:id)
+        @id_map.add(a.fetch(:klass).api_resource, tracking_id, a.fetch(:id))
       end
-      expected.each { |e| @id_map[e.tracking_id] ||= :new }
     end
 
     def resolve_linked_tracking_ids!(list, force: false)

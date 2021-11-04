@@ -101,8 +101,7 @@ module Kennel
       private
 
       def resolve_link(tracking_id, type, id_map, force:)
-        id = id_map[tracking_id]
-        if id == :new
+        if id_map.new?(type.to_s, tracking_id)
           if force
             invalid!(
               "#{type} #{tracking_id} was referenced but is also created by the current run.\n" \
@@ -111,7 +110,7 @@ module Kennel
           else
             nil # will be re-resolved after the linked object was created
           end
-        elsif id
+        elsif id = id_map.get(type.to_s, tracking_id)
           id
         else
           invalid! "Unable to find #{type} #{tracking_id} (does not exist and is not being created by the current run)"
