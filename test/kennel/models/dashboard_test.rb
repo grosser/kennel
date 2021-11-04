@@ -223,16 +223,16 @@ describe Kennel::Models::Dashboard do
 
       it "resolves the slo widget with full id" do
         definition[:slo_id] = "#{project.kennel_id}:b"
-        id_map.add("slo", "a:c", 1)
-        id_map.add("slo", "#{project.kennel_id}:b", 123)
+        id_map.add("slo", "a:c", "1")
+        id_map.add("slo", "#{project.kennel_id}:b", "123")
         resolved = resolve
         resolved[:slo_id].must_equal "123"
       end
 
       it "resolves nested slo widget with full id" do
         definition[:widgets] = [{ definition: { slo_id: "#{project.kennel_id}:b", type: "slo" } }]
-        id_map.add("slo", "a:c", 1)
-        id_map.add("slo", "#{project.kennel_id}:b", 123)
+        id_map.add("slo", "a:c", "1")
+        id_map.add("slo", "#{project.kennel_id}:b", "123")
         resolved = resolve
         resolved[:widgets][0][:definition][:slo_id].must_equal "123"
       end

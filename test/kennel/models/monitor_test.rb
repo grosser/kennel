@@ -334,9 +334,9 @@ describe Kennel::Models::Monitor do
       end
 
       it "resolves correctly with a matching monitor" do
-        id_map.add("slo", "foo:slo_x", 3)
-        id_map.add("slo", "foo:slo_a", 1)
-        id_map.add("slo", "foo:slo_b", 2)
+        id_map.add("slo", "foo:slo_x", "3")
+        id_map.add("slo", "foo:slo_a", "1")
+        id_map.add("slo", "foo:slo_b", "2")
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("error_budget(\"1\").over(\"7d\") > 123.0")
       end

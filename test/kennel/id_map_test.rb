@@ -15,10 +15,10 @@ describe Kennel::IdMap do
     id_map = Kennel::IdMap.new
 
     id_map.add("monitor", "a:b", 1)
-    id_map.add("slo", "a:b", 2)
+    id_map.add("slo", "a:b", "2")
 
     id_map.get("monitor", "a:b").must_equal 1
-    id_map.get("slo", "a:b").must_equal 2
+    id_map.get("slo", "a:b").must_equal "2"
   end
 
   it "stores new values" do
