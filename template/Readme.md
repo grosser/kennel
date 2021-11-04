@@ -189,7 +189,7 @@ removing the `id` will cause kennel to create a new resource in datadog.
 Having many projects (and their sub-resources) can quickly get out of hand.
 
 Use this class structure to keep things organized:
-```ruby
+```Ruby
 # projects/project_a/base.rb
 module ProjectA
   class Base < Kennel::Models::Project
@@ -200,7 +200,7 @@ module ProjectA
 # projects/project_a/monitors/foo_alert.rb
 module ProjectA
   module Monitors
-    class FooAlert < Kennel::Modesl::Monitor
+    class FooAlert < Kennel::Models::Monitor
       ...
 ```
 

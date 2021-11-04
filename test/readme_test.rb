@@ -18,10 +18,12 @@ describe "Readme.md" do
     # code blocks with line number so when the eval fails we get a usable error
     code_blocks = lines
       .each_with_index.map { |_, n| n } # we only care for line numbers
-      .select { |l| lines[l].include?("```") } # start or end of block
+      .select { |l| lines[l].include?("```") } # ignore start or end of block
       .each_slice(2) # group by blocks
       .select { |start, _| lines[start].include?(ruby_block_start) } # only ruby code blocks
       .map { |start, stop| [lines[(start + 1)...stop].join, start + 2] } # grab block of code
+
+    code_blocks.reject! { |block, _| block.match?(/^\s+\.\.\./) } # ignore broken blocks
 
     code_blocks.each { |block, line| eval(block, nil, readme, line) } # rubocop:disable Security/Eval
 
