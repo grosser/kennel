@@ -3,6 +3,7 @@ require "English"
 require "kennel"
 require "kennel/unmuted_alerts"
 require "kennel/importer"
+require "json"
 
 module Kennel
   module Tasks
@@ -89,7 +90,7 @@ namespace :kennel do
     Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
   end
 
-  desc "show monitors with no data by TAG, for example TAG=team:foo"
+  desc "show monitors with no data by TAG, for example TAG=team:foo [THRESHOLD_DAYS=7] [FORMAT=json]"
   task nodata: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
     monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
@@ -97,16 +98,45 @@ namespace :kennel do
     monitors.reject! { |m| m[:tags].include? "nodata:ignore" }
     if monitors.any?
       Kennel.err.puts <<~TEXT
-        This is a useful task to find monitors that have mis-spelled metrics or never received data at any time.
-        To ignore monitors with nodata, tag the monitor with "nodata:ignore"
+        To ignore monitors with expected nodata, tag it with "nodata:ignore"
 
       TEXT
     end
 
+    now = Time.now
     monitors.each do |m|
-      Kennel.out.puts m[:name]
-      Kennel.out.puts Kennel::Utils.path_to_url("/monitors/#{m[:id]}")
-      Kennel.out.puts
+      m[:days_in_no_data] =
+        if m[:overall_state_modified]
+          since = Date.parse(m[:overall_state_modified]).to_time
+          ((now - since) / (24 * 60 * 60)).to_i
+        else
+          999
+        end
+    end
+
+    if threshold = ENV["THRESHOLD_DAYS"]
+      monitors.select! { |m| m[:days_in_no_data] > Integer(threshold) }
+    end
+
+    monitors.each { |m| m[:url] = Kennel::Utils.path_to_url("/monitors/#{m[:id]}") }
+
+    if ENV["FORMAT"] == "json"
+      report = monitors.map do |m|
+        match = m[:message].to_s.match(/-- Managed by kennel (\S+:\S+) in (\S+), /) || []
+        m.slice(:url, :name, :tags, :days_in_no_data).merge(
+          kennel_tracking_id: match[1],
+          kennel_source: match[2]
+        )
+      end
+
+      Kennel.out.puts JSON.pretty_generate(report)
+    else
+      monitors.each do |m|
+        Kennel.out.puts m[:name]
+        Kennel.out.puts Kennel::Utils.path_to_url("/monitors/#{m[:id]}")
+        Kennel.out.puts "No data since #{m[:days_in_no_data]}d"
+        Kennel.out.puts
+      end
     end
   end
 
