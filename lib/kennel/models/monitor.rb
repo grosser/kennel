@@ -214,26 +214,46 @@ module Kennel
         end
 
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
-          # verify is_match/is_exact_match uses available variables
-          message = data.fetch(:message)
-          used = message.scan(/{{\s*([#^]is(?:_exact)?_match)\s*([^\s}]+)/)
-          if used.any?
-            allowed = data.fetch(:query)[/by\s*[({]([^})]+)[})]/, 1]
-              .to_s.gsub(/["']/, "").split(/\s*,\s*/)
-              .map! { |w| %("#{w}.name") }
-            used.uniq.each do |match, group|
-              next if allowed.include?(group)
-              invalid!(
-                "#{match} used with #{group}, but can only be used with #{allowed.join(", ")}. " \
-                "Group the query by #{group.sub(".name", "").tr('"', "")} or change the #{match}"
-              )
-            end
-          end
+          validate_message_variables(data)
         end
 
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
         end
+      end
+
+      # verify is_match/is_exact_match and {{foo.name}} uses available variables
+      def validate_message_variables(data)
+        message = data.fetch(:message)
+
+        used =
+          message.scan(/{{\s*(?:[#^]is(?:_exact)?_match)\s*"([^\s}]+)"/) + # {{#is_match "environment.name" "production"}}
+          message.scan(/{{\s*([^}]+\.name)\s*}}/) # Pod {{pod.name}} failed
+        return if used.empty?
+        used.flatten!(1)
+        used.uniq!
+
+        # TODO
+        # - also match without by
+        # - separate parsers for query and service
+        # - service must always allow `host`, maybe others
+        return unless match = data.fetch(:query).match(/(?:{([^}]*)}\s*)?by\s*[({]([^})]+)[})]/)
+
+        allowed =
+          match[1].to_s.split(/\s*,\s*/).map { |k| k.split(":", 2)[-2] } + # {a:b} -> a TODO: does not work for service check
+          match[2].to_s.gsub(/["']/, "").split(/\s*,\s*/) # by {a} -> a
+
+        allowed.compact!
+        allowed.uniq!
+        allowed.map! { |w| "#{w.tr('"', "")}.name" }
+
+        forbidden = used - allowed
+        return if forbidden.empty?
+
+        invalid! <<~MSG.rstrip
+          Used #{forbidden.join(", ")} in the message, but can only be used with #{allowed.join(", ")}.
+          Group or filter the query by #{forbidden.map { |f| f.sub(".name", "") }.join(", ")} to use it.
+        MSG
       end
     end
   end
