@@ -335,16 +335,16 @@ describe Kennel::Models::Monitor do
       end
 
       it "does not fail when unable to try to resolve" do
-        id_map.add_new("monitor", "foo:mon_a")
-        id_map.add_new("monitor", "bar:mon_b")
+        id_map.set_new("monitor", "foo:mon_a")
+        id_map.set_new("monitor", "bar:mon_b")
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal "%{foo:mon_a} || !%{bar:mon_b}", "query not modified"
       end
 
       it "resolves correctly with a matching monitor" do
-        id_map.add("monitor", "foo:mon_x", 3)
-        id_map.add("monitor", "foo:mon_a", 1)
-        id_map.add("monitor", "bar:mon_b", 2)
+        id_map.set("monitor", "foo:mon_x", 3)
+        id_map.set("monitor", "foo:mon_a", 1)
+        id_map.set("monitor", "bar:mon_b", 2)
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("1 || !2")
       end
@@ -363,9 +363,9 @@ describe Kennel::Models::Monitor do
       end
 
       it "resolves correctly with a matching monitor" do
-        id_map.add("slo", "foo:slo_x", "3")
-        id_map.add("slo", "foo:slo_a", "1")
-        id_map.add("slo", "foo:slo_b", "2")
+        id_map.set("slo", "foo:slo_x", "3")
+        id_map.set("slo", "foo:slo_a", "1")
+        id_map.set("slo", "foo:slo_b", "2")
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("error_budget(\"1\").over(\"7d\") > 123.0")
       end

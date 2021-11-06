@@ -60,18 +60,18 @@ describe Kennel::Models::Record do
     end
 
     it "resolves existing" do
-      id_map.add("monitor", "foo:bar", 2)
-      id_map.add("monitor", "foo:bar", 2)
+      id_map.set("monitor", "foo:bar", 2)
+      id_map.set("monitor", "foo:bar", 2)
       base.send(:resolve, "foo:bar", :monitor, id_map, force: false).must_equal 2
     end
 
     it "warns when trying to resolve" do
-      id_map.add_new("monitor", "foo:bar")
+      id_map.set_new("monitor", "foo:bar")
       base.send(:resolve, "foo:bar", :monitor, id_map, force: false).must_be_nil
     end
 
     it "fails when forcing resolve because of a circular dependency" do
-      id_map.add_new("monitor", "foo:bar")
+      id_map.set_new("monitor", "foo:bar")
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve, "foo:bar", :monitor, id_map, force: true)
       end
@@ -79,7 +79,7 @@ describe Kennel::Models::Record do
     end
 
     it "fails when trying to resolve but it is unresolvable" do
-      id_map.add("monitor", "foo:bar", 1)
+      id_map.set("monitor", "foo:bar", 1)
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve, "foo:xyz", :monitor, id_map, force: false)
       end

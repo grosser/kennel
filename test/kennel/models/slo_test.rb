@@ -108,14 +108,14 @@ describe Kennel::Models::Slo do
 
     it "resolves relative ids" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      id_map.add("monitor", "#{project.kennel_id}:mon", 123)
+      id_map.set("monitor", "#{project.kennel_id}:mon", 123)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      id_map.add_new("monitor", "#{project.kennel_id}:mon")
+      id_map.set_new("monitor", "#{project.kennel_id}:mon")
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
     end
