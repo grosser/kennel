@@ -12,6 +12,7 @@ describe Kennel::Models::Dashboard do
   end
 
   let(:project) { TestProject.new }
+  let(:id_map) { Kennel::IdMap.new }
   let(:expected_json) do
     {
       layout_type: "ordered",
@@ -136,8 +137,8 @@ describe Kennel::Models::Dashboard do
   describe "#resolve_linked_tracking_ids" do
     let(:definition) { dashboard_with_requests.as_json[:widgets][0][:definition] }
 
-    def resolve(map = {}, force: false)
-      dashboard_with_requests.resolve_linked_tracking_ids!(map, force: force)
+    def resolve(force: false)
+      dashboard_with_requests.resolve_linked_tracking_ids!(id_map, force: force)
       dashboard_with_requests.as_json[:widgets][0][:definition]
     end
 
@@ -164,14 +165,17 @@ describe Kennel::Models::Dashboard do
 
       it "resolves full id" do
         definition[:monitor_ids] = ["#{project.kennel_id}:b"]
-        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        id_map.add("monitor", "a:c", 1)
+        id_map.add("monitor", "#{project.kennel_id}:b", 123)
+        resolved = resolve
         resolved[:monitor_ids].must_equal [123]
       end
 
       it "fail hard when id is still missing after dependent monitors were created by syncer" do
         definition[:monitor_ids] = ["missing:the_id"]
+        id_map.add_new("monitor", "missing:the_id")
         e = assert_raises Kennel::ValidationError do
-          resolve({ "missing:the_id" => :new }, force: true)
+          resolve(force: true)
         end
         e.message.must_include "circular dependency"
       end
@@ -184,11 +188,6 @@ describe Kennel::Models::Dashboard do
         refute resolve.key?(:alert_id)
       end
 
-      it "does not modify regular ids" do
-        definition[:alert_id] = 123
-        resolve[:alert_id].must_equal 123
-      end
-
       it "does not change the alert widget with a string encoded id" do
         definition[:alert_id] = "123"
         resolve[:alert_id].must_equal "123"
@@ -196,13 +195,16 @@ describe Kennel::Models::Dashboard do
 
       it "resolves the alert widget with full id" do
         definition[:alert_id] = "#{project.kennel_id}:b"
-        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        id_map.add("monitor", "a:c", 1)
+        id_map.add("monitor", "#{project.kennel_id}:b", 123)
+        resolved = resolve
         resolved[:alert_id].must_equal "123"
       end
 
       it "does not fail hard when id is missing to not break when adding new monitors" do
         definition[:alert_id] = "a:b"
-        resolve("a:b" => :new)[:alert_id].must_equal "a:b"
+        id_map.add_new("monitor", "a:b")
+        resolve[:alert_id].must_equal "a:b"
       end
     end
 
@@ -216,13 +218,17 @@ describe Kennel::Models::Dashboard do
 
       it "resolves the slo widget with full id" do
         definition[:slo_id] = "#{project.kennel_id}:b"
-        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        id_map.add("slo", "a:c", "1")
+        id_map.add("slo", "#{project.kennel_id}:b", "123")
+        resolved = resolve
         resolved[:slo_id].must_equal "123"
       end
 
       it "resolves nested slo widget with full id" do
         definition[:widgets] = [{ definition: { slo_id: "#{project.kennel_id}:b", type: "slo" } }]
-        resolved = resolve("a:c" => 1, "#{project.kennel_id}:b" => 123)
+        id_map.add("slo", "a:c", "1")
+        id_map.add("slo", "#{project.kennel_id}:b", "123")
+        resolved = resolve
         resolved[:widgets][0][:definition][:slo_id].must_equal "123"
       end
     end

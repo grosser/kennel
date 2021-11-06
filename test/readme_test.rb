@@ -32,7 +32,7 @@ describe "Readme.md" do
 
   it "has language selected for all code blocks so 'working' test above is reliable" do
     code_blocks_starts = File.read(readme).scan(/```.*/).each_slice(2).map(&:first).map(&:strip)
-    code_blocks_starts.uniq.sort.must_equal ["```Bash", ruby_block_start]
+    code_blocks_starts.uniq.sort.must_equal ["```Bash", ruby_block_start, ruby_block_start.downcase]
   end
 
   it "documents all public rake tasks" do

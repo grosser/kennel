@@ -121,7 +121,7 @@ module Kennel
         when "composite", "slo alert"
           type = (as_json[:type] == "composite" ? :monitor : :slo)
           as_json[:query] = as_json[:query].gsub(/%{(.*?)}/) do
-            resolve_link($1, type, id_map, **args) || $&
+            resolve($1, type, id_map, **args) || $&
           end
         end
       end
