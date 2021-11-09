@@ -70,7 +70,8 @@ module Kennel
           path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
           used << File.dirname(path) # only 1 level of sub folders, so this is safe
           used << path
-          write_file_if_necessary(path, JSON.pretty_generate(part.as_json) << "\n")
+          payload = part.as_json.merge(api_resource: part.class.api_resource)
+          write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
         end
 
         # deleting all is slow, so only delete the extras
