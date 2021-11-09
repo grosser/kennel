@@ -260,6 +260,8 @@ module Kennel
 
       actual.each do |a|
         next unless tracking_id = a.fetch(:tracking_id)
+        next unless @id_map.get(a.fetch(:klass).api_resource, tracking_id)
+
         @id_map.set(a.fetch(:klass).api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
           @id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))

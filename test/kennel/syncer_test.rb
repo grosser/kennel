@@ -540,6 +540,13 @@ describe Kennel::Syncer do
       assert_raises(Kennel::ValidationError) { output }.message.must_include "Unable to find"
     end
 
+    it "fails on to-be-deleted dependencies" do
+      monitors << monitor_api_response("a", "b", id: 456)
+      slo = slo("a", "c", monitor_ids: ["a:b"])
+      expected << slo
+      assert_raises(Kennel::ValidationError) { output }.message.must_include "Unable to find"
+    end
+
     describe "with project_filter" do
       let(:project_filter) { ["a"] }
 
