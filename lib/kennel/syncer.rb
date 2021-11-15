@@ -256,6 +256,9 @@ module Kennel
     def populate_id_map(expected, actual)
       expected.each do |e|
         @id_map.set_new(e.class.api_resource, e.tracking_id)
+        if e.class.api_resource == "synthetics/tests"
+          @id_map.set_new(Kennel::Models::Monitor.api_resource, e.tracking_id)
+        end
       end
 
       actual.each do |a|

@@ -591,7 +591,7 @@ describe Kennel::Syncer do
     end
 
     describe "synthetics" do
-      it "can resolve a monitor id from a synthetic" do
+      it "can resolve a monitor id from an existing synthetic" do
         synthetics << {
           id: 123,
           monitor_id: 456,
@@ -610,6 +610,29 @@ describe Kennel::Syncer do
           .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
 
         output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c /slo?slo_id=1000\n"
+        slo.as_json[:monitor_ids].must_equal [456]
+      end
+
+      it "can resolve a monitor id from a new synthetic" do
+        synthetic = synthetic("a", "b", tags: ["foo"])
+        slo = slo("a", "c", monitor_ids: ["a:b"])
+
+        expected << synthetic
+        expected << slo
+
+        api.expects(:create)
+          .with("synthetics/tests", synthetic.as_json)
+          .returns(synthetic.as_json.merge(id: 1001, monitor_id: 456, message: "\n-- Managed by kennel a:b"))
+        api.expects(:create)
+          .with("slo", slo.as_json)
+          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+
+        output.must_equal <<~OUTPUT
+          Creating synthetics/tests a:b
+          \e[1A\e[KCreated synthetics/tests a:b /synthetics/details/1001
+          Creating slo a:c
+          \e[1A\e[KCreated slo a:c /slo?slo_id=1000
+        OUTPUT
         slo.as_json[:monitor_ids].must_equal [456]
       end
     end
