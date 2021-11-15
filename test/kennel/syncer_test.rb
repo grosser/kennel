@@ -179,6 +179,16 @@ describe Kennel::Syncer do
         monitors << monitor_api_response("a", "b", id: 123, message: "")
         output.must_equal "Plan:\nNothing to do\n"
       end
+
+      it "can resolve by tracking id outside of the filter" do
+        # project_filter[0] = nil
+        monitors << monitor_api_response("xxx", "x", id: 123)
+        expected << slo("a", "b", monitor_ids: ["xxx:x"])
+        output.must_equal <<~OUTPUT
+          Plan:
+          Create slo a:b
+        OUTPUT
+      end
     end
 
     it "shows long updates nicely" do
