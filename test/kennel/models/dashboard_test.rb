@@ -173,7 +173,7 @@ describe Kennel::Models::Dashboard do
 
       it "fail hard when id is still missing after dependent monitors were created by syncer" do
         definition[:monitor_ids] = ["missing:the_id"]
-        id_map.set_new("monitor", "missing:the_id")
+        id_map.set("monitor", "missing:the_id", Kennel::IdMap::NEW)
         e = assert_raises Kennel::ValidationError do
           resolve(force: true)
         end
@@ -203,7 +203,7 @@ describe Kennel::Models::Dashboard do
 
       it "does not fail hard when id is missing to not break when adding new monitors" do
         definition[:alert_id] = "a:b"
-        id_map.set_new("monitor", "a:b")
+        id_map.set("monitor", "a:b", Kennel::IdMap::NEW)
         resolve[:alert_id].must_equal "a:b"
       end
     end

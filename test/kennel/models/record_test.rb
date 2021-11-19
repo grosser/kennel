@@ -66,12 +66,12 @@ describe Kennel::Models::Record do
     end
 
     it "warns when trying to resolve" do
-      id_map.set_new("monitor", "foo:bar")
+      id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
       base.send(:resolve, "foo:bar", :monitor, id_map, force: false).must_be_nil
     end
 
     it "fails when forcing resolve because of a circular dependency" do
-      id_map.set_new("monitor", "foo:bar")
+      id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
       e = assert_raises Kennel::ValidationError do
         base.send(:resolve, "foo:bar", :monitor, id_map, force: true)
       end
