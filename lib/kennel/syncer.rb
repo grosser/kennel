@@ -254,19 +254,28 @@ module Kennel
     end
 
     def populate_id_map(expected, actual)
+      # mark everything as new
       expected.each do |e|
-        @id_map.set_new(e.class.api_resource, e.tracking_id)
+        @id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
         if e.class.api_resource == "synthetics/tests"
-          @id_map.set_new(Kennel::Models::Monitor.api_resource, e.tracking_id)
+          @id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
         end
       end
 
+      # override resources that exist with their id
+      project_prefix = @project_filter && "#{@project_filter}:"
       actual.each do |a|
+        # ignore when not managed by kennel
         next unless tracking_id = a.fetch(:tracking_id)
-        next unless @id_map.get(a.fetch(:klass).api_resource, tracking_id) \
-          || (@project_filter && !tracking_id.start_with?("#{@project_filter}:"))
 
-        @id_map.set(a.fetch(:klass).api_resource, tracking_id, a.fetch(:id))
+        # ignore when deleted from the codebase
+        # (when running with project filter we cannot see the other resources in the codebase)
+        api_resource = a.fetch(:klass).api_resource
+        next if
+          !@id_map.get(api_resource, tracking_id) &&
+          (!project_prefix || tracking_id.start_with?(project_prefix))
+
+        @id_map.set(api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
           @id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))
         end

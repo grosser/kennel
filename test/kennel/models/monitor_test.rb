@@ -335,8 +335,8 @@ describe Kennel::Models::Monitor do
       end
 
       it "does not fail when unable to try to resolve" do
-        id_map.set_new("monitor", "foo:mon_a")
-        id_map.set_new("monitor", "bar:mon_b")
+        id_map.set("monitor", "foo:mon_a", Kennel::IdMap::NEW)
+        id_map.set("monitor", "bar:mon_b", Kennel::IdMap::NEW)
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal "%{foo:mon_a} || !%{bar:mon_b}", "query not modified"
       end

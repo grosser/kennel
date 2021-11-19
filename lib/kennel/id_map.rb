@@ -15,10 +15,6 @@ module Kennel
       @map[type][tracking_id] = id
     end
 
-    def set_new(type, tracking_id)
-      @map[type][tracking_id] = NEW
-    end
-
     def new?(type, tracking_id)
       @map[type][tracking_id] == NEW
     end

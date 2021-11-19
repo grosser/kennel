@@ -24,7 +24,7 @@ describe Kennel::IdMap do
   it "stores new values" do
     id_map = Kennel::IdMap.new
     id_map.set("monitor", "a:b", 1)
-    id_map.set_new("monitor", "a:c")
+    id_map.set("monitor", "a:c", Kennel::IdMap::NEW)
 
     id_map.new?("monitor", "a:b").must_equal false
     id_map.new?("monitor", "a:c").must_equal true

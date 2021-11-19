@@ -115,7 +115,7 @@ describe Kennel::Models::Slo do
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      id_map.set_new("monitor", "#{project.kennel_id}:mon")
+      id_map.set("monitor", "#{project.kennel_id}:mon", Kennel::IdMap::NEW)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
     end
