@@ -256,11 +256,15 @@ module Kennel
     def populate_id_map(expected, actual)
       expected.each do |e|
         @id_map.set_new(e.class.api_resource, e.tracking_id)
+        if e.class.api_resource == "synthetics/tests"
+          @id_map.set_new(Kennel::Models::Monitor.api_resource, e.tracking_id)
+        end
       end
 
       actual.each do |a|
         next unless tracking_id = a.fetch(:tracking_id)
-        next unless @id_map.get(a.fetch(:klass).api_resource, tracking_id)
+        next unless @id_map.get(a.fetch(:klass).api_resource, tracking_id) \
+          || (@project_filter && !tracking_id.start_with?("#{@project_filter}:"))
 
         @id_map.set(a.fetch(:klass).api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
