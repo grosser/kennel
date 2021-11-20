@@ -363,10 +363,27 @@ describe Kennel::Syncer do
         TEXT
       end
 
-      it "complains when id was not found" do
+      it "complains when id was not found (with strict imports)" do
         monitors.pop
         e = assert_raises(RuntimeError) { syncer.plan }
         e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
+      end
+
+      it "complains when id was not found (without strict imports)" do
+        old_setting = Kennel.strict_imports
+
+        begin
+          Kennel.strict_imports = false
+          monitors.pop
+
+          output.must_equal <<~TXT
+            Plan:
+            Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
+            Create monitor a:b
+          TXT
+        ensure
+          Kennel.strict_imports = old_setting
+        end
       end
     end
   end

@@ -18,6 +18,7 @@ module Kennel
       if noop?
         Kennel.out.puts Utils.color(:green, "Nothing to do")
       else
+        @warnings.each { |message| Kennel.out.puts Utils.color(:yellow, "Warning: #{message}") }
         print_plan "Create", @create, :green
         print_plan "Update", @update, :yellow
         print_plan "Delete", @delete, :red
@@ -120,6 +121,7 @@ module Kennel
     end
 
     def calculate_diff
+      @warnings = []
       @update = []
       @delete = []
       @id_map = IdMap.new
@@ -181,7 +183,11 @@ module Kennel
       @expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
-        raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{e.id} }` line."
+        if Kennel.strict_imports
+          raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."
+        else
+          @warnings << "#{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."
+        end
       end
     end
 

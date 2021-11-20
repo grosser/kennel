@@ -42,9 +42,10 @@ module Kennel
 
   @out = $stdout
   @err = $stderr
+  @strict_imports = true
 
   class << self
-    attr_accessor :out, :err
+    attr_accessor :out, :err, :strict_imports
 
     def generate
       store generated

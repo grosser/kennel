@@ -76,6 +76,7 @@ namespace :kennel do
     is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push")
     task_name =
       if on_default_branch && is_push
+        Kennel.strict_imports = false
         "kennel:update_datadog"
       else
         "kennel:plan" # show plan in CI logs
