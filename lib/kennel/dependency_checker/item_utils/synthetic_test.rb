@@ -8,7 +8,7 @@ module Kennel
 
       class SyntheticTest < Base
         def kennel_id_text
-          nil
+          object.fetch(:message)
         end
 
         def dependencies
