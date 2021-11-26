@@ -14,6 +14,7 @@ module Kennel
         def dependencies
           require 'set'
           deps = Set.new
+          scan_text_for_dependencies(object[:description], "dash desc") { |dep| deps.add(dep) }
           each_dependency(object.fetch(:widgets)) { |dep| deps.add(dep) }
           deps
         end
@@ -29,6 +30,7 @@ module Kennel
             end
 
             if t == "note"
+              scan_text_for_dependencies(w[:content], "w note", &block)
               w[:content] = :dummy # human text
             end
 
@@ -75,6 +77,7 @@ module Kennel
             end
 
             w[:custom_links]&.each do |link|
+              scan_text_for_dependencies(link[:link], "w custom links", &block)
               link[:link] = :dummy
               link[:label] = :dummy
             end

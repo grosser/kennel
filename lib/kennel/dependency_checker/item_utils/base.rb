@@ -23,6 +23,25 @@ module Kennel
           KennelId.new(id: m[1], in: m[2])
         end
 
+        protected
+
+        def scan_text_for_dependencies(text, _context)
+          text&.scan(/https:\/\/zendesk\.datadoghq\.com\/dashboard\/(\w\w\w-\w\w\w-\w\w\w)\//) do |id, _|
+            # puts "found dashboard #{id} in #{context}"
+            yield ResourceId.new(resource: "dashboard", id: id)
+          end
+
+          text&.scan(/https:\/\/zendesk\.datadoghq\.com\/monitors\/(\d+)\//) do |id, _|
+            # puts "found monitor #{id} in #{context}"
+            yield ResourceId.new(resource: "monitor", id: id)
+          end
+
+          text&.scan(/https:\/\/zendesk\.datadoghq\.com\/slo\?(?:\w+=\w+&)*slo_id=(\w+)/) do |id, _|
+            # puts "found slo #{id} in #{context}"
+            yield ResourceId.new(resource: "slo", id: id)
+          end
+        end
+
       end
     end
   end

@@ -71,12 +71,12 @@ namespace :kennel do
     dependencies = Kennel::DependencyChecker::Collector.new(everything)
       .collect
 
-    fragile = Kennel::DependencyChecker::Reporter.new(base_url: ENV['BASE_URL'])
+    report = Kennel::DependencyChecker::Reporter.new(base_url: ENV['BASE_URL'])
       .report(dependencies)
 
     out = "tmp/fragile.json"
     Tempfile.open(out, File.dirname(out)) do |f|
-      f.puts JSON.generate(fragile: fragile)
+      f.puts JSON.generate(dependencies: report)
       f.flush
       f.chmod 0o644
       File.rename f.path, out

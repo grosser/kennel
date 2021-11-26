@@ -12,7 +12,11 @@ module Kennel
         end
 
         def dependencies
-          nil
+          found = Set.new
+
+          scan_text_for_dependencies(object[:message], "synth message") { |dep| found.add(dep) }
+
+          found
         end
 
         def url
