@@ -79,9 +79,10 @@ module Kennel
           end
         next if !old || !old["id"]
 
-        Kennel.out.puts(
-          Utils.color(:red, "WARNING: deleting #{api_resource} #{tracking_id} will break #{DEFAULT_BRANCH} branch")
-        )
+        Kennel.out.puts(Utils.color(:red, <<~WARN.rstrip))
+          WARNING: deleting #{api_resource} #{tracking_id} from a branch will break #{DEFAULT_BRANCH} branch.
+          (safe to merge to #{DEFAULT_BRANCH} though)
+        WARN
       end
     end
 

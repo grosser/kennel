@@ -450,7 +450,8 @@ describe Kennel::Syncer do
           syncer.expects(:`).returns('{"id":123}')
           assert syncer.confirm
           stdout.string.must_equal <<~TXT
-            \e[31mWARNING: deleting monitor a:b will break master branch\e[0m
+            \e[31mWARNING: deleting monitor a:b from a branch will break master branch.
+            (safe to merge to master though)\e[0m
           TXT
         end
 
