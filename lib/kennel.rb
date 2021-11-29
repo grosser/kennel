@@ -2,7 +2,6 @@
 require "faraday"
 require "json"
 require "zeitwerk"
-require "shellwords"
 require "English"
 
 require "kennel/version"
