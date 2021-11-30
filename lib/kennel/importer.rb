@@ -137,7 +137,7 @@ module Kennel
             pretty = convert_strings_to_heredoc(pretty)
 
             "\n#{pretty}\n  "
-          elsif k == :message
+          elsif [:message, :description].include?(k)
             "\n    <<~TEXT\n#{v.each_line.map { |l| l.strip.empty? ? "\n" : "      #{l}" }.join}\n      \#{super()}\n    TEXT\n  "
           elsif k == :tags
             " super() + #{v.inspect} "
