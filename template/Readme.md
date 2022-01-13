@@ -10,7 +10,7 @@ Manage Datadog Monitors / Dashboards / Slos as code
  - No copy-pasting of ids to create new resources
  - Automated cleanup when removing code
  - [Helpers](#helpers) for automating common tasks
- 
+
 ### Applying changes
 
 ![](github/screen.png?raw=true)
@@ -50,7 +50,6 @@ class Bar < Kennel::Models::Project
 end
 ```
 
-
 ## Structure
  - `projects/` monitors/dashboards/etc scoped by project
  - `teams/` team definitions
@@ -58,6 +57,7 @@ end
  - `generated/` projects as json, to show current state and proposed changes in PRs
 
 ## Workflows
+
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`

@@ -10,7 +10,7 @@ Manage Datadog Monitors / Dashboards / Slos as code
  - No copy-pasting of ids to create new resources
  - Automated cleanup when removing code
  - [Helpers](#helpers) for automating common tasks
- 
+
 ### Applying changes
 
 ![](template/github/screen.png?raw=true)
@@ -49,8 +49,8 @@ class Bar < Kennel::Models::Project
   )
 end
 ```
-
 <!-- NOT IN template/Readme.md  -->
+
 ## Installation
  - create a new private `kennel` repo for your organization (do not fork this repo)
  - use the template folder as starting point:
@@ -74,6 +74,7 @@ end
 
 ## Workflows
 <!-- ONLY IN template/Readme.md
+
 ### Setup
  - clone the repo
  - `gem install bundler && bundle install`
