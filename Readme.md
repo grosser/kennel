@@ -149,6 +149,10 @@ end
  - make a PR ... get reviewed ... merge
  - datadog is updated by CI
 
+### Deleting
+
+Remove the code that created the resource. The next update will delete it (see above for PR workflow).
+
 ### Adding a new dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to create a dashboard
  - see below
