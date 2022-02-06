@@ -40,7 +40,7 @@ module Kennel
       private
 
       def validate_setting_exist(name)
-        return if !@settings || @settings.include?(name)
+        return if @settings.include?(name)
         supported = @settings.map(&:inspect)
         raise ArgumentError, "Unsupported setting #{name.inspect}, supported settings are #{supported.join(", ")}"
       end
