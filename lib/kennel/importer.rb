@@ -138,7 +138,7 @@ module Kennel
 
             "\n#{pretty}\n  "
           elsif [:message, :description].include?(k)
-            "\n    <<~TEXT\n#{v.each_line.map { |l| l.strip.empty? ? "\n" : "      #{l}" }.join}\n      \#{super()}\n    TEXT\n  "
+            "\n    <<~TEXT\n#{v.to_s.each_line.map { |l| l.strip.empty? ? "\n" : "      #{l}" }.join}\n      \#{super()}\n    TEXT\n  "
           elsif k == :tags
             " super() + #{v.inspect} "
           else

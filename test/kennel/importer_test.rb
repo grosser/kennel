@@ -402,6 +402,26 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "can import new dashboard with nl description" do
+      response = { id: "abc", title: "hello", description: nil }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "hello" },
+          id: -> { "abc" },
+          kennel_id: -> { "hello" },
+          description: -> {
+            <<~TEXT
+        
+              \#{super()}
+            TEXT
+          }
+        )
+      RUBY
+    end
+
     it "simplifies styles" do
       response = {
         id: "abc",
