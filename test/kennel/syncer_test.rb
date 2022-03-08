@@ -444,7 +444,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b /monitors#123/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#123/edit
       TXT
     end
 
@@ -455,7 +455,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b /monitors#123/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#123/edit
       TXT
     end
 
@@ -464,8 +464,8 @@ describe Kennel::Syncer do
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
-        Updating monitor a:b /monitors#123/edit
-        \e[1A\033[KUpdated monitor a:b /monitors#123/edit
+        Updating monitor a:b https://app.datadoghq.com/monitors#123/edit
+        \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors#123/edit
       TXT
     end
 
@@ -501,9 +501,9 @@ describe Kennel::Syncer do
         ).returns(id: 2)
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b /monitors#1/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#1/edit
         Creating slo a:c
-        \e[1A\033[KCreated slo a:c /slo?slo_id=2
+        \e[1A\033[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=2
       TXT
     end
 
@@ -543,8 +543,8 @@ describe Kennel::Syncer do
         monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor")
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
         output.must_equal <<~TXT
-          Updating monitor a:b /monitors#123/edit
-          \e[1A\033[KUpdated monitor a:b /monitors#123/edit
+          Updating monitor a:b https://app.datadoghq.com/monitors#123/edit
+          \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors#123/edit
         TXT
       end
 
@@ -589,7 +589,7 @@ describe Kennel::Syncer do
           .with("slo", slo.as_json)
           .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
 
-        output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c /slo?slo_id=1000\n"
+        output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=1000\n"
         slo.as_json[:monitor_ids].must_equal [456]
       end
 
@@ -609,9 +609,9 @@ describe Kennel::Syncer do
 
         output.must_equal <<~OUTPUT
           Creating synthetics/tests a:b
-          \e[1A\e[KCreated synthetics/tests a:b /synthetics/details/1001
+          \e[1A\e[KCreated synthetics/tests a:b https://app.datadoghq.com/synthetics/details/1001
           Creating slo a:c
-          \e[1A\e[KCreated slo a:c /slo?slo_id=1000
+          \e[1A\e[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=1000
         OUTPUT
         slo.as_json[:monitor_ids].must_equal [456]
       end
@@ -628,8 +628,8 @@ describe Kennel::Syncer do
         }
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
         output.must_equal <<~TXT
-          Updating dashboard a:b /dashboard/abc
-          \e[1A\033[KUpdated dashboard a:b /dashboard/abc
+          Updating dashboard a:b https://app.datadoghq.com/dashboard/abc
+          \e[1A\033[KUpdated dashboard a:b https://app.datadoghq.com/dashboard/abc
         TXT
       end
 
@@ -638,7 +638,7 @@ describe Kennel::Syncer do
         api.expects(:create).with("dashboard", anything).returns(id: "abc")
         output.must_equal <<~TXT
           Creating dashboard a:b
-          \e[1A\033[KCreated dashboard a:b /dashboard/abc
+          \e[1A\033[KCreated dashboard a:b https://app.datadoghq.com/dashboard/abc
         TXT
       end
     end

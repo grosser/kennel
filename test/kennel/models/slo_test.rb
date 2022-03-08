@@ -130,7 +130,7 @@ describe Kennel::Models::Slo do
 
   describe ".url" do
     it "shows path" do
-      Kennel::Models::Slo.url(111).must_equal "/slo?slo_id=111"
+      Kennel::Models::Slo.url(111).must_equal "https://app.datadoghq.com/slo?slo_id=111"
     end
   end
 

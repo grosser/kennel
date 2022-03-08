@@ -139,8 +139,8 @@ describe Kennel::Utils do
   end
 
   describe ".path_to_url" do
-    it "shows path" do
-      Kennel::Utils.path_to_url("/111").must_equal "/111"
+    it "shows app." do
+      Kennel::Utils.path_to_url("/111").must_equal "https://app.datadoghq.com/111"
     end
 
     it "shows full url" do

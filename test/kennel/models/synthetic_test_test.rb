@@ -72,7 +72,7 @@ describe Kennel::Models::SyntheticTest do
 
   describe ".url" do
     it "builds" do
-      Kennel::Models::SyntheticTest.url("foo").must_equal "/synthetics/details/foo"
+      Kennel::Models::SyntheticTest.url("foo").must_equal "https://app.datadoghq.com/synthetics/details/foo"
     end
   end
 

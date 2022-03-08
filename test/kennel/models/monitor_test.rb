@@ -447,14 +447,8 @@ describe Kennel::Models::Monitor do
   end
 
   describe ".url" do
-    it "shows path" do
-      Kennel::Models::Monitor.url(111).must_equal "/monitors#111/edit"
-    end
-
     it "shows full url" do
-      with_env DATADOG_SUBDOMAIN: "foobar" do
-        Kennel::Models::Monitor.url(111).must_equal "https://foobar.datadoghq.com/monitors#111/edit"
-      end
+      Kennel::Models::Monitor.url(111).must_equal "https://app.datadoghq.com/monitors#111/edit"
     end
   end
 

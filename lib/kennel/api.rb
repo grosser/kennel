@@ -8,7 +8,8 @@ module Kennel
     def initialize(app_key, api_key)
       @app_key = app_key
       @api_key = api_key
-      @client = Faraday.new(url: "https://app.datadoghq.com") { |c| c.adapter :net_http_persistent }
+      url = Utils.path_to_url("", subdomain: "app")
+      @client = Faraday.new(url: url) { |c| c.adapter :net_http_persistent }
     end
 
     def show(api_resource, id, params = {})

@@ -183,7 +183,7 @@ describe Kennel do
       Kennel.update
 
       stderr.string.must_include "press 'y' to continue"
-      stdout.string.must_include "Created monitor temp_project:foo /monitors#123"
+      stdout.string.must_include "Created monitor temp_project:foo https://app.datadoghq.com/monitors#123"
     end
 
     it "does not update when user does not confirm" do

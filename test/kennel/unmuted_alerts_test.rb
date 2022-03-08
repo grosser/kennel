@@ -49,7 +49,7 @@ describe Kennel::UnmutedAlerts do
       end
       out.must_equal <<~TEXT
         monitor_name
-        /monitors/12345
+        https://app.datadoghq.com/monitors/12345
         \e[0mFoo\e[0m\tpod:pod3\t00:00:10
         \e[31mAlert\e[0m\tpod:pod3,project:foo,team:bar\t00:00:10
         \e[31mAlert\e[0m\tpod:pod10\t00:00:10

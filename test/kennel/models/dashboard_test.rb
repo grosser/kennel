@@ -352,7 +352,7 @@ describe Kennel::Models::Dashboard do
 
   describe "#url" do
     it "shows path" do
-      Kennel::Models::Dashboard.url(111).must_equal "/dashboard/111"
+      Kennel::Models::Dashboard.url(111).must_equal "https://app.datadoghq.com/dashboard/111"
     end
 
     it "shows full url" do

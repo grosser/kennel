@@ -64,7 +64,7 @@ describe "tasks" do
 
     it "reports missing data" do
       execute TAG: "team:foo"
-      stdout.string.must_equal "Foo\n/monitors/123\nNo data since 10d\n\n"
+      stdout.string.must_equal "Foo\nhttps://app.datadoghq.com/monitors/123\nNo data since 10d\n\n"
       stderr.string.must_include "nodata:ignore"
     end
 
@@ -111,7 +111,7 @@ describe "tasks" do
         stdout.string.must_equal <<~JSON
           [
             {
-              "url": "/monitors/123",
+              "url": "https://app.datadoghq.com/monitors/123",
               "name": "Foo",
               "tags": [
           
@@ -185,7 +185,7 @@ describe "tasks" do
 
     it "can grep urls" do
       with_env(DUMP: "dump", PATTERN: "foo", URLS: "true") { execute }
-      stdout.string.must_equal "/dashboard/1 # N\n"
+      stdout.string.must_equal "https://app.datadoghq.com/dashboard/1 # N\n"
     end
 
     it "fails when nothing matches" do
