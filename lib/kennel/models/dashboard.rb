@@ -61,6 +61,10 @@ module Kennel
           global_time_target: "0",
           title_align: "left",
           title_size: "16"
+        },
+        "query_table" => {
+          title_align: "left",
+          title_size: "16"
         }
       }.freeze
       SUPPORTED_DEFINITION_OPTIONS = [:events, :markers, :precision].freeze
