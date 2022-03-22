@@ -446,6 +446,31 @@ describe Kennel::Models::Monitor do
     end
   end
 
+  describe "#validate_update!" do
+    it "allows update of name" do
+      existing = monitor
+      wanted = existing.as_json.merge("name" => "new #{existing.name}")
+      diffs = [
+        ["~", "name", existing.name, wanted.fetch("name")]
+      ]
+
+      # Does not raise
+      existing.validate_update!(wanted, diffs)
+    end
+
+    it "disallows update of type" do
+      existing = monitor
+      wanted = existing.as_json.merge("type" => "new #{existing.type}")
+      diffs = [
+        ["~", "type", existing.type, wanted.fetch("type")]
+      ]
+      exception = assert_raises RuntimeError do
+        existing.validate_update!(wanted, diffs)
+      end
+      exception.message.must_match(/datadog.*allow.*type/i)
+    end
+  end
+
   describe ".url" do
     it "shows path" do
       Kennel::Models::Monitor.url(111).must_equal "/monitors#111/edit"
