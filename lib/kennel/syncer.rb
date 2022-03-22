@@ -214,16 +214,8 @@ module Kennel
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
     def validate_plan
-      @create.each do |_, expected|
-        expected.validate_create!
-      end
-
       @update.each do |_, expected, actual, diffs|
         expected.validate_update!(actual, diffs)
-      end
-
-      @delete.each do |_, _, actual|
-        actual.fetch(:klass).validate_delete!(actual)
       end
     end
 
