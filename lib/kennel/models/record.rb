@@ -36,9 +36,6 @@ module Kennel
             raise("did not find tracking id in #{value}")
         end
 
-        def validate_delete!(_actual)
-        end
-
         private
 
         def normalize(_expected, actual)
@@ -99,9 +96,6 @@ module Kennel
 
       def remove_tracking_id
         self.class.remove_tracking_id(as_json)
-      end
-
-      def validate_create!
       end
 
       def validate_update!(_actual, _diffs)
