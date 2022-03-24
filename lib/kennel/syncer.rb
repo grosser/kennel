@@ -214,8 +214,8 @@ module Kennel
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
     def validate_plan
-      @update.each do |_, expected, actual, diffs|
-        expected.validate_update!(actual, diffs)
+      @update.each do |_, expected, actuals, diffs|
+        expected.validate_update!(actuals, diffs)
       end
     end
 

@@ -364,26 +364,14 @@ describe Kennel::Models::Dashboard do
 
   describe "#validate_update!" do
     it "allows update of title" do
-      existing = dashboard_with_requests
-      wanted = existing.as_json.merge("title" => "new #{existing.title}")
-      diffs = [
-        ["~", "title", existing.title, wanted.fetch("title")]
-      ]
-
-      # Does not raise
-      existing.validate_update!(wanted, diffs)
+      dashboard.validate_update!(nil, [["~", "title", "foo", "bar"]])
     end
 
     it "disallows update of layout_type" do
-      existing = dashboard_with_requests
-      wanted = existing.as_json.merge("layout_type" => "new #{existing.layout_type}")
-      diffs = [
-        ["~", "layout_type", existing.layout_type, wanted.fetch("layout_type")]
-      ]
-      exception = assert_raises RuntimeError do
-        existing.validate_update!(wanted, diffs)
+      e = assert_raises Kennel::ValidationError do
+        dashboard.validate_update!(nil, [["~", "layout_type", "foo", "bar"]])
       end
-      exception.message.must_match(/datadog.*allow.*layout_type/i)
+      e.message.must_match(/datadog.*allow.*layout_type/i)
     end
   end
 

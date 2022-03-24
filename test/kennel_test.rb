@@ -46,7 +46,7 @@ describe Kennel do
   # we need to clean up so new definitions of TempProject trigger subclass addition
   # and leftover classes do not break other tests
   after do
-    Kennel::Models::Project.subclasses.clear
+    Kennel::Models::Project.subclasses.delete_if { |c| c.name.match?(/TestProject\d|TempProject/) }
     Object.send(:remove_const, :TempProject) if defined?(TempProject)
     Object.send(:remove_const, :TempProject2) if defined?(TempProject2)
   end
@@ -106,7 +106,9 @@ describe Kennel do
       e = assert_raises(RuntimeError) { with_env(PROJECT: "foo") { Kennel.generate } }
       e.message.must_equal <<~TXT.strip
         foo does not match any projects, try any of these:
+        sub_test_project
         temp_project
+        test_project
       TXT
     end
 
