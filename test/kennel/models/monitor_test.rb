@@ -448,26 +448,14 @@ describe Kennel::Models::Monitor do
 
   describe "#validate_update!" do
     it "allows update of name" do
-      existing = monitor
-      wanted = existing.as_json.merge("name" => "new #{existing.name}")
-      diffs = [
-        ["~", "name", existing.name, wanted.fetch("name")]
-      ]
-
-      # Does not raise
-      existing.validate_update!(wanted, diffs)
+      monitor.validate_update!(nil, [["~", "name", "foo", "bar"]])
     end
 
     it "disallows update of type" do
-      existing = monitor
-      wanted = existing.as_json.merge("type" => "new #{existing.type}")
-      diffs = [
-        ["~", "type", existing.type, wanted.fetch("type")]
-      ]
-      exception = assert_raises RuntimeError do
-        existing.validate_update!(wanted, diffs)
+      e = assert_raises Kennel::ValidationError do
+        monitor.validate_update!(nil, [["~", "type", "foo", "bar"]])
       end
-      exception.message.must_match(/datadog.*allow.*type/i)
+      e.message.must_match(/datadog.*allow.*type/i)
     end
   end
 
