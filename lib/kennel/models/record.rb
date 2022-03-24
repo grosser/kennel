@@ -98,6 +98,9 @@ module Kennel
         self.class.remove_tracking_id(as_json)
       end
 
+      def validate_update!(_actual, _diffs)
+      end
+
       private
 
       def resolve(value, type, id_map, force:)

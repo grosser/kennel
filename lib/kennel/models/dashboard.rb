@@ -209,6 +209,12 @@ module Kennel
         end
       end
 
+      def validate_update!(_actual, diffs)
+        if bad_diff = diffs.find { |diff| diff[1] == "layout_type" }
+          raise "Datadog does not allow update of #{bad_diff[1]} (in #{tracking_id}, #{bad_diff[2].inspect} -> #{bad_diff[3].inspect})"
+        end
+      end
+
       private
 
       # creates queries from metadata to avoid having to keep q and expression in sync
