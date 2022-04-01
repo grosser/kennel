@@ -109,7 +109,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "does not converts threshold values to floats for types that store integers" do
-        monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
+        monitor(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" }).as_json
           .dig(:options, :thresholds, :critical).must_equal 234
       end
     end
@@ -120,7 +120,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "fills default values for service check ok/warning" do
-      json = monitor(critical: -> { 234 }, type: -> { "service check" }).as_json
+      json = monitor(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" }).as_json
       json.dig(:options, :thresholds, :ok).must_equal 1
       json.dig(:options, :thresholds, :warning).must_equal 1
     end
@@ -216,6 +216,12 @@ describe Kennel::Models::Monitor do
 
     it "does not include new_host_delay when new_group_delay is provided" do
       monitor(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).as_json.dig(:options).key?(:new_host_delay).must_equal(false)
+    end
+
+    it "blocks invalid service check query without .by early" do
+      assert_raises(Kennel::ValidationError) do
+        monitor(type: -> { "service check" }).as_json
+      end
     end
 
     describe "is_match validation" do
@@ -394,13 +400,14 @@ describe Kennel::Models::Monitor do
     end
 
     it "ignores include_tags/require_full_window for service alerts" do
-      assert expected_basic_json[:query].sub!("123.0", "123")
+      expected_basic_json[:query] = "foo.by(x)"
       expected_basic_json[:options].delete(:include_tags)
       expected_basic_json[:options].delete(:require_full_window)
       expected_basic_json[:options][:thresholds][:critical] = 123
       diff_resource(
         {
           type: -> { "service check" },
+          query: -> { "foo.by(x)" },
           critical: -> { 123 },
           warning: -> { 1 },
           ok: -> { 1 }

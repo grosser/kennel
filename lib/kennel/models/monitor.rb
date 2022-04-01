@@ -223,6 +223,10 @@ module Kennel
           validate_message_variables(data)
         end
 
+        if type == "service check" && !data[:query].to_s.include?(".by(")
+          invalid! "query must include a .by() at least .by(\"*\")"
+        end
+
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
         end
