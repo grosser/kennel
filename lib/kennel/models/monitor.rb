@@ -253,6 +253,8 @@ module Kennel
           match[1].to_s.split(/\s*,\s*/).map { |k| k.split(":", 2)[-2] } + # {a:b} -> a TODO: does not work for service check
           match[2].to_s.gsub(/["']/, "").split(/\s*,\s*/) # by {a} -> a
 
+        return if allowed.include?("*")
+
         allowed.compact!
         allowed.uniq!
         allowed.map! { |w| "#{w.tr('"', "")}.name" }

@@ -224,7 +224,7 @@ describe Kennel::Models::Monitor do
       end
     end
 
-    describe "is_match validation" do
+    describe "#validate_message_variables" do
       describe "with query alert style queries" do
         let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
 
@@ -312,6 +312,12 @@ describe Kennel::Models::Monitor do
 
         it "passes when using valid is_match" do
           mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
+          mon.as_json
+        end
+
+        it "allows everything when using *" do
+          mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
+          mon.stubs(:query).returns("\"foo\".over(\"bar\").by(\"*\")")
           mon.as_json
         end
       end
