@@ -19,31 +19,33 @@ describe "tasks" do
 
   let(:dump_output) do
     <<~TXT
+      [
       {
         "id": 1,
         "modified_at": 2,
         "name": "N",
         "foo": "bar",
         "api_resource": "dashboard"
-      }
+      },
       {
         "id": 1,
         "modified_at": 2,
         "name": "N",
         "api_resource": "monitor"
-      }
+      },
       {
         "id": 1,
         "modified_at": 2,
         "name": "N",
         "api_resource": "slo"
-      }
+      },
       {
         "id": 1,
         "modified_at": 2,
         "name": "N",
         "api_resource": "synthetics/tests"
       }
+      ]
     TXT
   end
 
@@ -147,12 +149,14 @@ describe "tasks" do
     it "dumps" do
       execute(TYPE: "monitor")
       stdout.string.must_equal <<~JSON
+        [
         {
           "id": 1,
           "modified_at": 2,
           "name": "N",
           "api_resource": "monitor"
         }
+        ]
       JSON
     end
 

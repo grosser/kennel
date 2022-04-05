@@ -165,7 +165,9 @@ namespace :kennel do
       end
     api = Kennel.send(:api)
     list = nil
+    first = true
 
+    Kennel.out.puts "["
     resources.each do |resource|
       Kennel::Progress.progress("Downloading #{resource}") do
         list = api.list(resource)
@@ -173,16 +175,22 @@ namespace :kennel do
       end
       list.each do |r|
         r[:api_resource] = resource
-        Kennel.out.puts JSON.pretty_generate(r)
+        if first
+          first = false
+        else
+          Kennel.out.puts ","
+        end
+        Kennel.out.print JSON.pretty_generate(r)
       end
     end
+    Kennel.out.puts "\n]"
   end
 
   desc "Find items from dump by pattern DUMP= PATTERN= [URLS=true]"
   task dump_grep: :environment do
     file = ENV.fetch("DUMP")
     pattern = Regexp.new ENV.fetch("PATTERN")
-    items = File.read(file).gsub("}\n{", "}--SPLIT--{").split("--SPLIT--")
+    items = File.read(file)[2..-2].gsub("},\n{", "}--SPLIT--{").split("--SPLIT--")
     models = Kennel::Models::Record.api_resource_map
     found = items.grep(pattern)
     exit 1 if found.empty?
