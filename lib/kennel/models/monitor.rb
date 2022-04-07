@@ -76,12 +76,15 @@ module Kennel
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
-            renotify_interval: renotify_interval || 0,
-            renotify_statuses: notify_no_data ? ["alert", "no data"] : ["alert"]
-        }
+            renotify_interval: renotify_interval || 0
+          }
         }
 
         data[:id] = id if id
+
+        if renotify_interval != 0 && !notify_no_data
+          data[:options][:renotify_statuses] =["alert"]
+        end
 
         options = data[:options]
         if data.fetch(:type) != "composite"
