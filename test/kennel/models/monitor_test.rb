@@ -41,6 +41,10 @@ describe Kennel::Models::Monitor do
         evaluation_delay: nil,
         locked: false,
         renotify_interval: 0,
+        renotify_statuses: [
+          "alert",
+          "no data"
+        ],
         thresholds: { critical: 123.0 }
       }
     }
@@ -153,6 +157,12 @@ describe Kennel::Models::Monitor do
         notify_no_data: -> { false },
         no_data_timeframe: -> { 2 }
       ).as_json[:options][:no_data_timeframe].must_be_nil
+    end
+
+    it "sets renotify_statuses to alert only when notify_no_data is false" do
+      monitor(
+        notify_no_data: -> { false },
+        ).as_json[:options][:renotify_statuses].must_equal ["alert"]
     end
 
     it "can set notify_audit" do
