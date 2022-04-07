@@ -81,9 +81,11 @@ module Kennel
         }
 
         data[:id] = id if id
-
-        if renotify_interval != 0 && !notify_no_data
-          data[:options][:renotify_statuses] =["alert"]
+        if renotify_interval != 0
+          statuses = ["alert"]
+          statuses << "no data" if notify_no_data
+          statuses << "warn" if warning
+          data[:options][:renotify_statuses] = statuses
         end
 
         options = data[:options]

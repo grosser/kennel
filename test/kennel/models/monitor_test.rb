@@ -155,11 +155,27 @@ describe Kennel::Models::Monitor do
       ).as_json[:options][:no_data_timeframe].must_be_nil
     end
 
-    it "sets renotify_statuses to alert only when renotify_interval is greater than 1" do
+    it "sets renotify_statuses to alert only when renotify_interval is greater than 1, and notify no data and warning are disabled" do
       monitor(
         renotify_interval: -> { 10 },
         notify_no_data: -> { false },
         ).as_json[:options][:renotify_statuses].must_equal ["alert"]
+    end
+
+    it "sets renotify_statuses to alert and warn when renotify_interval and warning are set" do
+      monitor(
+        renotify_interval: -> { 10 },
+        notify_no_data: -> { false },
+        warning: -> { 10 },
+        ).as_json[:options][:renotify_statuses].must_equal ["alert", "warn"]
+    end
+
+    it "sets renotify_statuses when renotify_interval, warning and no data are set" do
+      monitor(
+        renotify_interval: -> { 10 },
+        notify_no_data: -> { true },
+        warning: -> { 10 },
+        ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
     end
 
     it "do not set renotify_statuses when renotify_interval is 0" do
