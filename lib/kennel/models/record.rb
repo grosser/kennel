@@ -8,6 +8,9 @@ module Kennel
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at,
         :klass, :tracking_id # added by syncer.rb
       ].freeze
+      ALLOWED_KENNEL_ID_CHARS = "a-zA-Z_\\d.-"
+      ALLOWED_KENNEL_ID_FULL = "[#{ALLOWED_KENNEL_ID_CHARS}]+:[#{ALLOWED_KENNEL_ID_CHARS}]+"
+      ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/.freeze
 
       settings :id, :kennel_id
 
@@ -25,7 +28,7 @@ module Kennel
         end
 
         def parse_tracking_id(a)
-          a[self::TRACKING_FIELD].to_s[/-- Managed by kennel (\S+:\S+)/, 1]
+          a[self::TRACKING_FIELD].to_s[/-- Managed by kennel (#{ALLOWED_KENNEL_ID_FULL})/, 1]
         end
 
         # TODO: combine with parse into a single method or a single regex
@@ -76,7 +79,9 @@ module Kennel
       def tracking_id
         @tracking_id ||= begin
           id = "#{project.kennel_id}:#{kennel_id}"
-          raise ValidationError, "#{id} kennel_id cannot include whitespace" if id.match?(/\s/) # <-> parse_tracking_id
+          unless id.match?(ALLOWED_KENNEL_ID_REGEX) # <-> parse_tracking_id
+            raise ValidationError, "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
+          end
           id
         end
       end
