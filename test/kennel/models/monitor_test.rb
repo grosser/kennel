@@ -90,14 +90,6 @@ describe Kennel::Models::Monitor do
       monitor(project: TestProject.new(tags: -> { ["foo"] })).as_json[:tags].must_equal(["foo"])
     end
 
-    it "sets 0 when re-notify is disabled" do
-      monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
-    end
-
-    it "can set re-notify interval" do
-      monitor(renotify_interval: -> { 60 }).as_json[:options][:renotify_interval].must_equal 60
-    end
-
     it "can set require_full_window" do
       monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
     end
@@ -143,51 +135,11 @@ describe Kennel::Models::Monitor do
       monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }).as_json
     end
 
-    it "fails on invalid renotify intervals" do
-      e = assert_raises(RuntimeError) { monitor(renotify_interval: -> { 123 }).as_json }
-      e.message.must_include "test_project:m1 renotify_interval must be one of 0, 10, 20,"
-    end
-
     it "sets no_data_timeframe to `nil` when notify_no_data is false" do
       monitor(
         notify_no_data: -> { false },
         no_data_timeframe: -> { 2 }
       ).as_json[:options][:no_data_timeframe].must_be_nil
-    end
-
-    it "sets renotify_statuses to alert only when renotify_interval is greater than 1, and notify no data and warning are disabled" do
-      monitor(
-        renotify_interval: -> { 10 },
-        notify_no_data: -> { false }
-      ).as_json[:options][:renotify_statuses].must_equal ["alert"]
-    end
-
-    it "sets renotify_statuses to alert and warn when renotify_interval and warning are set" do
-      monitor(
-        renotify_interval: -> { 10 },
-        notify_no_data: -> { false },
-        warning: -> { 10 }
-      ).as_json[:options][:renotify_statuses].must_equal ["alert", "warn"]
-    end
-
-    it "sets renotify_statuses when renotify_interval, warning and no data are set" do
-      monitor(
-        renotify_interval: -> { 10 },
-        notify_no_data: -> { true },
-        warning: -> { 10 }
-      ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
-    end
-
-    it "do not set renotify_statuses when renotify_interval is 0" do
-      monitor(
-        renotify_interval: -> { 0 }
-      ).as_json[:options][:renotify_statuses].must_be_nil
-    end
-
-    it "do not set renotify_statuses when renotify_interval is not defined" do
-      monitor(
-        renotify_interval: -> {}
-      ).as_json[:options][:renotify_statuses].must_be_nil
     end
 
     it "can set notify_audit" do
@@ -256,6 +208,55 @@ describe Kennel::Models::Monitor do
     it "blocks invalid service check query without .by early" do
       assert_raises(Kennel::ValidationError) do
         monitor(type: -> { "service check" }).as_json
+      end
+    end
+
+    describe "renotify_interval" do
+      it "sets 0 when disabled" do
+        monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
+      end
+
+      it "can set" do
+        monitor(renotify_interval: -> { 60 }).as_json[:options][:renotify_interval].must_equal 60
+      end
+
+      it "fails on invalid" do
+        e = assert_raises(RuntimeError) { monitor(renotify_interval: -> { 123 }).as_json }
+        e.message.must_include "test_project:m1 renotify_interval must be one of 0, 10, 20,"
+      end
+    end
+
+    describe "renotify_statuses" do
+      it "sets alert and no-data when renotify_interval is set" do
+        monitor(
+          renotify_interval: -> { 10 }
+        ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data"]
+      end
+
+      it "sets warn when warning is defined" do
+        monitor(
+          renotify_interval: -> { 10 },
+          warning: -> { 10 }
+        ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
+      end
+
+      it "does not set no-data when no-data is disabled" do
+        monitor(
+          renotify_interval: -> { 10 },
+          notify_no_data: -> { false }
+        ).as_json[:options][:renotify_statuses].must_equal ["alert"]
+      end
+
+      it "do not set renotify_statuses when renotify_interval is 0" do
+        monitor(
+          renotify_interval: -> { 0 }
+        ).as_json[:options][:renotify_statuses].must_be_nil
+      end
+
+      it "do not set renotify_statuses when renotify_interval is not defined" do
+        monitor(
+          renotify_interval: -> {}
+        ).as_json[:options][:renotify_statuses].must_be_nil
       end
     end
 
