@@ -111,6 +111,14 @@ module Kennel
         # Datadog requires only either new_group_delay or new_host_delay, never both
         options.delete(options[:new_group_delay] ? :new_host_delay : :new_group_delay)
 
+        # Add in statuses where we would re notify on. Possible values: alert, no data, warn
+        if options[:renotify_interval] != 0
+          statuses = ["alert"]
+          statuses << "no data" if options[:notify_no_data]
+          statuses << "warn" if options.dig(:thresholds, :warning)
+          options[:renotify_statuses] = statuses
+        end
+
         validate_json(data) if validate
 
         @as_json = data
