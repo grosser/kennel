@@ -4,9 +4,9 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
-    def initialize(api, expected, project: nil)
+    def initialize(api, expected, project_filter: nil)
       @api = api
-      @project_filter = project
+      @project_filter = project_filter
       @expected = expected
       calculate_diff
       validate_plan
@@ -252,7 +252,6 @@ module Kennel
       end
 
       # override resources that exist with their id
-      project_prefix = @project_filter && "#{@project_filter}:"
       actual.each do |a|
         # ignore when not managed by kennel
         next unless tracking_id = a.fetch(:tracking_id)
@@ -262,7 +261,7 @@ module Kennel
         api_resource = a.fetch(:klass).api_resource
         next if
           !@id_map.get(api_resource, tracking_id) &&
-          (!project_prefix || tracking_id.start_with?(project_prefix))
+          (!@project_filter || @project_filter.include?(tracking_id.split(":")[0]))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
@@ -279,7 +278,7 @@ module Kennel
       return unless @project_filter
       actual.select! do |a|
         tracking_id = a.fetch(:tracking_id)
-        !tracking_id || tracking_id.start_with?("#{@project_filter}:")
+        !tracking_id || @project_filter.include?(tracking_id.split(":")[0])
       end
     end
   end

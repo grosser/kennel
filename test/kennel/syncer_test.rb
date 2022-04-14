@@ -102,7 +102,7 @@ describe Kennel::Syncer do
   let(:synthetics) { [] }
   let(:expected) { [] }
   let(:project_filter) { [nil] }
-  let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter.first) }
+  let(:syncer) { Kennel::Syncer.new(api, expected, project_filter: project_filter.first) }
 
   before do
     Kennel::Progress.stubs(:print).yields
@@ -162,7 +162,7 @@ describe Kennel::Syncer do
     end
 
     describe "with project filter set" do
-      let(:project_filter) { ["a"] }
+      let(:project_filter) { ["z", "a"] }
 
       it "updates without tracking when previously unmanaged" do
         expected << monitor("a", "b", id: 123)
@@ -270,7 +270,7 @@ describe Kennel::Syncer do
     end
 
     describe "filter" do
-      let(:syncer) { Kennel::Syncer.new(api, expected, project: "a") }
+      let(:syncer) { Kennel::Syncer.new(api, expected, project_filter: ["a"]) }
 
       it "does something when filtered changes" do
         expected << monitor("a", "c")
