@@ -99,7 +99,7 @@ describe Kennel do
     it "does not generate for other projects" do
       write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
       write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
-      with_env(PROJECT: "temp_project:temp_project3") { Kennel.generate }
+      with_env(PROJECT: "temp_project,temp_project3") { Kennel.generate }
       refute File.exist?("generated/temp_project2/foo.json")
       assert File.exist?("generated/temp_project/foo.json")
       assert File.exist?("generated/temp_project3/foo.json")

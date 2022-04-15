@@ -63,21 +63,19 @@ module Kennel
 
     def store(parts)
       Progress.progress "Storing" do
-        (project_filter || ["**"]).each do |project_pattern|
-          old = Dir["generated/#{project_pattern}/*"]
-          used = []
+        old = Dir["generated/{#{(project_filter || ["**"]).join(",")}}/*"]
+        used = []
 
-          Utils.parallel(parts, max: 2) do |part|
-            path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-            used << File.dirname(path) # only 1 level of sub folders, so this is safe
-            used << path
-            payload = part.as_json.merge(api_resource: part.class.api_resource)
-            write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
-          end
-
-          # deleting all is slow, so only delete the extras
-          (old - used).each { |p| FileUtils.rm_rf(p) }
+        Utils.parallel(parts, max: 2) do |part|
+          path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
+          used << File.dirname(path) # only 1 level of sub folders, so this is safe
+          used << path
+          payload = part.as_json.merge(api_resource: part.class.api_resource)
+          write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
         end
+
+        # deleting all is slow, so only delete the extras
+        (old - used).each { |p| FileUtils.rm_rf(p) }
       end
     end
 
@@ -106,18 +104,20 @@ module Kennel
         Progress.progress "Generating" do
           load_all
           known = []
+          filter = project_filter
+
           parts = Models::Project.recursive_subclasses.flat_map do |project_class|
             project = project_class.new
             kennel_id = project.kennel_id
-            if project_filter
+            if filter
               known << kennel_id
-              next [] unless project_filter.include?(kennel_id)
+              next [] unless filter.include?(kennel_id)
             end
             project.validated_parts
           end
 
-          if project_filter && parts.empty?
-            raise "#{project_filter_raw} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
+          if filter && parts.empty?
+            raise "#{filter.join(", ")} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
           end
 
           parts.group_by(&:tracking_id).each do |tracking_id, same|
@@ -132,12 +132,8 @@ module Kennel
       end
     end
 
-    def project_filter_raw
-      ENV["PROJECT"]
-    end
-
     def project_filter
-      project_filter_raw&.split(":")
+      ENV["PROJECT"]&.split(",")
     end
 
     def load_all

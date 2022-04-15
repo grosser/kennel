@@ -252,6 +252,7 @@ module Kennel
       end
 
       # override resources that exist with their id
+      project_prefixes = @project_filter&.map { |p| "#{p}:" }
       actual.each do |a|
         # ignore when not managed by kennel
         next unless tracking_id = a.fetch(:tracking_id)
@@ -261,7 +262,7 @@ module Kennel
         api_resource = a.fetch(:klass).api_resource
         next if
           !@id_map.get(api_resource, tracking_id) &&
-          (!@project_filter || @project_filter.include?(tracking_id.split(":")[0]))
+          (!project_prefixes || tracking_id.start_with?(*project_prefixes))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
@@ -276,9 +277,10 @@ module Kennel
 
     def filter_actual_by_project!(actual)
       return unless @project_filter
+      project_prefixes = @project_filter&.map { |p| "#{p}:" }
       actual.select! do |a|
         tracking_id = a.fetch(:tracking_id)
-        !tracking_id || @project_filter.include?(tracking_id.split(":")[0])
+        !tracking_id || tracking_id.start_with?(*project_prefixes)
       end
     end
   end
