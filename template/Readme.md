@@ -230,6 +230,7 @@ so they can be created in a single update and can be re-created if any of them i
  - rebase on updated `master` to not undo other changes
  - figure out project name by converting the class name to snake-case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project (monitors: remove mentions while debugging to avoid alert spam)
+   - use `PROJECT=foo,bar,...` for multiple projects
 
 ### Reuse
 Add to `parts/<folder>`.

@@ -63,7 +63,7 @@ module Kennel
 
     def store(parts)
       Progress.progress "Storing" do
-        old = Dir["generated/#{project_filter || "**"}/*"]
+        old = Dir["generated/{#{(project_filter || ["**"]).join(",")}}/*"]
         used = []
 
         Utils.parallel(parts, max: 2) do |part|
@@ -92,7 +92,7 @@ module Kennel
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, project: project_filter)
+      @syncer ||= Syncer.new(api, generated, project_filter: project_filter)
     end
 
     def api
@@ -104,18 +104,20 @@ module Kennel
         Progress.progress "Generating" do
           load_all
           known = []
+          filter = project_filter
+
           parts = Models::Project.recursive_subclasses.flat_map do |project_class|
             project = project_class.new
             kennel_id = project.kennel_id
-            if project_filter
+            if filter
               known << kennel_id
-              next [] if kennel_id != project_filter
+              next [] unless filter.include?(kennel_id)
             end
             project.validated_parts
           end
 
-          if project_filter && parts.empty?
-            raise "#{project_filter} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
+          if filter && parts.empty?
+            raise "#{filter.join(", ")} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
           end
 
           parts.group_by(&:tracking_id).each do |tracking_id, same|
@@ -131,7 +133,7 @@ module Kennel
     end
 
     def project_filter
-      ENV["PROJECT"]
+      ENV["PROJECT"]&.split(",")
     end
 
     def load_all

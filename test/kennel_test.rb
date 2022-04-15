@@ -49,6 +49,7 @@ describe Kennel do
     Kennel::Models::Project.subclasses.delete_if { |c| c.name.match?(/TestProject\d|TempProject/) }
     Object.send(:remove_const, :TempProject) if defined?(TempProject)
     Object.send(:remove_const, :TempProject2) if defined?(TempProject2)
+    Object.send(:remove_const, :TempProject3) if defined?(TempProject3)
   end
 
   describe ".generate" do
@@ -97,9 +98,11 @@ describe Kennel do
 
     it "does not generate for other projects" do
       write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
-      with_env(PROJECT: "temp_project") { Kennel.generate }
+      write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
+      with_env(PROJECT: "temp_project,temp_project3") { Kennel.generate }
       refute File.exist?("generated/temp_project2/foo.json")
       assert File.exist?("generated/temp_project/foo.json")
+      assert File.exist?("generated/temp_project3/foo.json")
     end
 
     it "complains when everything would be filtered" do

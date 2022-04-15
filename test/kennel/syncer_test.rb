@@ -101,8 +101,8 @@ describe Kennel::Syncer do
   let(:slos) { [] }
   let(:synthetics) { [] }
   let(:expected) { [] }
-  let(:project_filter) { [nil] }
-  let(:syncer) { Kennel::Syncer.new(api, expected, project: project_filter.first) }
+  let(:project_filter) { [] }
+  let(:syncer) { Kennel::Syncer.new(api, expected, project_filter: (project_filter.any? ? project_filter : nil)) }
 
   before do
     Kennel::Progress.stubs(:print).yields
@@ -159,36 +159,6 @@ describe Kennel::Syncer do
           ~nested.foo \"baz\" -> \"bar\"
           +bar nil -> \"foo\"
       TEXT
-    end
-
-    describe "with project filter set" do
-      let(:project_filter) { ["a"] }
-
-      it "updates without tracking when previously unmanaged" do
-        expected << monitor("a", "b", id: 123)
-        monitors << monitor_api_response("a", "", id: 123, message: "old stuff")
-        output.must_equal <<~TEXT
-          Plan:
-          Update monitor a:b
-            ~message \"old stuff\" -> \"@slack-foo\"
-        TEXT
-      end
-
-      it "can plan when linked only by id during update" do
-        expected << monitor("a", "b", id: 123, message: "")
-        monitors << monitor_api_response("a", "b", id: 123, message: "")
-        output.must_equal "Plan:\nNothing to do\n"
-      end
-
-      it "can resolve by tracking id outside of the filter" do
-        # project_filter[0] = nil
-        monitors << monitor_api_response("xxx", "x", id: 123)
-        expected << slo("a", "b", monitor_ids: ["xxx:x"])
-        output.must_equal <<~OUTPUT
-          Plan:
-          Create slo a:b
-        OUTPUT
-      end
     end
 
     it "shows long updates nicely" do
@@ -269,10 +239,16 @@ describe Kennel::Syncer do
       )
     end
 
-    describe "filter" do
-      let(:syncer) { Kennel::Syncer.new(api, expected, project: "a") }
+    describe "with project filter set" do
+      let(:project_filter) { ["a"] }
 
       it "does something when filtered changes" do
+        expected << monitor("a", "c")
+        output.must_equal "Plan:\nCreate monitor a:c\n"
+      end
+
+      it "does something when filtered changes" do
+        project_filter.unshift "b"
         expected << monitor("a", "c")
         output.must_equal "Plan:\nCreate monitor a:c\n"
       end
@@ -281,6 +257,42 @@ describe Kennel::Syncer do
         add_identical
         monitors << { id: 123, message: "foo", tags: [] }
         output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "updates without tracking when previously unmanaged" do
+        expected << monitor("a", "b", id: 123)
+        monitors << monitor_api_response("a", "", id: 123, message: "old stuff")
+        output.must_equal <<~TEXT
+          Plan:
+          Update monitor a:b
+            ~message \"old stuff\" -> \"@slack-foo\"
+        TEXT
+      end
+
+      it "updates when using multiple tracking ids" do
+        project_filter.unshift "b"
+        expected << monitor("a", "b", id: 123)
+        monitors << monitor_api_response("a", "", id: 123, message: "old stuff")
+        output.must_equal <<~TEXT
+          Plan:
+          Update monitor a:b
+            ~message \"old stuff\" -> \"@slack-foo\"
+        TEXT
+      end
+
+      it "can plan when linked only by id during update" do
+        expected << monitor("a", "b", id: 123, message: "")
+        monitors << monitor_api_response("a", "b", id: 123, message: "")
+        output.must_equal "Plan:\nNothing to do\n"
+      end
+
+      it "can resolve by tracking id outside of the filter" do
+        monitors << monitor_api_response("xxx", "x", id: 123)
+        expected << slo("a", "b", monitor_ids: ["xxx:x"])
+        output.must_equal <<~OUTPUT
+          Plan:
+          Create slo a:b
+        OUTPUT
       end
     end
 
