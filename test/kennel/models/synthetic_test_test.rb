@@ -84,16 +84,16 @@ describe Kennel::Models::SyntheticTest do
 
   describe ".normalize" do
     it "sorts tags" do
-      a = { tags: ["c", "a", "b"] }
-      e = { tags: ["b", "c", "a"] }
+      a = { tags: ["c", "a", "b"].freeze }
+      e = { tags: ["b", "c", "a"].freeze }
       Kennel::Models::SyntheticTest.normalize(a, e)
       e[:tags].must_equal ["a", "b", "c"]
       a[:tags].must_equal ["a", "b", "c"]
     end
 
     it "sorts locations" do
-      a = { locations: ["c", "a", "b"] }
-      e = { locations: ["b", "c", "a"] }
+      a = { locations: ["c", "a", "b"].freeze }
+      e = { locations: ["b", "c", "a"].freeze }
       Kennel::Models::SyntheticTest.normalize(a, e)
       e[:locations].must_equal ["a", "b", "c"]
       a[:locations].must_equal ["a", "b", "c"]
