@@ -54,7 +54,10 @@ module Kennel
 
         # tags come in a semi-random order and order is never updated
         expected[:tags]&.sort!
-        actual[:tags].sort!
+        actual[:tags]&.sort!
+
+        expected[:locations]&.sort!
+        actual[:locations]&.sort!
 
         ignore_default(expected, actual, DEFAULTS)
       end
