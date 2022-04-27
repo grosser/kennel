@@ -34,7 +34,7 @@ module Kennel
       def as_json
         return @as_json if @as_json
         data = {
-          name: "#{name}#{LOCK}",
+          name: "#{LOCK} #{name}",
           description: description,
           thresholds: thresholds,
           monitor_ids: monitor_ids,

@@ -58,7 +58,7 @@ module Kennel
       def as_json
         return @as_json if @as_json
         data = {
-          name: "#{name}#{LOCK}",
+          name: "#{LOCK} #{name}",
           type: type,
           query: query.strip,
           message: message.strip,

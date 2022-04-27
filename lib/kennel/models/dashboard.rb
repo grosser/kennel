@@ -161,7 +161,7 @@ module Kennel
 
         @json = {
           layout_type: layout_type,
-          title: "#{title}#{tags_as_string}#{LOCK}",
+          title: "#{LOCK} #{title}#{tags_as_string}",
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,

@@ -23,7 +23,7 @@ describe Kennel::Models::Monitor do
   let(:id_map) { Kennel::IdMap.new }
   let(:expected_basic_json) do
     {
-      name: "Kennel::Models::Monitor\u{1F512}",
+      name: "\u{1F512} Kennel::Models::Monitor",
       type: "query alert",
       query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",

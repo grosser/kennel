@@ -16,7 +16,7 @@ describe Kennel::Models::Dashboard do
   let(:expected_json) do
     {
       layout_type: "ordered",
-      title: "Hello🔒",
+      title: "🔒 Hello",
       description: "",
       template_variables: [],
       template_variable_presets: nil,
@@ -90,7 +90,7 @@ describe Kennel::Models::Dashboard do
 
     it "adds team tags when requested" do
       project.team.class.any_instance.expects(:tag_dashboards).returns(true)
-      dashboard.as_json[:title].must_equal "Hello (team:test_team)🔒"
+      dashboard.as_json[:title].must_equal "🔒 Hello (team:test_team)"
     end
 
     describe "definitions" do

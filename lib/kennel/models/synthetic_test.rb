@@ -26,7 +26,7 @@ module Kennel
           type: type,
           subtype: subtype,
           options: options,
-          name: "#{name}#{LOCK}",
+          name: "#{LOCK} #{name}",
           locations: locations == :all ? LOCATIONS : locations
         }
 

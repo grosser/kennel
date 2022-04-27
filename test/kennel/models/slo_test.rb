@@ -23,7 +23,7 @@ describe Kennel::Models::Slo do
   let(:id_map) { Kennel::IdMap.new }
   let(:expected_basic_json) do
     {
-      name: "Foo\u{1F512}",
+      name: "\u{1F512} Foo",
       description: nil,
       thresholds: [],
       monitor_ids: [],

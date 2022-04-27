@@ -35,7 +35,7 @@ describe Kennel::Models::SyntheticTest do
       type: "api",
       subtype: "http",
       options: {},
-      name: "foo\u{1F512}",
+      name: "\u{1F512} foo",
       locations: ["l1"]
     }
   end

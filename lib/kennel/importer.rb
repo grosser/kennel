@@ -26,6 +26,7 @@ module Kennel
       title_field = TITLES.detect { |f| data[f] }
       title = data.fetch(title_field)
       title.tr!(Kennel::Models::Record::LOCK, "") # avoid double lock icon
+      title.strip!
 
       # calculate or reuse kennel_id
       data[:kennel_id] =

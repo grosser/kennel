@@ -315,7 +315,7 @@ describe Kennel::Syncer do
         expected << slo("a", "b", id: "abc")
         slos << {
           id: "abc",
-          name: "x\u{1F512}",
+          name: "\u{1F512} x",
           type: "metric",
           thresholds: [],
           tags: ["team:test_team", "service:a"],
