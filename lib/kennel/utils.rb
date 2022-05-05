@@ -149,7 +149,7 @@ module Kennel
       # TODO: use awesome-print or similar, but it has too many monkey-patches
       # https://github.com/amazing-print/amazing_print/issues/36
       def pretty_inspect(object)
-        string = object.inspect
+        string = object.inspect.dup
         string.gsub!(/:([a-z_]+)=>/, "\\1: ")
         10.times do
           string.gsub!(/{(\S.*?\S)}/, "{ \\1 }") || break
