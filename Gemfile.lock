@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.112.0)
+    kennel (1.112.1)
       faraday (~> 1.8)
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
@@ -114,4 +114,4 @@ RUBY VERSION
    ruby 2.6.5p114
 
 BUNDLED WITH
-   2.2.16
+   2.3.12
