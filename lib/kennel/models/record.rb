@@ -8,6 +8,7 @@ module Kennel
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at,
         :klass, :tracking_id # added by syncer.rb
       ].freeze
+      ALLOWED_TYPE_REGEX = /[a-z0-9\/-]+/
       ALLOWED_KENNEL_ID_CHARS = "a-zA-Z_\\d.-"
       ALLOWED_KENNEL_ID_FULL = "[#{ALLOWED_KENNEL_ID_CHARS}]+:[#{ALLOWED_KENNEL_ID_CHARS}]+"
       ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/.freeze
@@ -86,7 +87,16 @@ module Kennel
         end
       end
 
-      def resolve_linked_tracking_ids!(*)
+      def id_macro
+        # The thing matched and expanded by #resolve_linked_tracking_ids!
+        "%{#{self.class.api_resource}:#{tracking_id}}"
+      end
+
+      def resolve_linked_tracking_ids!(id_map, **args)
+        field = self.class::TRACKING_FIELD
+        as_json[field] = as_json[field]&.gsub(/%{(#{ALLOWED_TYPE_REGEX}):(#{ALLOWED_KENNEL_ID_FULL})}/) do
+          resolve($2, $1, id_map, **args) || $&
+        end
       end
 
       def add_tracking_id
