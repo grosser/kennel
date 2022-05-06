@@ -186,6 +186,7 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
+        super
         widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
         widgets.each do |widget|
           next unless definition = widget[:definition]

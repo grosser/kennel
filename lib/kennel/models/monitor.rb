@@ -125,6 +125,7 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
+        super
         case as_json[:type]
         when "composite", "slo alert"
           type = (as_json[:type] == "composite" ? :monitor : :slo)
