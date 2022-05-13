@@ -125,13 +125,24 @@ module Kennel
         @api.fill_details! "dashboard", details
 
         # pick out things to update or delete
-        items.each do |e, a|
-          id = a.fetch(:id)
+        # we cannot return objects from forks, so just sending the raw data
+        commands = Parallel.map(items) do |e, a|
           if e
-            diff = e.diff(a) # slow ...
-            @update << [id, e, a, diff] if diff.any?
+            diff = e.diff(a)
+            [:update, diff] if diff.any?
           elsif a.fetch(:tracking_id) # was previously managed
-            @delete << [id, nil, a]
+            [:delete, nil]
+          end
+        end
+
+        commands.each_with_index do |(command, diff), i|
+          next unless command
+          e, a = items[i]
+          id = a.fetch(:id)
+          case command
+          when :update then @update << [id, e, a, diff]
+          when :delete then @delete << [id, nil, a]
+          else raise NotImplementedError
           end
         end
 

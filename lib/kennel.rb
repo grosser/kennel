@@ -3,6 +3,7 @@ require "faraday"
 require "json"
 require "zeitwerk"
 require "English"
+require "parallel"
 
 require "kennel/version"
 require "kennel/utils"
@@ -68,7 +69,7 @@ module Kennel
         old = Dir["generated/{#{(project_filter || ["**"]).join(",")}}/*"]
         used = []
 
-        Utils.parallel(parts, max: 2) do |part|
+        Parallel.each(parts) do |part| # in ruby 3.1 this might work nice with ractors
           path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
           used << File.dirname(path) # only 1 level of sub folders, so this is safe
           used << path
@@ -131,8 +132,9 @@ module Kennel
           end
 
           # trigger json caching here so it counts into generating
-          # somehow threading helps reduce this ~25%
-          Utils.parallel(parts, &:as_json)
+          # we cannot return full objects from the parallel execution, so we just set the json
+          json = Parallel.map(parts) { |p| p.as_json  }
+          json.each_with_index { |json, i| parts[i].instance_variable_set(:@json, json) }
 
           parts
         end

@@ -5,6 +5,7 @@ PATH
       faraday (~> 1.8)
       hashdiff (~> 1.0)
       net-http-persistent (~> 4.0)
+      parallel
       zeitwerk (~> 2.4)
 
 GEM
