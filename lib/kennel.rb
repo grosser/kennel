@@ -47,7 +47,9 @@ module Kennel
     attr_accessor :out, :err, :strict_imports
 
     def generate
-      store generated
+      out = generated
+      store out if ENV["STORE"] != "false" # quicker when debugging
+      out
     end
 
     def plan
@@ -127,7 +129,8 @@ module Kennel
               use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
             ERROR
           end
-          parts
+
+          parts.each(&:as_json) # trigger json caching here so it counts into generating
         end
       end
     end

@@ -88,6 +88,12 @@ describe Kennel do
       refute File.exist?(plain)
     end
 
+    it "does not store if requested" do
+      with_env(STORE: "false") { Kennel.generate }
+
+      refute File.exist?("generated/temp_project/foo.json")
+    end
+
     it "can filter by project" do
       other = "generated/foo/bar.json"
       write other, "HO"

@@ -7,7 +7,7 @@ module Kennel
     def initialize(api, expected, project_filter: nil)
       @api = api
       @project_filter = project_filter
-      @expected = expected
+      @expected = Set.new expected # need set to speed up deletion
       calculate_diff
       validate_plan
       prevent_irreversible_partial_updates
@@ -110,9 +110,10 @@ module Kennel
 
         @expected.each(&:add_tracking_id) # avoid diff with actual
 
+        lookup_map = matching_expected_lookup_map
         items = actual.map do |a|
-          e = matching_expected(a)
-          if e && @expected.delete(e)
+          e = matching_expected(a, lookup_map)
+          if e && @expected.delete?(e)
             [e, a]
           else
             [nil, a]
@@ -127,7 +128,7 @@ module Kennel
         items.each do |e, a|
           id = a.fetch(:id)
           if e
-            diff = e.diff(a)
+            diff = e.diff(a) # slow ...
             @update << [id, e, a, diff] if diff.any?
           elsif a.fetch(:tracking_id) # was previously managed
             @delete << [id, nil, a]
@@ -166,9 +167,9 @@ module Kennel
       end
     end
 
-    def matching_expected(a)
-      # index list by all the thing we look up by: tracking id and actual id
-      @lookup_map ||= @expected.each_with_object({}) do |e, all|
+    # index list by all the thing we look up by: tracking id and actual id
+    def matching_expected_lookup_map
+      @expected.each_with_object({}) do |e, all|
         keys = [e.tracking_id]
         keys << "#{e.class.api_resource}:#{e.id}" if e.id
         keys.compact.each do |key|
@@ -176,9 +177,11 @@ module Kennel
           all[key] = e
         end
       end
+    end
 
+    def matching_expected(a, map)
       klass = a.fetch(:klass)
-      @lookup_map["#{klass.api_resource}:#{a.fetch(:id)}"] || @lookup_map[a.fetch(:tracking_id)]
+      map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
     end
 
     def print_plan(step, list, color)

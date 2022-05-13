@@ -109,11 +109,8 @@ module Kennel
       private
 
       def resolve(value, type, id_map, force:)
-        if tracking_id?(value)
-          return resolve_link(value, type, id_map, force: force)
-        end
-
-        value
+        return value unless tracking_id?(value)
+        resolve_link(value, type, id_map, force: force)
       end
 
       def tracking_id?(id)

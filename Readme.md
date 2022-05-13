@@ -307,7 +307,8 @@ https://foo.datadog.com/monitor/123
 ## Development
 
 ### Benchmarking
-Setting `FORCE_GET_CACHE=true` will cache all get requests, which makes benchmarking improvements more reliable.
+- Setting `FORCE_GET_CACHE=true` will cache all get requests, which makes benchmarking improvements more reliable.
+- Setting `STORE=false` will make `rake plan` not update the files on disk and save a bit of time
 
 ### Integration testing
 ```Bash
