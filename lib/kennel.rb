@@ -130,7 +130,11 @@ module Kennel
             ERROR
           end
 
-          parts.each(&:as_json) # trigger json caching here so it counts into generating
+          # trigger json caching here so it counts into generating
+          # somehow threading helps reduce this ~25%
+          Utils.parallel(parts, &:as_json)
+
+          parts
         end
       end
     end
