@@ -108,7 +108,7 @@ module Kennel
           known = []
           filter = project_filter
 
-          parts = Models::Project.recursive_subclasses.flat_map do |project_class|
+          parts = Utils.parallel(Models::Project.recursive_subclasses) do |project_class|
             project = project_class.new
             kennel_id = project.kennel_id
             if filter
@@ -116,7 +116,7 @@ module Kennel
               next [] unless filter.include?(kennel_id)
             end
             project.validated_parts
-          end
+          end.flatten(1)
 
           if filter && parts.empty?
             raise "#{filter.join(", ")} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
@@ -131,7 +131,6 @@ module Kennel
           end
 
           # trigger json caching here so it counts into generating
-          # somehow threading helps reduce this ~25%
           Utils.parallel(parts, &:as_json)
 
           parts
