@@ -456,7 +456,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#123/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
       TXT
     end
 
@@ -467,7 +467,7 @@ describe Kennel::Syncer do
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#123/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
       TXT
     end
 
@@ -476,8 +476,8 @@ describe Kennel::Syncer do
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
       output.must_equal <<~TXT
-        Updating monitor a:b https://app.datadoghq.com/monitors#123/edit
-        \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors#123/edit
+        Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
+        \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors/123/edit
       TXT
     end
 
@@ -513,7 +513,7 @@ describe Kennel::Syncer do
         ).returns(id: 2)
       output.must_equal <<~TXT
         Creating monitor a:b
-        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors#1/edit
+        \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/1/edit
         Creating slo a:c
         \e[1A\033[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=2
       TXT
@@ -555,8 +555,8 @@ describe Kennel::Syncer do
         monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor")
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
         output.must_equal <<~TXT
-          Updating monitor a:b https://app.datadoghq.com/monitors#123/edit
-          \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors#123/edit
+          Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
+          \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors/123/edit
         TXT
       end
 

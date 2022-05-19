@@ -510,7 +510,7 @@ describe Kennel::Models::Monitor do
 
   describe ".url" do
     it "shows full url" do
-      Kennel::Models::Monitor.url(111).must_equal "https://app.datadoghq.com/monitors#111/edit"
+      Kennel::Models::Monitor.url(111).must_equal "https://app.datadoghq.com/monitors/111/edit"
     end
   end
 

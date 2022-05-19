@@ -145,7 +145,7 @@ module Kennel
       end
 
       def self.url(id)
-        Utils.path_to_url "/monitors##{id}/edit"
+        Utils.path_to_url "/monitors/#{id}/edit"
       end
 
       def self.parse_url(url)
