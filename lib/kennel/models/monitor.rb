@@ -131,12 +131,15 @@ module Kennel
           as_json[:query] = as_json[:query].gsub(/%{(.*?)}/) do
             resolve($1, type, id_map, **args) || $&
           end
+        else # do nothing
         end
       end
 
       def validate_update!(_actuals, diffs)
-        if bad_diff = diffs.find { |diff| diff[1] == "type" }
-          invalid! "Datadog does not allow update of #{bad_diff[1]} (#{bad_diff[2].inspect} -> #{bad_diff[3].inspect})"
+        # ensure type does not change, but not if it's metric->query which is supported and used by importer.rb
+        _, path, from, to = diffs.detect { |_, path, _, _| path == "type" }
+        if path && !(from == "metric alert" && to == "query alert")
+          invalid! "Datadog does not allow update of #{path} (#{from.inspect} -> #{to.inspect})"
         end
       end
 

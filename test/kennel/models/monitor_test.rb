@@ -506,6 +506,10 @@ describe Kennel::Models::Monitor do
       end
       e.message.must_match(/datadog.*allow.*type/i)
     end
+
+    it "allows update of metric to query which is used by the importer" do
+      monitor.validate_update!(nil, [["~", "type", "metric alert", "query alert"]])
+    end
   end
 
   describe ".url" do
