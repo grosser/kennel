@@ -41,7 +41,8 @@ describe Kennel::Models::Monitor do
         evaluation_delay: nil,
         locked: false,
         renotify_interval: 0,
-        thresholds: { critical: 123.0 }
+        silenced: nil,
+        thresholds: { critical: 123.0 },
       }
     }
   end
@@ -97,12 +98,12 @@ describe Kennel::Models::Monitor do
     describe "query alert" do
       it "converts threshold values to floats to avoid api diff" do
         monitor(critical: -> { 234 }).as_json
-          .dig(:options, :thresholds, :critical).must_equal 234.0
+                                     .dig(:options, :thresholds, :critical).must_equal 234.0
       end
 
       it "does not converts threshold values to floats for types that store integers" do
         monitor(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" }).as_json
-          .dig(:options, :thresholds, :critical).must_equal 234
+                                                                                              .dig(:options, :thresholds, :critical).must_equal 234
       end
     end
 
@@ -257,6 +258,34 @@ describe Kennel::Models::Monitor do
         monitor(
           renotify_interval: -> {}
         ).as_json[:options][:renotify_statuses].must_be_nil
+      end
+    end
+
+    describe "silenced" do
+      it "can set to nil" do
+        monitor(silenced: -> { nil }).as_json.dig(:options, :silenced).must_be_nil
+      end
+
+      it "can set to true" do
+        monitor(silenced: -> { true }).as_json.dig(:options, :silenced).must_equal({ '*': nil })
+      end
+
+      it "can set to hash of scopes" do
+        monitor(silenced: -> { { 'role:db': 1412798116 } }).as_json.dig(:options, :silenced).must_equal({ 'role:db': 1412798116 })
+      end
+
+      it "can set scope value to nil" do
+        monitor(silenced: -> { { 'role:db': nil } }).as_json.dig(:options, :silenced).must_equal({ 'role:db': nil })
+      end
+
+      it "fails on invalid value" do
+        e = assert_raises(RuntimeError) { monitor(silenced: -> { 123 }).as_json }
+        e.message.must_include "silenced must be either null or dictionary of scopes"
+      end
+
+      it "fails on invalid scope value" do
+        e = assert_raises(RuntimeError) { monitor(silenced: -> { { 'role:db': 123.4 } }).as_json }
+        e.message.must_include "silenced scopes must be either a posix timestamp or null"
       end
     end
 

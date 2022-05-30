@@ -23,7 +23,8 @@ module Kennel
         renotify_interval: 0,
         notify_audit: false,
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
-        groupby_simple_monitor: false
+        groupby_simple_monitor: false,
+        silenced: nil,
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -31,7 +32,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :new_group_delay, :priority
+        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :silenced
       )
 
       defaults(
@@ -52,7 +53,8 @@ module Kennel
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
         threshold_windows: -> { nil },
-        priority: -> { MONITOR_DEFAULTS.fetch(:priority) }
+        priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
+        silenced: -> { nil },
       )
 
       def as_json
@@ -76,7 +78,8 @@ module Kennel
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
-            renotify_interval: renotify_interval || 0
+            renotify_interval: renotify_interval || 0,
+            silenced: silenced
           }
         }
 
@@ -117,6 +120,11 @@ module Kennel
           statuses << "no data" if options[:notify_no_data]
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
+        end
+
+        # Silenced option can be set to 'true' which translates to a scope of '{"*": null}'
+        if options[:silenced] == true
+          options[:silenced] = { '*': nil }
         end
 
         validate_json(data) if validate
@@ -241,6 +249,8 @@ module Kennel
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
         end
+
+        validate_silenced_option(data.dig(:options, :silenced))
       end
 
       # verify is_match/is_exact_match and {{foo.name}} uses available variables
@@ -277,6 +287,17 @@ module Kennel
           Used #{forbidden.join(", ")} in the message, but can only be used with #{allowed.join(", ")}.
           Group or filter the query by #{forbidden.map { |f| f.sub(".name", "") }.join(", ")} to use it.
         MSG
+      end
+
+      def validate_silenced_option(silenced)
+        return if silenced == nil
+        invalid! "silenced must be either null or dictionary of scopes" unless silenced.is_a?(Hash)
+
+        silenced.each_value do |scope_value|
+          unless scope_value == nil || scope_value.is_a?(Integer)
+            invalid! "silenced scopes must be either a posix timestamp or null"
+          end
+        end
       end
     end
   end
