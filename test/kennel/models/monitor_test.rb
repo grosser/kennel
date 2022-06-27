@@ -211,6 +211,18 @@ describe Kennel::Models::Monitor do
       end
     end
 
+    it "blocks names that create perma-diff" do
+      assert_raises(Kennel::ValidationError) do
+        monitor(name: -> { " oops" }).as_json
+      end
+    end
+
+    it "blocks invalid timeout_h" do
+      assert_raises(Kennel::ValidationError) do
+        monitor(timeout_h: -> { 200 }).as_json
+      end
+    end
+
     describe "renotify_interval" do
       it "sets 0 when disabled" do
         monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0

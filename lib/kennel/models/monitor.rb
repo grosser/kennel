@@ -211,6 +211,10 @@ module Kennel
       def validate_json(data)
         super
 
+        if data[:name]&.start_with?(" ")
+          invalid! "name cannot start with a space"
+        end
+
         type = data.fetch(:type)
 
         # do not allow deprecated type that will be coverted by datadog and then produce a diff
@@ -240,6 +244,10 @@ module Kennel
 
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
           invalid! "priority needs to be an Integer"
+        end
+
+        if data.dig(:options, :timeout_h)&.> 24
+          invalid! "timeout_h must be <= 24"
         end
       end
 
