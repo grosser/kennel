@@ -3,6 +3,16 @@ module Kennel
   module SettingsAsMethods
     SETTING_OVERRIDABLE_METHODS = [].freeze
 
+    AS_PROCS = ->(options) do
+      options.transform_values do |v|
+        if v.class == Proc
+          v
+        else
+          -> { v }
+        end
+      end
+    end
+
     def self.included(base)
       base.extend ClassMethods
       base.instance_variable_set(:@settings, [])
@@ -31,7 +41,7 @@ module Kennel
       end
 
       def defaults(options)
-        options.each do |name, block|
+        AS_PROCS.call(options).each do |name, block|
           validate_setting_exist name
           define_method name, &block
         end
@@ -58,12 +68,7 @@ module Kennel
         raise ArgumentError, "Expected #{self.class.name}.new options to be a Hash, got a #{options.class}"
       end
 
-      options.each do |k, v|
-        next if v.class == Proc
-        raise ArgumentError, "Expected #{self.class.name}.new option :#{k} to be Proc, for example `#{k}: -> { 12 }`"
-      end
-
-      options.each do |name, block|
+      AS_PROCS.call(options).each do |name, block|
         self.class.send :validate_setting_exist, name
         define_singleton_method name, &block
       end
