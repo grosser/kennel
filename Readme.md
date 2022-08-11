@@ -94,7 +94,7 @@ Each of the models defines various settings; for example, a Monitor has `name`, 
 When defining a subclass of a model, one can use `defaults` to provide default values for
 those settings:
 
-```ruby
+```Ruby
 class MyMonitor < Kennel::Models::Monitor
   defaults(
     name: "Error rate",
@@ -110,7 +110,7 @@ end
 
 This is equivalent to defining instance methods of those names, which return those values:
 
-```ruby
+```Ruby
 class MyMonitor < Kennel::Models::Monitor
   def name
     "Error rate"
@@ -138,7 +138,8 @@ that same value; use whichever suits you best.
 When you _instantiate_ a model class, you can pass settings in the constructor, after
 the project:
 
-```ruby
+```Ruby
+project = Kennel::Models::Project.new
 my_monitor = MyMonitor.new(
   project,
   critical: 10.0,
