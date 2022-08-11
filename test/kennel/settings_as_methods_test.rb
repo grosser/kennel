@@ -41,9 +41,17 @@ describe Kennel::SettingsAsMethods do
       e.message.must_equal "Expected TestSetting.new options to be a Hash, got a String"
     end
 
-    it "fails nicely when given non-procs" do
-      e = assert_raises(ArgumentError) { TestSetting.new(id: 12345) }
-      e.message.must_equal "Expected TestSetting.new option :id to be Proc, for example `id: -> { 12 }`"
+    it "accepts non-procs (constructor)" do
+      item = TestSetting.new(foo: 12345)
+      item.foo.must_equal(12345)
+    end
+
+    it "accepts non-procs (defaults)" do
+      klass = Class.new(TestSetting) do
+        defaults(foo: 12345)
+      end
+      item = klass.new
+      item.foo.must_equal(12345)
     end
 
     it "stores invocation_location" do
