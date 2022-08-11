@@ -72,6 +72,94 @@ end
  - `parts/` monitors/dashboards/etc that are used by multiple projects
  - `generated/` projects as json, to show current state and proposed changes in PRs
 
+## About the models
+
+Kennel provides several classes which act as models for different purposes:
+
+* `Kennel::Models::Dashboard`, `Kennel::Models::Monitor`, `Kennel::Models::Slo`, `Kennel::Models::SyntheticTest`;
+  these models represent the various Datadog objects
+* `Kennel::Models::Project`; a container for a collection of Datadog objects
+* `Kennel::Models::Team`; provides defaults and values (e.g. tags, mentions) for the other models.
+
+After loading all the `*.rb` files under `projects/`, Kennel's starting point
+is to find all the subclasses of `Kennel::Models::Project`, and for each one,
+create an instance of that subclass (via `.new`) and then call `#parts` on that
+instance. `parts` should return a collection of the Datadog-objects (Dashboard / Monitor / etc).
+
+### Model Settings
+
+Each of the models defines various settings; for example, a Monitor has `name`, `message`,
+`type`, `query`, `tags`, and many more.
+
+When defining a subclass of a model, one can use `defaults` to provide default values for
+those settings:
+
+```ruby
+class MyMonitor < Kennel::Models::Monitor
+  defaults(
+    name: "Error rate",
+    type: "query alert",
+    critical: 5.0,
+    query: -> {
+      "some datadog metric expression > #{critical}"
+    },
+    # ...
+  )
+end
+```
+
+This is equivalent to defining instance methods of those names, which return those values:
+
+```ruby
+class MyMonitor < Kennel::Models::Monitor
+  def name
+    "Error rate"
+  end
+
+  def type
+    "query alert"
+  end
+
+  def critical
+    5.0
+  end
+
+  def query
+    "some datadog metric expression > #{critical}"
+  end
+end
+```
+
+except that `defaults` will complain if you try to use a setting name which doesn't
+exist. Note also that you can use either plain values (`critical: 5.0`), or procs
+(`query: -> { ... }`). Using a plain value is equivalent to using a proc which returns
+that same value; use whichever suits you best.
+
+When you _instantiate_ a model class, you can pass settings in the constructor, after
+the project:
+
+```ruby
+my_monitor = MyMonitor.new(
+  project,
+  critical: 10.0,
+  message: -> {
+    <<~MESSAGE
+      Something bad is happening and you should be worried.
+
+      #{super()}
+    MESSAGE
+  },
+)
+```
+
+This works just like `defaults` (it checks the setting names, and it accepts
+either plain values or procs), but it applies just to this instance of the class,
+rather than to the class as a whole (i.e. it defines singleton methods, rather
+than instance methods).
+
+Most of the examples in this Readme use the proc syntax (`critical: -> { 5.0 }`) but
+for simple constants you may prefer to use the plain syntax (`critical: 5.0`).
+
 ## Workflows
 <!-- ONLY IN template/Readme.md
 
