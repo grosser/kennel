@@ -16,6 +16,7 @@ module Kennel
     def self.included(base)
       base.extend ClassMethods
       base.instance_variable_set(:@settings, [])
+      base.attr_reader :invocation_location
     end
 
     module ClassMethods
@@ -45,9 +46,29 @@ module Kennel
           validate_setting_exist name
           define_method name, &block
         end
+        if self <= Kennel::Models::Project
+          location = compute_invocation_location
+          define_method(:invocation_location) { location }
+        end
       end
 
       private
+
+      def compute_invocation_location
+        lib = File.dirname(__dir__)
+        pwd = Dir.pwd + "/"
+        caller.reverse_each.detect do |l|
+          next if l.start_with?(lib)
+
+          # need expand_path so it works wih rake and when run individually
+          next unless found = File.expand_path(l).sub!(pwd, "")
+
+          # ignore any extra layers that were hacked in locally
+          next if found.start_with?("extensions/", "vendor/")
+
+          break found
+        end
+      end
 
       def validate_setting_exist(name)
         return if @settings.include?(name)
@@ -73,13 +94,8 @@ module Kennel
         define_singleton_method name, &block
       end
 
-      # need expand_path so it works wih rake and when run individually
-      pwd = /^#{Regexp.escape(Dir.pwd)}\//
-      @invocation_location = caller.detect do |l|
-        if found = File.expand_path(l).sub!(pwd, "")
-          break found
-        end
-      end
+      # instantiated by kennel so we never get a good caller
+      @invocation_location = self.class.send(:compute_invocation_location) unless is_a?(Models::Project)
     end
 
     def raise_with_location(error, message)

@@ -21,15 +21,15 @@ require "kennel/unmuted_alerts"
 require "kennel/models/base"
 require "kennel/models/record"
 
+# settings
+require "kennel/models/project"
+require "kennel/models/team"
+
 # records
 require "kennel/models/dashboard"
 require "kennel/models/monitor"
 require "kennel/models/slo"
 require "kennel/models/synthetic_test"
-
-# settings
-require "kennel/models/project"
-require "kennel/models/team"
 
 # need to define early since we autoload the teams/ folder into it
 module Teams

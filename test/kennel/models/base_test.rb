@@ -23,7 +23,7 @@ describe Kennel::Models::Base do
       end
       message = e.message
       assert message.sub!(/ \S+?:\d+/, " file.rb:123")
-      message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `initialize'"
+      message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `new'"
     end
 
     it "does not allow using generic names for projects" do
@@ -41,7 +41,7 @@ describe Kennel::Models::Base do
       end
       message = e.message
       assert message.sub!(/ \S+?:\d+/, " file.rb:123")
-      message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `initialize'"
+      message.must_equal "Set :kennel_id for project test_project on file.rb:123:in `new'"
     end
   end
 

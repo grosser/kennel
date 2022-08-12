@@ -214,7 +214,7 @@ describe Kennel::Models::Record do
       e = assert_raises ArgumentError do
         TestRecord.new(TestProject.new).send(:raise_with_location, ArgumentError, "hey")
       end
-      e.message.must_include "hey for project test_project on lib/kennel/"
+      e.message.must_include "hey for project test_project on test/kennel/models/record_test.rb"
     end
   end
 

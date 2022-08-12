@@ -96,7 +96,7 @@ module Kennel
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \
-          "-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
+          "-- Managed by kennel #{tracking_id} in #{project.invocation_location.split(":").first}, do not modify manually".lstrip
       end
 
       def remove_tracking_id
