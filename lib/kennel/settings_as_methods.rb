@@ -4,11 +4,15 @@ module Kennel
     SETTING_OVERRIDABLE_METHODS = [].freeze
 
     AS_PROCS = ->(options) do
+      # Fragile; depends on the fact that in both locations where AS_PROCS is
+      # used, we're 2 frames away from the user code.
+      file, line, = caller(2..2).first.split(":", 3)
+
       options.transform_values do |v|
         if v.class == Proc
           v
         else
-          -> { v }
+          eval "-> { v }", nil, file, line.to_i
         end
       end
     end
