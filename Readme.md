@@ -315,6 +315,7 @@ module ProjectA
       ...
 ```
 
+On the command line, use the projects `kennel_id` (and if none is set then snake_case of the class name) to refer to the project. For example here`PROJECT=project_a` but if it were `Foo::ProjectA` then `foo_project_a`.
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
 to unblock use the `validate: -> { false }` option.
@@ -335,7 +336,7 @@ so they can be created in a single update and can be re-created if any of them i
 
 ### Debugging changes locally
  - rebase on updated `master` to not undo other changes
- - figure out project name by converting the class name to snake-case
+ - figure out project name by converting the class name to snake_case
  - run `PROJECT=foo bundle exec rake kennel:update_datadog` to test changes for a single project (monitors: remove mentions while debugging to avoid alert spam)
    - use `PROJECT=foo,bar,...` for multiple projects
 
