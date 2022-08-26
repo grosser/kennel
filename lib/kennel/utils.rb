@@ -156,6 +156,23 @@ module Kennel
         end
         string
       end
+
+      # Returns a hash that is enumerated by key in alphanumerical order.In Ruby > 1.9, hashes enumerate their values
+      # in the order that the corresponding keys were inserted.
+      def sorted_hash_enumeration_order(value)
+        return value unless value.is_a?(Array) || value.is_a?(Hash)
+
+        if value.is_a?(Array)
+          value.map(&method(:sorted_hash_enumeration_order))
+        else
+          sorted_hash = {}
+          value.keys.map(&:to_sym).sort.each do |key|
+            sorted_hash[key] = sorted_hash_enumeration_order(value[key])
+          end
+
+          sorted_hash
+        end
+      end
     end
   end
 end
