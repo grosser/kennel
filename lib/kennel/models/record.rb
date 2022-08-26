@@ -56,12 +56,28 @@ module Kennel
         end
       end
 
-      attr_reader :project
+      attr_reader :project, :constructed_from
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
         @project = project
+        @constructed_from = caller
         super(*args)
+      end
+
+      def strip_caller(base)
+        @constructed_from -= base
+      end
+
+      def tracking_location
+        frames = constructed_from.map do |frame|
+          file, line, = frame.split(':')
+          file.sub!('/Users/revans/git/github.com/zendesk/kennel/', './')
+          "#{file}:#{line}"
+        end
+
+        # Would prefer just to remove /neighbouring/ duplicates, like "uniq(1)"
+        frames.uniq.join(";").gsub(/[ ,]/, '')
       end
 
       def diff(actual)
@@ -96,7 +112,7 @@ module Kennel
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \
-          "-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
+          "-- Managed by kennel #{tracking_id} in #{tracking_location}, do not modify manually".lstrip
       end
 
       def remove_tracking_id

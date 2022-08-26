@@ -23,6 +23,7 @@ module Kennel
           invalid! "#parts must return an array of Records"
         end
 
+        all.each { |part| part.strip_caller(here) }
         validate_parts(all)
         all
       end
