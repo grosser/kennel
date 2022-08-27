@@ -88,4 +88,8 @@ Minitest::Test.class_eval do
   def assert_json_equal(a, b)
     JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
   end
+
+  def validation_error_message(&block)
+    assert_raises(Kennel::ValidationError, &block).message
+  end
 end

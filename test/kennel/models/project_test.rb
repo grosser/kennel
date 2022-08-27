@@ -71,9 +71,9 @@ describe Kennel::Models::Project do
       bad_project = TestProject.new(parts: -> {
         Kennel::Models::Monitor.new(self)
       })
-      assert_raises(Kennel::Models::Project::PartsDidNotReturnAnArrayException) do
+      validation_error_message do
         bad_project.validated_parts
-      end
+      end.must_equal "test_project #parts must return an array of Records"
     end
   end
 end

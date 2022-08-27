@@ -2,12 +2,6 @@
 module Kennel
   module Models
     class Project < Base
-      class PartsDidNotReturnAnArrayException < RuntimeError
-        def initialize(project)
-          super("Project#parts (in #{project.name} / #{project.kennel_id}) must return an array")
-        end
-      end
-
       settings :team, :parts, :tags, :mention, :name, :kennel_id
       defaults(
         tags: -> { ["service:#{kennel_id}"] + team.tags },
@@ -25,13 +19,20 @@ module Kennel
 
       def validated_parts
         all = parts
-        raise PartsDidNotReturnAnArrayException, self unless all.is_a?(Array)
+        unless all.is_a?(Array) && all.all? { |part| part.is_a?(Record) }
+          invalid! "#parts must return an array of Records"
+        end
 
         validate_parts(all)
         all
       end
 
       private
+
+      # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
+      def invalid!(message)
+        raise ValidationError, "#{kennel_id} #{message}"
+      end
 
       # hook for users to add custom validations via `prepend`
       def validate_parts(parts)
