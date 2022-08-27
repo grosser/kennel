@@ -170,7 +170,7 @@ describe Kennel::Models::Record do
       record = eval <<~EVAL, nil, "/some/file1.rb", 777
         eval 'TestRecord.new(TestProject.new)', nil, "/another/file2.rb", 888
       EVAL
-      record.strip_caller('/some')
+      record.strip_caller("/some")
       answer = record.generated_from
       answer.must_equal ["./file1.rb:777"]
     end
