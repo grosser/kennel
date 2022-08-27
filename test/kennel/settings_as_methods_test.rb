@@ -61,15 +61,16 @@ describe Kennel::SettingsAsMethods do
     end
 
     it "stores invocation_location from first outside project line" do
-      Kennel::Models::Monitor.any_instance.expects(:caller).returns(
+      my_class = Class.new(Kennel::Models::Monitor)
+      my_class.define_method(:caller) do
         [
-          "/foo/bar.rb",
-          "#{Dir.pwd}/baz.rb"
+          "/foo/bar.rb:555:in c",
+          "#{Dir.pwd}/baz.rb:666:in d"
         ]
-      )
-      model = Kennel::Models::Monitor.new(TestProject.new)
-      location = model.instance_variable_get(:@invocation_location).sub(/:\d+/, ":123")
-      location.must_equal "baz.rb"
+      end
+      model = my_class.new(TestProject.new)
+      location = model.instance_variable_get(:@invocation_location)
+      location.must_equal "baz.rb:666:in d"
     end
   end
 
