@@ -17,13 +17,13 @@ module Kennel
         end
       end
 
-      def validated_parts
+      def validated_parts(base_dir)
         all = parts
         unless all.is_a?(Array) && all.all? { |part| part.is_a?(Record) }
           invalid! "#parts must return an array of Records"
         end
 
-        all.each { |part| part.strip_caller(here) }
+        all.each { |part| part.strip_caller(base_dir) }
         validate_parts(all)
         all
       end

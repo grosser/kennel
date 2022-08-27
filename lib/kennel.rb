@@ -78,7 +78,17 @@ module Kennel
 
         # deleting all is slow, so only delete the extras
         (old - used).each { |p| FileUtils.rm_rf(p) }
+
+        store_generated_from(parts)
       end
+    end
+
+    def store_generated_from(parts)
+      payload = parts.map do |part|
+        [part.tracking_id, part.generated_from]
+      end.sort_by(&:first).to_h
+
+      write_file_if_necessary("generated/generated_from.json", JSON.pretty_generate(payload) << "\n")
     end
 
     def write_file_if_necessary(path, content)
@@ -108,6 +118,7 @@ module Kennel
           known = []
           filter = project_filter
 
+          base_dir = File.expand_path(".")
           parts = Utils.parallel(Models::Project.recursive_subclasses) do |project_class|
             project = project_class.new
             kennel_id = project.kennel_id
@@ -115,7 +126,7 @@ module Kennel
               known << kennel_id
               next [] unless filter.include?(kennel_id)
             end
-            project.validated_parts
+            project.validated_parts(base_dir)
           end.flatten(1)
 
           if filter && parts.empty?
