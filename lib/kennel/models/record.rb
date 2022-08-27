@@ -67,7 +67,7 @@ module Kennel
 
       def strip_caller(base_dir)
         @constructed_from = @constructed_from.map do |f|
-          f.sub(base_dir, '.') if f.start_with?(base_dir)
+          f.sub(base_dir, '.') if f.start_with?(base_dir + '/')
         end.compact
       end
 

@@ -165,6 +165,17 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "strip_caller / generated_from" do
+    it "calls" do
+      record = eval <<~EVAL, nil, "/some/file1.rb", 777
+        eval 'TestRecord.new(TestProject.new)', nil, "/another/file2.rb", 888
+      EVAL
+      record.strip_caller('/some')
+      answer = record.generated_from
+      answer.must_equal ["./file1.rb:777"]
+    end
+  end
+
   describe ".ignore_default" do
     it "ignores defaults" do
       a = { a: 1 }
