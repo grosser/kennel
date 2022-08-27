@@ -64,7 +64,7 @@ describe Kennel::Models::Project do
 
   describe "#validated_parts" do
     it "returns parts" do
-      TestProject.new.validated_parts.size.must_equal 0
+      TestProject.new.validated_parts(Dir.pwd).size.must_equal 0
     end
 
     it "raises an error if parts did not return an array" do
@@ -72,7 +72,7 @@ describe Kennel::Models::Project do
         Kennel::Models::Monitor.new(self)
       })
       validation_error_message do
-        bad_project.validated_parts
+        bad_project.validated_parts(Dir.pwd)
       end.must_equal "test_project #parts must return an array of Records"
     end
   end
