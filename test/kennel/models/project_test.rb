@@ -66,5 +66,14 @@ describe Kennel::Models::Project do
     it "returns parts" do
       TestProject.new.validated_parts.size.must_equal 0
     end
+
+    it "raises an error if parts did not return an array" do
+      bad_project = TestProject.new(parts: -> {
+        Kennel::Models::Monitor.new(self)
+      })
+      validation_error_message do
+        bad_project.validated_parts
+      end.must_equal "test_project #parts must return an array of Records"
+    end
   end
 end

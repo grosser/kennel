@@ -19,11 +19,20 @@ module Kennel
 
       def validated_parts
         all = parts
+        unless all.is_a?(Array) && all.all? { |part| part.is_a?(Record) }
+          invalid! "#parts must return an array of Records"
+        end
+
         validate_parts(all)
         all
       end
 
       private
+
+      # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
+      def invalid!(message)
+        raise ValidationError, "#{kennel_id} #{message}"
+      end
 
       # hook for users to add custom validations via `prepend`
       def validate_parts(parts)
