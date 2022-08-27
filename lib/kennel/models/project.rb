@@ -2,6 +2,12 @@
 module Kennel
   module Models
     class Project < Base
+      class PartsDidNotReturnAnArrayException < RuntimeError
+        def initialize(project)
+          super("Project#parts (in #{project.name} / #{project.kennel_id}) must return an array")
+        end
+      end
+
       settings :team, :parts, :tags, :mention, :name, :kennel_id
       defaults(
         tags: -> { ["service:#{kennel_id}"] + team.tags },
@@ -19,6 +25,8 @@ module Kennel
 
       def validated_parts
         all = parts
+        raise PartsDidNotReturnAnArrayException, self unless all.is_a?(Array)
+
         validate_parts(all)
         all
       end
