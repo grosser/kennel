@@ -67,11 +67,14 @@ module Kennel
       Progress.progress "Storing" do
         old = Dir["generated/{#{(project_filter || ["**"]).join(",")}}/*"]
         used = []
+        mutex = Mutex.new
 
         Utils.parallel(parts, max: 2) do |part|
           path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-          used << File.dirname(path) # only 1 level of sub folders, so this is safe
-          used << path
+          mutex.synchronize do
+            used << File.dirname(path) # only 1 level of sub folders, so this is safe
+            used << path
+          end
           payload = part.as_json.merge(api_resource: part.class.api_resource)
           write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
         end
@@ -107,12 +110,13 @@ module Kennel
           load_all
           known = []
           filter = project_filter
+          mutex = Mutex.new
 
           parts = Utils.parallel(Models::Project.recursive_subclasses) do |project_class|
             project = project_class.new
             kennel_id = project.kennel_id
             if filter
-              known << kennel_id
+              mutex.synchronize { known << kennel_id }
               next [] unless filter.include?(kennel_id)
             end
             project.validated_parts

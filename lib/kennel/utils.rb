@@ -105,18 +105,22 @@ module Kennel
         threads = [items.size, max].min
         work = items.each_with_index.to_a
         done = Array.new(items.size)
+        mutex = Mutex.new
         workers = Array.new(threads).map do
           Thread.new do
             loop do
-              item, i = work.pop
+              item, i = mutex.synchronize { work.pop }
               break unless i
-              done[i] =
+              result =
                 begin
                   yield item
                 rescue StandardError => e
-                  work.clear
                   e
                 end
+              mutex.synchronize do
+                done[i] = result
+                work.clear if e.is_a?(StandardError)
+              end
             end
           end
         end

@@ -7,24 +7,25 @@ module Kennel
     def self.progress(name)
       Kennel.err.print "#{name} ... "
 
-      animation = "-\\|/"
-      count = 0
       stop = false
       result = nil
+      mutex = Mutex.new
 
       spinner = Thread.new do
+        animation = "-\\|/"
+        count = 0
         loop do
-          break if stop
-          Kennel.err.print animation[count % animation.size]
+          break if mutex.synchronize { stop }
+          Kennel.err.print animation[count]
           sleep 0.2
           Kennel.err.print "\b"
-          count += 1
+          count = (count + 1) % animation.size
         end
       end
 
       time = Benchmark.realtime { result = yield }
 
-      stop = true
+      mutex.synchronize { stop = true }
       spinner.join
       Kennel.err.print "#{time.round(2)}s\n"
 
