@@ -4,9 +4,10 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
-    def initialize(api, expected, project_filter: nil)
+    def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
       @api = api
       @project_filter = project_filter
+      @tracking_id_filter = tracking_id_filter
       @expected = Set.new expected # need set to speed up deletion
       calculate_diff
       validate_plan
@@ -105,7 +106,7 @@ module Kennel
 
       Progress.progress "Diffing" do
         populate_id_map @expected, actual
-        filter_actual_by_project! actual
+        filter_actual! actual
         resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
 
         @expected.each(&:add_tracking_id) # avoid diff with actual
@@ -261,11 +262,12 @@ module Kennel
         next unless tracking_id = a.fetch(:tracking_id)
 
         # ignore when deleted from the codebase
-        # (when running with project filter we cannot see the other resources in the codebase)
+        # (when running with filters we cannot see the other resources in the codebase)
         api_resource = a.fetch(:klass).api_resource
         next if
           !@id_map.get(api_resource, tracking_id) &&
-          (!project_prefixes || tracking_id.start_with?(*project_prefixes))
+          (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
+          (!@tracking_id_filter || @tracking_id_filter.include?(tracking_id))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
@@ -278,12 +280,18 @@ module Kennel
       list.each { |e| e.resolve_linked_tracking_ids!(@id_map, force: force) }
     end
 
-    def filter_actual_by_project!(actual)
-      return unless @project_filter
-      project_prefixes = @project_filter&.map { |p| "#{p}:" }
-      actual.select! do |a|
-        tracking_id = a.fetch(:tracking_id)
-        !tracking_id || tracking_id.start_with?(*project_prefixes)
+    def filter_actual!(actual)
+      if @tracking_id_filter
+        actual.select! do |a|
+          tracking_id = a.fetch(:tracking_id)
+          !tracking_id || @tracking_id_filter.include?(tracking_id)
+        end
+      elsif @project_filter
+        project_prefixes = @project_filter.map { |p| "#{p}:" }
+        actual.select! do |a|
+          tracking_id = a.fetch(:tracking_id)
+          !tracking_id || tracking_id.start_with?(*project_prefixes)
+        end
       end
     end
   end

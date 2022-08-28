@@ -102,7 +102,14 @@ describe Kennel::Syncer do
   let(:synthetics) { [] }
   let(:expected) { [] }
   let(:project_filter) { [] }
-  let(:syncer) { Kennel::Syncer.new(api, expected, project_filter: (project_filter.any? ? project_filter : nil)) }
+  let(:tracking_id_filter) { [] }
+  let(:syncer) do
+    Kennel::Syncer.new(
+      api, expected,
+      project_filter: Kennel::Utils.presence(project_filter),
+      tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
+    )
+  end
 
   before do
     Kennel::Progress.stubs(:print).yields
@@ -239,15 +246,15 @@ describe Kennel::Syncer do
       )
     end
 
-    describe "with project filter set" do
+    describe "with project filter" do
       let(:project_filter) { ["a"] }
 
-      it "does something when filtered changes" do
+      it "finds diff when filtered is added" do
         expected << monitor("a", "c")
         output.must_equal "Plan:\nCreate monitor a:c\n"
       end
 
-      it "does something when filtered changes" do
+      it "ignores not found projects" do
         project_filter.unshift "b"
         expected << monitor("a", "c")
         output.must_equal "Plan:\nCreate monitor a:c\n"
@@ -293,6 +300,21 @@ describe Kennel::Syncer do
           Plan:
           Create slo a:b
         OUTPUT
+      end
+    end
+
+    describe "with tracing_id filter" do
+      let(:project_filter) { tracking_id_filter.map { |id| id.split(":").first } }
+      let(:tracking_id_filter) { ["a:c"] }
+
+      it "finds diff when filtered is added" do
+        expected << monitor("a", "c")
+        output.must_equal "Plan:\nCreate monitor a:c\n"
+      end
+
+      it "ignores diff when other is removed" do
+        monitors << monitor_api_response("a", "b")
+        output.must_equal "Plan:\nNothing to do\n"
       end
     end
 
