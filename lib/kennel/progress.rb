@@ -7,12 +7,12 @@ module Kennel
     def self.progress(name)
       Kennel.err.print "#{name} ... "
 
-      animation = "-\\|/"
-      count = 0
       stop = false
       result = nil
 
       spinner = Thread.new do
+        animation = "-\\|/"
+        count = 0
         loop do
           break if stop
           Kennel.err.print animation[count % animation.size]
@@ -30,7 +30,7 @@ module Kennel
 
       result
     ensure
-      stop = true
+      stop = true # make thread stop without killing it
     end
   end
 end

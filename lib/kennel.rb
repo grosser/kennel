@@ -70,8 +70,7 @@ module Kennel
 
         Utils.parallel(parts, max: 2) do |part|
           path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-          used << File.dirname(path) # only 1 level of sub folders, so this is safe
-          used << path
+          used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
           payload = part.as_json.merge(api_resource: part.class.api_resource)
           write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
         end
