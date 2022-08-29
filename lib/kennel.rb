@@ -65,7 +65,17 @@ module Kennel
 
     def store(parts)
       Progress.progress "Storing" do
-        old = Dir["generated/{#{(project_filter || ["**"]).join(",")}}/*"]
+        old = Dir[[
+          "generated",
+          if project_filter || tracking_id_filter
+            [
+              "{" + (project_filter || ["*"]).join(",") + "}",
+              "{" + (tracking_id_filter || ["*"]).join(",") + "}.json"
+            ]
+          else
+            "**"
+          end
+        ].join("/")]
         used = []
 
         Utils.parallel(parts, max: 2) do |part|
@@ -93,7 +103,7 @@ module Kennel
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, project_filter: project_filter)
+      @syncer ||= Syncer.new(api, generated, project_filter: project_filter, tracking_id_filter: tracking_id_filter)
     end
 
     def api
@@ -104,22 +114,12 @@ module Kennel
       @generated ||= begin
         Progress.progress "Generating" do
           load_all
-          known = []
-          filter = project_filter
 
-          parts = Utils.parallel(Models::Project.recursive_subclasses) do |project_class|
-            project = project_class.new
-            kennel_id = project.kennel_id
-            if filter
-              known << kennel_id
-              next [] unless filter.include?(kennel_id)
-            end
-            project.validated_parts
-          end.flatten(1)
+          projects = Models::Project.recursive_subclasses.map(&:new)
+          filter_resources!(projects, :kennel_id, project_filter, "projects", "PROJECT")
 
-          if filter && parts.empty?
-            raise "#{filter.join(", ")} does not match any projects, try any of these:\n#{known.uniq.sort.join("\n")}"
-          end
+          parts = Utils.parallel(projects, &:validated_parts).flatten(1)
+          filter_resources!(parts, :tracking_id, tracking_id_filter, "resources", "TRACKING_ID")
 
           parts.group_by(&:tracking_id).each do |tracking_id, same|
             next if same.size == 1
@@ -138,7 +138,25 @@ module Kennel
     end
 
     def project_filter
-      ENV["PROJECT"]&.split(",")
+      raise "either use PROJECT= or TRACKING_ID=" if ENV["PROJECT"] && ENV["TRACKING_ID"]
+      ENV["PROJECT"]&.split(",") || tracking_id_filter&.map { |id| id.split(":", 2).first }
+    end
+
+    def tracking_id_filter
+      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",")
+    end
+
+    def filter_resources!(resources, by, against, name, env)
+      return unless against
+
+      before = resources.dup
+      resources.select! { |p| against.include?(p.send(by)) }
+      return if resources.size == against.size
+
+      raise <<~MSG.rstrip
+        #{env}=#{against.join(",")} matched #{resources.size} #{name}, try any of these:
+        #{before.map(&by).sort.uniq.join("\n")}
+      MSG
     end
 
     def load_all
@@ -147,7 +165,7 @@ module Kennel
       Dir.exist?("parts") && loader.push_dir("parts")
       loader.setup
 
-      # TODO: also do projects and update expected path too
+      # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
         Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" }
       end

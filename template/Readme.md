@@ -271,23 +271,27 @@ Remove the code that created the resource. The next update will delete it (see a
  ```
 
 ### Updating existing resources with id
-
 Setting `id` makes kennel take over a manually created datadog resource.
 When manually creating to import, it is best to remove the `id` and delete the manually created resource.
 
 When an `id` is set and the original resource is deleted, kennel will fail to update,
 removing the `id` will cause kennel to create a new resource in datadog.
 
-### Organizing many projects
-Having many projects (and their sub-resources) can quickly get out of hand.
+### Organizing projects with many resources
+When project files get too long, this structure can keep things bite-sized.
 
-Use this class structure to keep things organized:
 ```Ruby
 # projects/project_a/base.rb
 module ProjectA
   class Base < Kennel::Models::Project
     defaults(
       kennel_id: -> { "project_a" },
+      parts: -> {
+        [
+          Monitors::FooAlert.new(self),
+          ...
+        ]
+      }
       ...
 
 # projects/project_a/monitors/foo_alert.rb
@@ -297,7 +301,16 @@ module ProjectA
       ...
 ```
 
-On the command line, use the projects `kennel_id` (and if none is set then snake_case of the class name) to refer to the project. For example here`PROJECT=project_a` but if it were `Foo::ProjectA` then `foo_project_a`.
+### Updating a single project or resource
+
+- Use `PROJECT=<kennel_id>` for single project:
+
+  Use the projects `kennel_id` (and if none is set then snake_case of the class name including modules)
+  to refer to the project. For example for `class ProjectA` use `PROJECT=project_a` but for `Foo::ProjectA` use `foo_project_a`.
+
+- Use `TRACKING_ID=<project-kennel_id>:<resource-kennel_id>` for single resource:
+
+  Use the project kennel_id and the resources kennel_id, for example `class ProjectA` and `FooAlert` would give `project_a:foo_alert`.
 
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
