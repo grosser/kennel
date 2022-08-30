@@ -113,7 +113,7 @@ module Kennel
               done[i] =
                 begin
                   yield item
-                rescue StandardError => e
+                rescue Exception => e # rubocop:disable Lint/RescueException
                   work.clear
                   e
                 end
@@ -121,7 +121,7 @@ module Kennel
           end
         end
         workers.each(&:join)
-        done.each { |d| raise d if d.is_a?(StandardError) }
+        done.each { |d| raise d if d.is_a?(Exception) }
       end
 
       def natural_order(name)

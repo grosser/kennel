@@ -160,10 +160,18 @@ describe Kennel::Utils do
       end.must_be :<, 0.2
     end
 
-    it "raises exceptions" do
+    it "raises runtime errors" do
       assert_raises ArgumentError do
         Kennel::Utils.parallel([1, 2, 3, 4, 5]) do
           raise ArgumentError
+        end
+      end
+    end
+
+    it "raises exceptions" do
+      assert_raises Interrupt do
+        Kennel::Utils.parallel([1, 2, 3, 4, 5]) do
+          raise Interrupt
         end
       end
     end
