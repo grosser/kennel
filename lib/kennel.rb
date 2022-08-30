@@ -164,6 +164,7 @@ module Kennel
       Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
       Dir.exist?("parts") && loader.push_dir("parts")
       loader.setup
+      loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
 
       # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
