@@ -219,9 +219,13 @@ describe Kennel do
         TXT
       end
 
-      it "complains when also using project filter" do
+      it "complains when using mismatching project filter" do
         e = assert_raises(RuntimeError) { with_env(PROJECT: "other_project") { Kennel.generate } }
-        e.message.must_equal "either use PROJECT= or TRACKING_ID="
+        e.message.must_equal "do not set PROJECT= when using TRACKING_ID="
+      end
+
+      it "ignores when using same project filter" do
+        with_env(PROJECT: "temp_project") { Kennel.generate }
       end
     end
   end

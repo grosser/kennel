@@ -138,8 +138,12 @@ module Kennel
     end
 
     def project_filter
-      raise "either use PROJECT= or TRACKING_ID=" if ENV["PROJECT"] && ENV["TRACKING_ID"]
-      ENV["PROJECT"]&.split(",") || tracking_id_filter&.map { |id| id.split(":", 2).first }
+      projects = ENV["PROJECT"]&.split(",")
+      tracking_projects = tracking_id_filter&.map { |id| id.split(":", 2).first }
+      if projects && tracking_projects && projects != tracking_projects
+        raise "do not set PROJECT= when using TRACKING_ID="
+      end
+      projects || tracking_projects
     end
 
     def tracking_id_filter
