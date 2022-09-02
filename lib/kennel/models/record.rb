@@ -2,6 +2,7 @@
 module Kennel
   module Models
     class Record < Base
+      MANAGED_BY_KENNEL = ENV.fetch("MANAGED_BY_KENNEL", "Managed by kennel")
       LOCK = "\u{1F512}"
       TRACKING_FIELDS = [:message, :description].freeze
       READONLY_ATTRIBUTES = [
@@ -28,14 +29,14 @@ module Kennel
         end
 
         def parse_tracking_id(a)
-          a[self::TRACKING_FIELD].to_s[/-- Managed by kennel (#{ALLOWED_KENNEL_ID_FULL})/, 1]
+          a[self::TRACKING_FIELD].to_s[/-- #{Regexp.escape(MANAGED_BY_KENNEL)} (#{ALLOWED_KENNEL_ID_FULL})/, 1]
         end
 
         # TODO: combine with parse into a single method or a single regex
         def remove_tracking_id(a)
           value = a[self::TRACKING_FIELD]
           a[self::TRACKING_FIELD] =
-            value.dup.sub!(/\n?-- Managed by kennel .*/, "") ||
+            value.dup.sub!(/\n?-- #{Regexp.escape(MANAGED_BY_KENNEL)} .*/, "") ||
             raise("did not find tracking id in #{value}")
         end
 
@@ -92,11 +93,11 @@ module Kennel
       def add_tracking_id
         json = as_json
         if self.class.parse_tracking_id(json)
-          invalid! "remove \"-- Managed by kennel\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
+          invalid! "remove \"-- #{MANAGED_BY_KENNEL}\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \
-          "-- Managed by kennel #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
+          "-- #{MANAGED_BY_KENNEL} #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
       end
 
       def remove_tracking_id
