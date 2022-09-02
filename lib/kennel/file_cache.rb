@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'tempfile'
+
 # cache that reads everything from a single file
 # - avoids doing multiple disk reads while iterating all definitions
 # - has a global expiry to not keep deleted resources forever
@@ -44,7 +46,12 @@ module Kennel
     def persist
       dir = File.dirname(@file)
       FileUtils.mkdir_p(dir) unless File.directory?(dir)
-      File.write(@file, Marshal.dump(@data))
+
+      Tempfile.open('FileCache', dir) do |tmp|
+        tmp.write(Marshal.dump(@data))
+        File.chmod 0o600, tmp.path
+        File.rename tmp.path, @file
+      end
     end
 
     # keep the cache small to make loading it fast (5MB ~= 100ms)
