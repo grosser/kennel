@@ -7,6 +7,9 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
+    Plan = Struct.new(:noop?, :already_ok, :create, :update, :delete, keyword_init: true)
+    Update = Struct.new(:update_log, keyword_init: true)
+
     def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
       @api = api
       @project_filter = project_filter
@@ -27,6 +30,14 @@ module Kennel
         print_plan "Update", @update, :yellow
         print_plan "Delete", @delete, :red
       end
+
+      Plan.new(
+        noop?: noop?,
+        already_ok: @already_ok,
+        create: @create,
+        update: @update,
+        delete: @delete
+      )
     end
 
     def confirm
@@ -36,12 +47,15 @@ module Kennel
     end
 
     def update
+      update_log = []
+
       each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
         cache_metadata reply, e.class
         id = reply.fetch(:id)
+        update_log << [:create, e.class.api_resource, id]
         populate_id_map [], [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
@@ -50,6 +64,7 @@ module Kennel
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
         @api.update e.class.api_resource, id, e.as_json
+        update_log << [:update, e.class.api_resource, id]
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
@@ -58,8 +73,11 @@ module Kennel
         message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete klass.api_resource, id
+        update_log << [:delete, klass.api_resource, id]
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
+
+      Update.new(update_log: update_log)
     end
 
     private
@@ -103,6 +121,7 @@ module Kennel
       @warnings = []
       @update = []
       @delete = []
+      @already_ok = []
       @id_map = IdMap.new
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
@@ -133,7 +152,11 @@ module Kennel
           id = a.fetch(:id)
           if e
             diff = e.diff(a) # slow ...
-            @update << [id, e, a, diff] if diff.any?
+            if diff.any?
+              @update << [id, e, a, diff]
+            else
+              @already_ok << [id, e, a]
+            end
           elsif a.fetch(:tracking_id) # was previously managed
             @delete << [id, nil, a]
           end

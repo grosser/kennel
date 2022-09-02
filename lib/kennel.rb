@@ -42,6 +42,9 @@ module Kennel
 
   include Kennel::Compatibility
 
+  PlanResults = Struct.new(:plan, keyword_init: true)
+  UpdateResults = Struct.new(:plan, :update, keyword_init: true)
+
   class Engine
     def initialize
       @out = $stdout
@@ -51,6 +54,11 @@ module Kennel
 
     attr_accessor :out, :err, :strict_imports
 
+    def reset
+      remove_instance_variable(:@generated)
+      remove_instance_variable(:@syncer)
+    end
+
     def generate
       out = generated
       store out if ENV["STORE"] != "false" # quicker when debugging
@@ -58,12 +66,19 @@ module Kennel
     end
 
     def plan
-      syncer.plan
+      the_plan = syncer.plan
+      PlanResults.new(
+        plan: the_plan
+      )
     end
 
     def update
-      syncer.plan
-      syncer.update if syncer.confirm
+      the_plan = syncer.plan
+      the_update = syncer.update if syncer.confirm
+      UpdateResults.new(
+        plan: the_plan,
+        update: the_update
+      )
     end
 
     private
@@ -169,11 +184,13 @@ module Kennel
     end
 
     def load_all
-      loader = Zeitwerk::Loader.new
-      Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
-      Dir.exist?("parts") && loader.push_dir("parts")
-      loader.setup
-      loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
+      @loaded_zeitwerk ||= begin
+        loader = Zeitwerk::Loader.new
+        Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
+        Dir.exist?("parts") && loader.push_dir("parts")
+        loader.setup
+        loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
+      end
 
       # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
