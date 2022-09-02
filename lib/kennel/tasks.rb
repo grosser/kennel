@@ -12,6 +12,44 @@ module Kennel
         Kennel.err.puts message if message
         raise SystemExit.new(1), message
       end
+
+      def environment
+        @environment ||= begin
+          require "kennel"
+          gem "dotenv"
+          require "dotenv"
+          source = ".env"
+
+          # warn when users have things like DATADOG_TOKEN already set and it will not be loaded from .env
+          unless ENV["KENNEL_SILENCE_UPDATED_ENV"]
+            updated = Dotenv.parse(source).select { |k, v| ENV[k] && ENV[k] != v }
+            warn "Environment variables #{updated.keys.join(", ")} need to be unset to be sourced from #{source}" if updated.any?
+          end
+
+          Dotenv.load(source)
+          true
+        end
+      end
+
+      def ci
+        environment
+
+        if on_default_branch? && git_push?
+          Kennel.strict_imports = false
+          Kennel.update
+        else
+          Kennel.plan # show plan in CI logs
+        end
+      end
+
+      def on_default_branch?
+        branch = (ENV["TRAVIS_BRANCH"] || ENV["GITHUB_REF"]).to_s.sub(/^refs\/heads\//, "")
+        (branch == (ENV["DEFAULT_BRANCH"] || "master"))
+      end
+
+      def git_push?
+        (ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push")
+      end
     end
   end
 end
@@ -71,18 +109,7 @@ namespace :kennel do
 
   desc "update on push to the default branch, otherwise show plan"
   task :ci do
-    branch = (ENV["TRAVIS_BRANCH"] || ENV["GITHUB_REF"]).to_s.sub(/^refs\/heads\//, "")
-    on_default_branch = (branch == (ENV["DEFAULT_BRANCH"] || "master"))
-    is_push = (ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push")
-    task_name =
-      if on_default_branch && is_push
-        Kennel.strict_imports = false
-        "kennel:update_datadog"
-      else
-        "kennel:plan" # show plan in CI logs
-      end
-
-    Rake::Task[task_name].invoke
+    Kennel::Tasks.ci
   end
 
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
@@ -207,17 +234,6 @@ namespace :kennel do
   end
 
   task :environment do
-    require "kennel"
-    gem "dotenv"
-    require "dotenv"
-    source = ".env"
-
-    # warn when users have things like DATADOG_TOKEN already set and it will not be loaded from .env
-    unless ENV["KENNEL_SILENCE_UPDATED_ENV"]
-      updated = Dotenv.parse(source).select { |k, v| ENV[k] && ENV[k] != v }
-      warn "Environment variables #{updated.keys.join(", ")} need to be unset to be sourced from #{source}" if updated.any?
-    end
-
-    Dotenv.load(source)
+    Kennel::Tasks.environment
   end
 end
