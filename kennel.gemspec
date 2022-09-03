@@ -11,6 +11,7 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.files = `git ls-files lib Readme.md template/Readme.md`.split("\n")
   s.license = "MIT"
   s.required_ruby_version = ">= 2.6.0"
+  s.add_runtime_dependency "diff-lcs", "~> 1.5"
   s.add_runtime_dependency "faraday", "~> 1.8"
   s.add_runtime_dependency "hashdiff", "~> 1.0"
   s.add_runtime_dependency "net-http-persistent", "~> 4.0"

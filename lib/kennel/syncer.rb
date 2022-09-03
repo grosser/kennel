@@ -1,4 +1,7 @@
 # frozen_string_literal: true
+
+require "diff/lcs"
+
 module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
@@ -196,21 +199,47 @@ module Kennel
 
     def print_diff(diff)
       diff.each do |type, field, old, new|
+        use_diff = false
         if type == "+"
           temp = Utils.pretty_inspect(new)
           new = Utils.pretty_inspect(old)
           old = temp
+        elsif old.is_a?(String) && new.is_a?(String) && (old.include?("\n") || new.include?("\n"))
+          use_diff = true
         else # ~ and -
           old = Utils.pretty_inspect(old)
           new = Utils.pretty_inspect(new)
         end
 
-        if (old + new).size > 100
+        if use_diff
+          Kennel.out.puts "  #{type}#{field}"
+          Kennel.out.puts(diff(old, new).map { |l| "    #{l}" })
+        elsif (old + new).size > 100
           Kennel.out.puts "  #{type}#{field}"
           Kennel.out.puts "    #{old} ->"
           Kennel.out.puts "    #{new}"
         else
           Kennel.out.puts "  #{type}#{field} #{old} -> #{new}"
+        end
+      end
+    end
+
+    # display diff for multi-line strings
+    # must stay readable when color is off too
+    def diff(old, new)
+      Diff::LCS.sdiff(old.split("\n", -1), new.split("\n", -1)).flat_map do |diff|
+        case diff.action
+        when "-"
+          Utils.color(:red, "- #{diff.old_element}")
+        when "+"
+          Utils.color(:green, "+ #{diff.new_element}")
+        when "!"
+          [
+            Utils.color(:red, "- #{diff.old_element}"),
+            Utils.color(:green, "+ #{diff.new_element}")
+          ]
+        else
+          "  #{diff.old_element}"
         end
       end
     end
