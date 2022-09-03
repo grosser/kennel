@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'tempfile'
+require "tempfile"
 
 # cache that reads everything from a single file
 # - avoids doing multiple disk reads while iterating all definitions
@@ -47,9 +47,8 @@ module Kennel
       dir = File.dirname(@file)
       FileUtils.mkdir_p(dir) unless File.directory?(dir)
 
-      Tempfile.open('FileCache', dir) do |tmp|
-        tmp.write(Marshal.dump(@data))
-        File.chmod 0o600, tmp.path
+      Tempfile.create do |tmp|
+        Marshal.dump @data, tmp
         File.rename tmp.path, @file
       end
     end
