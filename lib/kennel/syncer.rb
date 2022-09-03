@@ -196,16 +196,22 @@ module Kennel
 
     def print_diff(diff)
       diff.each do |type, field, old, new|
+        use_diff = false
         if type == "+"
           temp = Utils.pretty_inspect(new)
           new = Utils.pretty_inspect(old)
           old = temp
+        elsif old.is_a?(String) && new.is_a?(String) && (old + new).size > 100
+          use_diff = true
         else # ~ and -
           old = Utils.pretty_inspect(old)
           new = Utils.pretty_inspect(new)
         end
 
-        if (old + new).size > 100
+        if use_diff
+          Kennel.out.puts "  #{type}#{field}"
+          Kennel.out.puts diff(old, new)
+        elsif (old + new).size > 100
           Kennel.out.puts "  #{type}#{field}"
           Kennel.out.puts "    #{old} ->"
           Kennel.out.puts "    #{new}"
@@ -213,6 +219,39 @@ module Kennel
           Kennel.out.puts "  #{type}#{field} #{old} -> #{new}"
         end
       end
+    end
+
+    def diff(old, new)
+      Tempfile.open("old") do |a|
+        a.puts old
+        a.flush
+
+        Tempfile.open("new") do |b|
+          b.puts new
+          b.flush
+
+          result = `#{diff_cmd} #{a.path} #{b.path}`
+          result.sub!(/^\-\-\- .+/, "--- old")
+          result.sub!(/^\+\+\+ .+/, "+++ new")
+          result
+        end
+      end
+    end
+
+    def diff_cmd
+      return @diff_cmd if defined? @diff_cmd
+
+      @diff_cmd =
+        if (RbConfig::CONFIG["host_os"] =~ /mswin|mingw/ && system("diff.exe", __FILE__, __FILE__))
+          "diff.exe -u"
+        elsif system("gdiff", __FILE__, __FILE__)
+          "gdiff -u" # solaris and kin suck
+        elsif system("diff", __FILE__, __FILE__)
+          # "delta --paging never" also works ... but theme cannot be selected
+          "diff -u"
+        else
+          nil
+        end
     end
 
     # We've already validated the desired objects ('generated') in isolation.
