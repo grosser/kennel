@@ -37,9 +37,10 @@ describe Kennel do
   end
 
   before do
-    Kennel.instance_variable_set(:@generated, nil)
-    Kennel.instance_variable_set(:@api, nil)
-    Kennel.instance_variable_set(:@syncer, nil)
+    engine = Kennel.send(:default_instance)
+    engine.instance_variable_set(:@generated, nil)
+    engine.instance_variable_set(:@api, nil)
+    engine.instance_variable_set(:@syncer, nil)
     Zeitwerk::Loader.any_instance.stubs(:setup)
   end
 

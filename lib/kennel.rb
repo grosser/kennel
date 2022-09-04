@@ -5,6 +5,7 @@ require "zeitwerk"
 require "English"
 
 require "kennel/version"
+require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/syncer"
@@ -39,11 +40,15 @@ module Kennel
   class ValidationError < RuntimeError
   end
 
-  @out = $stdout
-  @err = $stderr
-  @strict_imports = true
+  include Kennel::Compatibility
 
-  class << self
+  class Engine
+    def initialize
+      @out = $stdout
+      @err = $stderr
+      @strict_imports = true
+    end
+
     attr_accessor :out, :err, :strict_imports
 
     def generate
