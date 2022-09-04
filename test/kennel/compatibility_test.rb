@@ -4,9 +4,7 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::Compatibility do
-  after do
-    Kennel.instance_variable_set(:@default_instance, nil)
-  end
+  reset_default_instance
 
   it "makes a default instance of kennel" do
     engine = Kennel::Engine.new
