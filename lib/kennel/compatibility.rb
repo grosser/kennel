@@ -11,7 +11,7 @@ module Kennel
         end
 
         def instance
-          @default_instance ||= build_default
+          @instance ||= build_default
         end
 
         private

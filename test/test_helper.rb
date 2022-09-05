@@ -39,12 +39,12 @@ module Teams
 end
 
 Minitest::Test.class_eval do
-  def reset_default_instance
-    Kennel.instance_variable_set(:@default_instance, nil)
+  def reset_instance
+    Kennel.instance_variable_set(:@instance, nil)
   end
 
-  def self.reset_default_instance
-    after { reset_default_instance }
+  def self.reset_instance
+    after { reset_instance }
   end
 
   def with_env(hash)
@@ -68,7 +68,7 @@ Minitest::Test.class_eval do
       Kennel.err = stderr
     end
 
-    reset_default_instance
+    reset_instance
   end
 
   def self.in_temp_dir(&block)
