@@ -63,7 +63,7 @@ Minitest::Test.class_eval do
     let(:stdout) { StringIO.new }
     let(:stderr) { StringIO.new }
 
-    before do |_t|
+    before do
       Kennel.out = stdout
       Kennel.err = stderr
     end
