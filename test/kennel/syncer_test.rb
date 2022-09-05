@@ -368,7 +368,10 @@ describe Kennel::Syncer do
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
-            ~message \"nope\" -> \"@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually\"
+            ~message
+              - nope
+              + @slack-foo
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
             +foo nil -> \"bar\"
         TEXT
       end
@@ -379,8 +382,10 @@ describe Kennel::Syncer do
           Plan:
           Update monitor a:b
             ~message
-              "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
-              "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+              - foo
+              + @slack-foo
+              - -- Managed by kennel foo:bar in foo.rb
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
             +foo nil -> \"bar\"
         TEXT
       end
@@ -392,8 +397,10 @@ describe Kennel::Syncer do
           Plan:
           Update monitor a:b
             ~message
-              "foo\\n-- Managed by kennel foo:bar in foo.rb" ->
-              "@slack-foo\\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+              - foo
+              + @slack-foo
+              - -- Managed by kennel foo:bar in foo.rb
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
         TEXT
       end
 
@@ -675,6 +682,32 @@ describe Kennel::Syncer do
           \e[1A\033[KCreated dashboard a:b https://app.datadoghq.com/dashboard/abc
         TXT
       end
+    end
+  end
+
+  describe "#diff" do
+    def call(a, b)
+      syncer.send(:diff, a, b).map { |l| Kennel::Utils.strip_shell_control(l) }
+    end
+
+    it "can replace" do
+      call("a", "b").must_equal ["- a", "+ b"]
+    end
+
+    it "can add" do
+      call("", "b").must_equal ["+ b"]
+    end
+
+    it "can remove" do
+      call("a", "").must_equal ["- a"]
+    end
+
+    it "can keep" do
+      call("a", "a").must_equal ["  a"]
+    end
+
+    it "shows newlines" do
+      call("\na", "a\n\n").must_equal ["- ", "  a", "+ ", "+ "]
     end
   end
 end
