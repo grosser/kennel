@@ -47,7 +47,7 @@ module Kennel
       dir = File.dirname(@file)
       FileUtils.mkdir_p(dir) unless File.directory?(dir)
 
-      Tempfile.create do |tmp|
+      Tempfile.create "kennel-file-cache", dir do |tmp|
         Marshal.dump @data, tmp
         File.rename tmp.path, @file
       end

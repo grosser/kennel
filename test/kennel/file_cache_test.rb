@@ -44,6 +44,15 @@ describe Kennel::FileCache do
       data.must_equal(a: [4, [3, "1"], cache.instance_variable_get(:@expires)])
     end
 
+    it "avoids writing cross volume by writing tempfile locally" do
+      File.expects(:rename).with do |a, b|
+        File.dirname(a).must_equal File.dirname(b)
+      end
+      cache.open do |c|
+        c.fetch(:a, 3) { 4 }.must_equal 4
+      end
+    end
+
     it "can use nested file" do
       cache = Kennel::FileCache.new("foo/bar", "1")
       cache.open do |c|
