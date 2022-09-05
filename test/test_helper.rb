@@ -39,6 +39,14 @@ module Teams
 end
 
 Minitest::Test.class_eval do
+  def reset_instance
+    Kennel.instance_variable_set(:@instance, nil)
+  end
+
+  def self.reset_instance
+    after { reset_instance }
+  end
+
   def with_env(hash)
     old = ENV.to_h
     hash.each { |k, v| ENV[k.to_s] = v }
@@ -55,14 +63,12 @@ Minitest::Test.class_eval do
     let(:stdout) { StringIO.new }
     let(:stderr) { StringIO.new }
 
-    around do |t|
+    before do
       Kennel.out = stdout
       Kennel.err = stderr
-      t.call
-    ensure
-      Kennel.out = STDOUT
-      Kennel.err = STDERR
     end
+
+    reset_instance
   end
 
   def self.in_temp_dir(&block)
