@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Kennel
   module Compatibility
     def self.included(into)
