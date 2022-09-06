@@ -3,9 +3,6 @@
 module Kennel
   module ProjectsProvider
     class LoadAll
-      # def initialize
-      # end
-
       def projects
         load_all
         Models::Project.recursive_subclasses.map(&:new)
