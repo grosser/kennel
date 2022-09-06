@@ -18,6 +18,7 @@ require "kennel/file_cache"
 require "kennel/template_variables"
 require "kennel/optional_validations"
 require "kennel/unmuted_alerts"
+require "kennel/parts_writer/generated_dir"
 
 require "kennel/models/base"
 require "kennel/models/record"
@@ -69,42 +70,10 @@ module Kennel
     private
 
     def store(parts)
-      Progress.progress "Storing" do
-        old = Dir[[
-          "generated",
-          if project_filter || tracking_id_filter
-            [
-              "{" + (project_filter || ["*"]).join(",") + "}",
-              "{" + (tracking_id_filter || ["*"]).join(",") + "}.json"
-            ]
-          else
-            "**"
-          end
-        ].join("/")]
-        used = []
-
-        Utils.parallel(parts, max: 2) do |part|
-          path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-          used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
-          payload = part.as_json.merge(api_resource: part.class.api_resource)
-          write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
-        end
-
-        # deleting all is slow, so only delete the extras
-        (old - used).each { |p| FileUtils.rm_rf(p) }
-      end
-    end
-
-    def write_file_if_necessary(path, content)
-      # 99% case
-      begin
-        return if File.read(path) == content
-      rescue Errno::ENOENT
-        FileUtils.mkdir_p(File.dirname(path))
-      end
-
-      # slow 1% case
-      File.write(path, content)
+      Kennel::PartsWriter::GeneratedDir.new(
+        project_filter: project_filter,
+        tracking_id_filter: tracking_id_filter
+      ).store(parts: parts)
     end
 
     def syncer
