@@ -17,6 +17,8 @@ module Kennel
 
       def store(parts:)
         Progress.progress "Storing" do
+          ensure_dir_exists
+
           old = Dir[[
             # FIXME: characters like `{` and `}` in base_dir will break things
             base_dir,
@@ -26,7 +28,7 @@ module Kennel
                 "{" + (tracking_id_filter || ["*"]).join(",") + "}.json"
               ]
             else
-              "**"
+              "**/*"
             end
           ].join("/")]
           used = []
@@ -46,6 +48,11 @@ module Kennel
       private
 
       attr_reader :base_dir, :project_filter, :tracking_id_filter
+
+      def ensure_dir_exists
+        Dir.mkdir(base_dir)
+      rescue Errno::EEXIST
+      end
 
       def write_file_if_necessary(path, content)
         # 99% case
