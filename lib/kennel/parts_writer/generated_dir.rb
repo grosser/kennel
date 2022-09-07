@@ -51,7 +51,7 @@ module Kennel
 
       def ensure_dir_exists
         Dir.mkdir(base_dir)
-      rescue Errno::EEXIST
+      rescue Errno::EEXIST # rubocop:disable Lint/SuppressedException
       end
 
       def write_file_if_necessary(path, content)

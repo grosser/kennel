@@ -23,13 +23,13 @@ describe Kennel::PartsWriter::GeneratedDir do
       {
         title: "a title",
         kennel_id: "a_dashboard",
-        layout_type: "fixed",
+        layout_type: "fixed"
       }.merge(options)
     )
   end
 
   def tree
-    require 'find'
+    require "find"
     Find.find(base_dir).map { |path| path.sub(base_dir + "/", "") }.sort - [base_dir]
   end
 
@@ -51,9 +51,9 @@ describe Kennel::PartsWriter::GeneratedDir do
     end
 
     let(:project) { build_project }
-    let(:part1a) { build_dashboard(project: project, kennel_id: 'd1', title: 'A') }
-    let(:part1b) { build_dashboard(project: project, kennel_id: 'd1', title: 'B') }
-    let(:part2) { build_dashboard(project: project, kennel_id: 'd2') }
+    let(:part1a) { build_dashboard(project: project, kennel_id: "d1", title: "A") }
+    let(:part1b) { build_dashboard(project: project, kennel_id: "d1", title: "B") }
+    let(:part2) { build_dashboard(project: project, kennel_id: "d2") }
 
     before do
       Kennel::Progress.stubs(:progress).yields
@@ -98,7 +98,7 @@ describe Kennel::PartsWriter::GeneratedDir do
       it "with no parts" do
         Dir.rmdir(base_dir)
         writer.store(parts: [])
-        Dir.exists?(base_dir).must_equal(true)
+        Dir.exist?(base_dir).must_equal(true)
         tree.must_equal(%w[])
       end
     end
@@ -141,8 +141,8 @@ describe Kennel::PartsWriter::GeneratedDir do
     describe "with a project_filter" do
       let(:project_filter) { ["p1", "p2"] }
 
-      let(:p2) { build_project(kennel_id: 'p2') }
-      let(:dashboard_in_p2) { build_dashboard(project: p2, kennel_id: 'd3') }
+      let(:p2) { build_project(kennel_id: "p2") }
+      let(:dashboard_in_p2) { build_dashboard(project: p2, kennel_id: "d3") }
 
       before do
         # Using 'unfiltered' shouldn't make a difference
