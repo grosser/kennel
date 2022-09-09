@@ -54,11 +54,6 @@ module Kennel
 
     attr_accessor :out, :err, :strict_imports
 
-    def reset
-      remove_instance_variable(:@generated)
-      remove_instance_variable(:@syncer)
-    end
-
     def generate
       out = generated
       store out if ENV["STORE"] != "false" # quicker when debugging
