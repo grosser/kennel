@@ -13,8 +13,8 @@ module Kennel
         raise SystemExit.new(1), message
       end
 
-      def environment
-        @environment ||= begin
+      def load_environment
+        @load_environment ||= begin
           require "kennel"
           gem "dotenv"
           require "dotenv"
@@ -234,6 +234,6 @@ namespace :kennel do
   end
 
   task :environment do
-    Kennel::Tasks.environment
+    Kennel::Tasks.load_environment
   end
 end
