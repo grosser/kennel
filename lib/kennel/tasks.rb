@@ -150,7 +150,7 @@ namespace :kennel do
 
     if ENV["FORMAT"] == "json"
       report = monitors.map do |m|
-        match = m[:message].to_s.match(/-- #{Regexp.escape(Kennel::Models::Record::MANAGED_BY_KENNEL)} (\S+:\S+) in (\S+), /) || []
+        match = m[:message].to_s.match(/-- #{Regexp.escape(Kennel::Models::Record::MARKER_TEXT)} (\S+:\S+) in (\S+), /) || []
         m.slice(:url, :name, :tags, :days_in_no_data).merge(
           kennel_tracking_id: match[1],
           kennel_source: match[2]
