@@ -42,8 +42,8 @@ module Kennel
 
   include Kennel::Compatibility
 
-  PlanResults = Struct.new(:plan, keyword_init: true)
-  UpdateResults = Struct.new(:plan, :update, keyword_init: true)
+  PlanResult = Struct.new(:plan, keyword_init: true)
+  UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   class Engine
     def initialize
@@ -62,7 +62,7 @@ module Kennel
 
     def plan
       the_plan = syncer.plan
-      PlanResults.new(
+      PlanResult.new(
         plan: the_plan
       )
     end
@@ -70,7 +70,7 @@ module Kennel
     def update
       the_plan = syncer.plan
       the_update = syncer.update if syncer.confirm
-      UpdateResults.new(
+      UpdateResult.new(
         plan: the_plan,
         update: the_update
       )
