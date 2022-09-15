@@ -32,7 +32,7 @@ module Kennel
       end
 
       def ci
-        environment
+        load_environment
 
         if on_default_branch? && git_push?
           Kennel.strict_imports = false
