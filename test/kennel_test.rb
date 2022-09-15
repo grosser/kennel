@@ -36,10 +36,6 @@ describe Kennel do
     RUBY
   end
 
-  before do
-    Zeitwerk::Loader.any_instance.stubs(:setup)
-  end
-
   # we need to clean up so new definitions of TempProject trigger subclass addition
   # and leftover classes do not break other tests
   after do
