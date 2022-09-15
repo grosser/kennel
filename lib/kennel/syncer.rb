@@ -7,7 +7,7 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
-    Plan = Struct.new(:noop?, :already_ok, :create, :update, :delete, keyword_init: true)
+    Plan = Struct.new(:noop?, :no_change, :create, :update, :delete, keyword_init: true)
     Update = Struct.new(:update_log, keyword_init: true)
 
     def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
@@ -33,7 +33,7 @@ module Kennel
 
       Plan.new(
         noop?: noop?,
-        already_ok: @already_ok,
+        no_change: @no_change,
         create: @create,
         update: @update,
         delete: @delete
@@ -121,7 +121,7 @@ module Kennel
       @warnings = []
       @update = []
       @delete = []
-      @already_ok = []
+      @no_change = []
       @id_map = IdMap.new
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
@@ -155,7 +155,7 @@ module Kennel
             if diff.any?
               @update << [id, e, a, diff]
             else
-              @already_ok << [id, e, a]
+              @no_change << [id, e, a]
             end
           elsif a.fetch(:tracking_id) # was previously managed
             @delete << [id, nil, a]
