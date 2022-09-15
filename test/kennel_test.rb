@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "tmpdir"
 
-SingleCov.covered! uncovered: 2 # TODO: reduce this
+SingleCov.covered!
 
 describe Kennel do
   def write(file, content)
@@ -34,10 +34,6 @@ describe Kennel do
         )
       end
     RUBY
-  end
-
-  before do
-    Zeitwerk::Loader.any_instance.stubs(:setup)
   end
 
   # we need to clean up so new definitions of TempProject trigger subclass addition

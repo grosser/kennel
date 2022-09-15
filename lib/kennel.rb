@@ -175,13 +175,21 @@ module Kennel
     end
 
     def load_all
-      @loaded_zeitwerk ||= begin
-        loader = Zeitwerk::Loader.new
-        Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
-        Dir.exist?("parts") && loader.push_dir("parts")
-        loader.setup
-        loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
-      end
+      # load_all's purpose is to "require" all the .rb files under './projects',
+      # also with reference to ./teams and ./parts. What happens if you call it
+      # more than once?
+      #
+      # For a reason yet to be investigated, Zeitwerk rejects second and subsequent calls.
+      # But even if we skip over the Zeitwerk part, the nature of 'require' is
+      # somewhat one-way: we're not providing any mechanism to *un*load things.
+      # As long as the contents of `./projects`, `./teams` and `./parts` doesn't
+      # change between calls, then simply by no-op'ing subsequent calls to `load_all`
+      # we can have `load_all` appear to be idempotent.
+      loader = Zeitwerk::Loader.new
+      Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
+      Dir.exist?("parts") && loader.push_dir("parts")
+      loader.setup
+      loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
 
       # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
