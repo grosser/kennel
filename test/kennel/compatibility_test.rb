@@ -12,14 +12,6 @@ describe Kennel::Compatibility do
     Kennel.instance.config.strict_imports.must_equal(true)
   end
 
-  it "provides strict_imports and strict_imports=" do
-    Kennel.strict_imports.must_equal(true)
-    Kennel.instance.config.strict_imports.must_equal(true)
-    Kennel.strict_imports = false
-    Kennel.strict_imports.must_equal(false)
-    Kennel.instance.config.strict_imports.must_equal(false)
-  end
-
   %I[generate plan update].each do |sym|
     it "can #{sym}" do
       engine = Kennel::Engine.new
