@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered! uncovered: 1
+SingleCov.covered!
 
 describe Kennel::Compatibility do
   reset_instance
@@ -18,6 +18,17 @@ describe Kennel::Compatibility do
     Kennel.err.must_equal(err)
     engine.config.out.must_equal(out)
     engine.config.err.must_equal(err)
+  end
+
+  %I[generate plan update].each do |sym|
+    it "can #{sym}" do
+      engine = Kennel::Engine.new
+      Kennel::Engine.expects(:new).times(1).returns(engine)
+
+      return_value = {}
+      engine.expects(sym).times(1).returns(return_value)
+      Kennel.public_send(sym).must_equal(return_value)
+    end
   end
 
   it "provides private :api compatibility" do
