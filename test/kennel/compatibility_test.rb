@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 1
 
 describe Kennel::Compatibility do
   reset_instance
@@ -12,10 +12,12 @@ describe Kennel::Compatibility do
 
     out = StringIO.new
     err = StringIO.new
-    engine.out = out
-    engine.err = err
+    Kennel.out = out
+    Kennel.err = err
     Kennel.out.must_equal(out)
     Kennel.err.must_equal(err)
+    engine.config.out.must_equal(out)
+    engine.config.err.must_equal(err)
   end
 
   it "provides private :api compatibility" do

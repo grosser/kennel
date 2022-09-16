@@ -6,6 +6,7 @@ require "English"
 
 require "kennel/version"
 require "kennel/compatibility"
+require "kennel/config"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/syncer"
@@ -45,7 +46,7 @@ module Kennel
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   class Engine
-    def initialize(config_from = nil, &block)
+    def initialize(config_from = Kennel::Config.from_env, &block)
       @config = Kennel::Config.new(config_from, &block)
     end
 
