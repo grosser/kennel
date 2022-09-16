@@ -35,10 +35,12 @@ module Kennel
         load_environment
 
         if on_default_branch? && git_push?
-          Kennel.strict_imports = false
-          Kennel.update
+          config = Kennel::Config.from_env do |c|
+            c.strict_imports = false
+          end
+          Kennel::Engine.new(config).update
         else
-          Kennel.plan # show plan in CI logs
+          Kennel::Engine.new.plan # show plan in CI logs
         end
       end
 

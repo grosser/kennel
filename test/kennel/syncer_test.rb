@@ -95,6 +95,8 @@ describe Kennel::Syncer do
     monitors << monitor_api_response("a", "b")
   end
 
+  let(:strict_imports) { true }
+  let(:config) { Kennel::Config.new(strict_imports: strict_imports) }
   let(:api) { stub("Api") }
   let(:monitors) { [] }
   let(:dashboards) { [] }
@@ -105,7 +107,7 @@ describe Kennel::Syncer do
   let(:tracking_id_filter) { [] }
   let(:syncer) do
     Kennel::Syncer.new(
-      api, expected,
+      config, api, expected,
       project_filter: Kennel::Utils.presence(project_filter),
       tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
     )
@@ -410,11 +412,10 @@ describe Kennel::Syncer do
         e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
       end
 
-      it "complains when id was not found (without strict imports)" do
-        old_setting = Kennel.strict_imports
+      context "strict_imports = false" do
+        let(:strict_imports) { false }
 
-        begin
-          Kennel.strict_imports = false
+        it "complains when id was not found (without strict imports)" do
           monitors.pop
 
           output.must_equal <<~TXT
@@ -422,8 +423,6 @@ describe Kennel::Syncer do
             Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
             Create monitor a:b
           TXT
-        ensure
-          Kennel.strict_imports = old_setting
         end
       end
     end

@@ -10,7 +10,8 @@ module Kennel
     Plan = Struct.new(:noop?, :no_change, :create, :update, :delete, keyword_init: true)
     Update = Struct.new(:update_log, keyword_init: true)
 
-    def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
+    def initialize(config, api, expected, project_filter: nil, tracking_id_filter: nil)
+      @config = config
       @api = api
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
@@ -81,6 +82,8 @@ module Kennel
     end
 
     private
+
+    attr_reader :config
 
     # loop over items until everything is resolved or crash when we get stuck
     # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
@@ -186,7 +189,7 @@ module Kennel
       @expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
-        if Kennel.strict_imports
+        if config.strict_imports
           raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."
         else
           @warnings << "#{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."

@@ -120,7 +120,7 @@ module Kennel
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, project_filter: project_filter, tracking_id_filter: tracking_id_filter)
+      @syncer ||= Syncer.new(config, api, generated, project_filter: project_filter, tracking_id_filter: tracking_id_filter)
     end
 
     def api
