@@ -44,10 +44,10 @@ module Kennel
       out
       err
       strict_imports
-    ]
+    ].freeze
     private_constant :ATTRS
 
-    attr_reader *ATTRS
+    attr_reader(*ATTRS)
 
     def self.from_env(&block)
       new(&block)
@@ -61,7 +61,7 @@ module Kennel
     end
 
     def to_h
-      ATTRS.to_h { |k| [k.to_sym, public_send(k) ] }
+      ATTRS.to_h { |k| [k.to_sym, public_send(k)] }
     end
 
     def out=(arg)
@@ -103,7 +103,7 @@ module Kennel
         singleton_class.undef_method("#{k}=")
       end
 
-      define_singleton_method(:freeze) { }
+      define_singleton_method(:freeze) {}
       define_singleton_method(:frozen?) { true }
     end
   end

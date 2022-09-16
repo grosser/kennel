@@ -4,7 +4,7 @@ module Kennel
   module Compatibility
     def self.included(into)
       class << into
-        %I[out err strict_imports ].each do |sym|
+        %I[out err strict_imports].each do |sym|
           define_method(sym) do |*args|
             warn "Using legacy Kennel.#{sym} from #{caller[1..1]}"
             instance.config.public_send(sym, *args)
