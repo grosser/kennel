@@ -45,13 +45,11 @@ module Kennel
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   class Engine
-    def initialize
-      @out = $stdout
-      @err = $stderr
-      @strict_imports = true
+    def initialize(config_from = nil, &block)
+      @config = Kennel::Config.new(config_from, &block)
     end
 
-    attr_accessor :out, :err, :strict_imports
+    attr_reader :config
 
     def generate
       out = generated
