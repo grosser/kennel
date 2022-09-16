@@ -41,6 +41,13 @@ module Kennel
   class ValidationError < RuntimeError
   end
 
+  @out = $stdout
+  @err = $stderr
+
+  class << self
+    attr_accessor :out, :err
+  end
+
   include Kennel::Compatibility
 
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)

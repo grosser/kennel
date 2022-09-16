@@ -4,8 +4,6 @@
 #
 # The options are:
 #
-# * `out` - where kennel prints output (an `IO`; default: `$stdout`)
-# * `err` - where kennel prints errors (an `IO`; default: `$stderr`)
 # * `strict_imports` - whether kennel should abort if asked to create a part, and the part has an `id:`,
 #   but there is no such object in Datadog (boolean; default: true)
 #
@@ -41,8 +39,6 @@
 module Kennel
   class Config
     ATTRS = %I[
-      out
-      err
       strict_imports
     ].freeze
     private_constant :ATTRS
@@ -64,18 +60,6 @@ module Kennel
       ATTRS.to_h { |k| [k.to_sym, public_send(k)] }
     end
 
-    def out=(arg)
-      raise ":out must be an IO" unless arg.is_a?(IO)
-
-      @out = arg
-    end
-
-    def err=(arg)
-      raise ":err must be an IO" unless arg.is_a?(IO)
-
-      @err = arg
-    end
-
     def strict_imports=(arg)
       @strict_imports = !!arg
     end
@@ -87,8 +71,6 @@ module Kennel
     private
 
     def set_defaults
-      @out = $stdout
-      @err = $stderr
       @strict_imports = true
     end
 

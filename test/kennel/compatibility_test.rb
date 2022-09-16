@@ -9,15 +9,15 @@ describe Kennel::Compatibility do
   it "makes a default instance of kennel" do
     engine = Kennel::Engine.new
     Kennel::Engine.expects(:new).times(1).returns(engine)
+    Kennel.instance.config.strict_imports.must_equal(true)
+  end
 
-    out = StringIO.new
-    err = StringIO.new
-    Kennel.out = out
-    Kennel.err = err
-    Kennel.out.must_equal(out)
-    Kennel.err.must_equal(err)
-    engine.config.out.must_equal(out)
-    engine.config.err.must_equal(err)
+  it "provides strict_imports and strict_imports=" do
+    Kennel.strict_imports.must_equal(true)
+    Kennel.instance.config.strict_imports.must_equal(true)
+    Kennel.strict_imports = false
+    Kennel.strict_imports.must_equal(false)
+    Kennel.instance.config.strict_imports.must_equal(false)
   end
 
   %I[generate plan update].each do |sym|
