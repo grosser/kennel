@@ -166,10 +166,11 @@ module Kennel
 
       before = resources.dup
       resources.select! { |p| against.include?(p.send(by)) }
-      return if resources.size == against.size
+      keeping = resources.uniq(&by).size
+      return if keeping == against.size
 
       raise <<~MSG.rstrip
-        #{env}=#{against.join(",")} matched #{resources.size} #{name}, try any of these:
+        #{env}=#{against.join(",")} matched #{keeping} #{name}, try any of these:
         #{before.map(&by).sort.uniq.join("\n")}
       MSG
     end

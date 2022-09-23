@@ -172,6 +172,16 @@ describe Kennel do
           test_project
         TXT
       end
+
+      it "does not complain when multiple projects have the same kennel_id" do
+        same = File.read("projects/simple.rb")
+        assert same.sub!("TempProject", "TempProject4") # same kennel_id different class
+        assert same.sub!("parts: -> { [", "kennel_id: -> { 'temp_project' },\nparts: -> { [")
+        assert same.sub!("foo", "bar")
+        write "projects/no2.rb", same
+        with_env(PROJECT: "temp_project") { Kennel.generate }
+        assert File.exist?("generated/temp_project/foo.json")
+      end
     end
 
     describe "tracking id filtering" do
