@@ -151,7 +151,7 @@ describe Kennel do
 
     describe "project filtering" do
       it "can filter by project" do
-        filter.project_filter = ['temp_project']
+        filter.project_filter = ["temp_project"]
         other = "generated/foo/bar.json"
         write other, "HO"
         Kennel.generate
@@ -160,7 +160,7 @@ describe Kennel do
       end
 
       it "does not generate for other projects" do
-        filter.project_filter = ['temp_project', 'temp_project3']
+        filter.project_filter = ["temp_project", "temp_project3"]
         write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
         write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
         Kennel.generate
@@ -172,8 +172,8 @@ describe Kennel do
 
     describe "tracking id filtering" do
       it "can filter by id" do
-        filter.project_filter = ['temp_project']
-        filter.tracking_id_filter = ['temp_project:foo']
+        filter.project_filter = ["temp_project"]
+        filter.tracking_id_filter = ["temp_project:foo"]
         other = "generated/foo/bar.json"
         write other, "HO"
         Kennel.generate
@@ -182,8 +182,8 @@ describe Kennel do
       end
 
       it "does not generate for other ids" do
-        filter.project_filter = ['temp_project', 'temp_project3']
-        filter.tracking_id_filter = ['temp_project:foo', 'temp_project3:foo']
+        filter.project_filter = ["temp_project", "temp_project3"]
+        filter.tracking_id_filter = ["temp_project:foo", "temp_project3:foo"]
         write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
         write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
         Kennel.generate
