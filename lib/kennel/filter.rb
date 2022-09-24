@@ -23,6 +23,7 @@ module Kennel
     def self.filter_resources!(resources, by, against, name, env)
       return unless against
 
+      against = against.uniq
       before = resources.dup
       resources.select! { |p| against.include?(p.send(by)) }
       keeping = resources.uniq(&by).size

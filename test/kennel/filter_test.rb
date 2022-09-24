@@ -86,10 +86,15 @@ describe Kennel::Filter do
       things.must_equal([foo, another_foo])
     end
 
-    # it "filters (repeated spec, > 1 match)" do
-    #   run_filter ['foo', 'foo']
-    #   things.must_equal([foo, another_foo])
-    # end
+    it "filters (repeated spec, 1 match)" do
+      run_filter ['bar', 'bar']
+      things.must_equal([bar])
+    end
+
+    it "filters (repeated spec, > 1 match)" do
+      run_filter ['foo', 'foo']
+      things.must_equal([foo, another_foo])
+    end
 
     it "filters (> 1 spec, 1 match each)" do
       things << baz
