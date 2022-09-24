@@ -8,6 +8,7 @@ require "kennel/version"
 require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
+require "kennel/filter"
 require "kennel/syncer"
 require "kennel/id_map"
 require "kennel/api"
@@ -113,6 +114,10 @@ module Kennel
       File.write(path, content)
     end
 
+    def filter
+      @filter ||= Filter.new
+    end
+
     def syncer
       @syncer ||= Syncer.new(api, generated, project_filter: project_filter, tracking_id_filter: tracking_id_filter)
     end
@@ -149,30 +154,15 @@ module Kennel
     end
 
     def project_filter
-      projects = ENV["PROJECT"]&.split(",")
-      tracking_projects = tracking_id_filter&.map { |id| id.split(":", 2).first }
-      if projects && tracking_projects && projects != tracking_projects
-        raise "do not set PROJECT= when using TRACKING_ID="
-      end
-      projects || tracking_projects
+      filter.project_filter
     end
 
     def tracking_id_filter
-      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",")
+      filter.tracking_id_filter
     end
 
-    def filter_resources!(resources, by, against, name, env)
-      return unless against
-
-      before = resources.dup
-      resources.select! { |p| against.include?(p.send(by)) }
-      keeping = resources.uniq(&by).size
-      return if keeping == against.size
-
-      raise <<~MSG.rstrip
-        #{env}=#{against.join(",")} matched #{keeping} #{name}, try any of these:
-        #{before.map(&by).sort.uniq.join("\n")}
-      MSG
+    def filter_resources!(*args)
+      Filter.filter_resources!(*args)
     end
 
     def load_all
