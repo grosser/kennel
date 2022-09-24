@@ -4,6 +4,8 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::TemplateVariables do
+  with_test_classes
+
   it "adds settings" do
     Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, template_variables: -> { ["xxx"] }).template_variables.must_equal ["xxx"]
   end

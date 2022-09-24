@@ -5,6 +5,8 @@ require "tmpdir"
 SingleCov.covered!
 
 describe Kennel do
+  with_test_classes
+
   def write(file, content)
     folder = File.dirname(file)
     FileUtils.mkdir_p folder unless File.exist?(folder)
@@ -109,45 +111,7 @@ describe Kennel do
       ERROR
     end
 
-    it "shows helpful autoload errors for parts" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject3 < Kennel::Models::Project
-          FooBar::BazFoo
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
-        uninitialized constant TestProject3::FooBar
-        Unable to load TestProject3::FooBar from parts/test_project3/foo_bar.rb
-        - Option 1: rename the constant or the file it lives in, to make them match
-        - Option 2: Use `require` or `require_relative` to load the constant
-      MSG
-    end
 
-    it "shows helpful autoload errors for teams" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject4 < Kennel::Models::Project
-          Teams::BazFoo
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
-        uninitialized constant Teams::BazFoo
-        Unable to load Teams::BazFoo from teams/baz_foo.rb
-        - Option 1: rename the constant or the file it lives in, to make them match
-        - Option 2: Use `require` or `require_relative` to load the constant
-      MSG
-    end
-
-    it "shows unparseable NameError" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject5 < Kennel::Models::Project
-          raise NameError, "wut"
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal "wut"
-    end
 
     describe "project filtering" do
       it "can filter by project" do

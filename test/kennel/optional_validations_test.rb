@@ -4,6 +4,8 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::OptionalValidations do
+  with_test_classes
+
   it "adds settings" do
     Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, validate: -> { false }).validate.must_equal false
   end

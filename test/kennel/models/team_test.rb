@@ -4,6 +4,8 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Team do
+  with_test_classes
+
   describe "#tags" do
     it "is a nice searchable name" do
       TestTeam.new.tags.must_equal ["team:test_team"]
