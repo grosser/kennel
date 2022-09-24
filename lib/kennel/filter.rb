@@ -8,16 +8,16 @@ module Kennel
     end
 
     def project_filter
-      projects = ENV["PROJECT"]&.split(",")
-      tracking_projects = tracking_id_filter&.map { |id| id.split(":", 2).first }
+      projects = ENV["PROJECT"]&.split(",")&.sort&.uniq
+      tracking_projects = tracking_id_filter&.map { |id| id.split(":", 2).first }&.sort&.uniq
       if projects && tracking_projects && projects != tracking_projects
         raise "do not set PROJECT= when using TRACKING_ID="
       end
-      projects || tracking_projects
+      (projects || tracking_projects)
     end
 
     def tracking_id_filter
-      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",")
+      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").sort.uniq
     end
 
     def self.filter_resources!(resources, by, against, name, env)

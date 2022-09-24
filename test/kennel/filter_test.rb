@@ -7,30 +7,30 @@ describe Kennel::Filter do
   context "without project, without tracking_id" do
     with_env('PROJECT' => nil, 'TRACKING_ID' => nil)
 
-    it "doesn't crash" do
+    it "works" do
       f = Kennel::Filter.new
-      f.project_filter
-      f.tracking_id_filter
+      f.project_filter.must_be_nil
+      f.tracking_id_filter.must_be_nil
     end
   end
 
   context "with project, without tracking_id" do
-    it "doesn't crash" do
+    it "works" do
       with_env('PROJECT' => "foo,bar", 'TRACKING_ID' => nil) do
         f = Kennel::Filter.new
-        f.project_filter
-        f.tracking_id_filter
+        f.project_filter.must_equal(['bar', 'foo'])
+        f.tracking_id_filter.must_be_nil
       end
     end
   end
 
   context "with project, with tracking_id" do
     context "they agree" do
-      it "doesn't crash" do
+      it "works" do
         with_env('PROJECT' => "foo,bar", 'TRACKING_ID' => "foo:x,bar:y") do
           f = Kennel::Filter.new
-          f.project_filter
-          f.tracking_id_filter
+          f.project_filter.must_equal(['bar', 'foo'])
+          f.tracking_id_filter.must_equal(['bar:y', 'foo:x'])
         end
       end
     end
@@ -48,11 +48,13 @@ describe Kennel::Filter do
     end
   end
 
-  it "xd" do
-    with_env('PROJECT' => nil, 'TRACKING_ID' => "foo:x,baz:y") do
-      f = Kennel::Filter.new
-      f.project_filter
-      f.tracking_id_filter
+  context "without project, with tracking_id" do
+    it "works" do
+      with_env('PROJECT' => nil, 'TRACKING_ID' => "foo:x,bar:y") do
+        f = Kennel::Filter.new
+        f.project_filter.must_equal(['bar', 'foo'])
+        f.tracking_id_filter.must_equal(['bar:y', 'foo:x'])
+      end
     end
   end
 
