@@ -111,8 +111,6 @@ describe Kennel do
       ERROR
     end
 
-
-
     describe "project filtering" do
       it "can filter by project" do
         filter.project_filter = ["temp_project"]
