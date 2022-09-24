@@ -79,10 +79,10 @@ module Kennel
       Progress.progress "Storing" do
         old = Dir[[
           "generated",
-          if project_filter || tracking_id_filter
+          if filter.project_filter || filter.tracking_id_filter
             [
-              "{" + (project_filter || ["*"]).join(",") + "}",
-              "{" + (tracking_id_filter || ["*"]).join(",") + "}.json"
+              "{" + (filter.project_filter || ["*"]).join(",") + "}",
+              "{" + (filter.tracking_id_filter || ["*"]).join(",") + "}.json"
             ]
           else
             "**"
@@ -119,7 +119,7 @@ module Kennel
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, project_filter: project_filter, tracking_id_filter: tracking_id_filter)
+      @syncer ||= Syncer.new(api, generated, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
     end
 
     def api
@@ -132,10 +132,10 @@ module Kennel
           load_all
 
           projects = Models::Project.recursive_subclasses.map(&:new)
-          filter_resources!(projects, :kennel_id, project_filter, "projects", "PROJECT")
+          Kennel::Filter.filter_resources!(projects, :kennel_id, filter.project_filter, "projects", "PROJECT")
 
           parts = Utils.parallel(projects, &:validated_parts).flatten(1)
-          filter_resources!(parts, :tracking_id, tracking_id_filter, "resources", "TRACKING_ID")
+          Kennel::Filter.filter_resources!(parts, :tracking_id, filter.tracking_id_filter, "resources", "TRACKING_ID")
 
           parts.group_by(&:tracking_id).each do |tracking_id, same|
             next if same.size == 1
@@ -151,18 +151,6 @@ module Kennel
           parts
         end
       end
-    end
-
-    def project_filter
-      filter.project_filter
-    end
-
-    def tracking_id_filter
-      filter.tracking_id_filter
-    end
-
-    def filter_resources!(*args)
-      Filter.filter_resources!(*args)
     end
 
     def load_all
