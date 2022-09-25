@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
-require 'find'
+require "find"
 
 SingleCov.covered!
 
@@ -26,8 +26,8 @@ describe Kennel::PartsWriter do
   def make_project(kennel_id, monitor_kennel_ids)
     Kennel::Models::Project.new(
       team: Kennel::Models::Team.new(
-        kennel_id: 'team-id',
-        mention: "@slack-whatever",
+        kennel_id: "team-id",
+        mention: "@slack-whatever"
       ),
       name: kennel_id,
       kennel_id: kennel_id,
@@ -38,7 +38,7 @@ describe Kennel::PartsWriter do
             type: "query alert",
             kennel_id: id,
             query: "avg(last_5m) > 123",
-            critical: 123,
+            critical: 123
           )
         end
       }
@@ -48,7 +48,7 @@ describe Kennel::PartsWriter do
   in_temp_dir
 
   it "saves formatted json" do
-    parts = make_project('temp_project', ['foo']).validated_parts
+    parts = make_project("temp_project", ["foo"]).validated_parts
     Kennel::PartsWriter.new(filter: filter).write(parts)
     content = File.read("generated/temp_project/foo.json")
     assert content.start_with?("{\n") # pretty generated
@@ -57,7 +57,7 @@ describe Kennel::PartsWriter do
   end
 
   it "keeps same" do
-    parts = make_project('temp_project', ['foo']).validated_parts
+    parts = make_project("temp_project", ["foo"]).validated_parts
     Kennel::PartsWriter.new(filter: filter).write(parts)
 
     old = Time.now - 10
@@ -69,7 +69,7 @@ describe Kennel::PartsWriter do
   end
 
   it "overrides different" do
-    parts = make_project('temp_project', ['foo']).validated_parts
+    parts = make_project("temp_project", ["foo"]).validated_parts
     Kennel::PartsWriter.new(filter: filter).write(parts)
 
     old = Time.now - 10
@@ -87,7 +87,7 @@ describe Kennel::PartsWriter do
     Dir.mkdir "generated/old_empty_project"
     write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
-    parts = make_project('temp_project', ['foo']).validated_parts
+    parts = make_project("temp_project", ["foo"]).validated_parts
     Kennel::PartsWriter.new(filter: filter).write(parts)
 
     Find.find("generated").to_a.sort.must_equal [
@@ -101,7 +101,7 @@ describe Kennel::PartsWriter do
     # The filtering only applies to the _cleanup_, not to the _write_.
     # This is because filtering of what parts to write is handled by
     # Kennel.generated
-    let(:project_filter) { ['included1', 'included2'] }
+    let(:project_filter) { ["included1", "included2"] }
 
     it "filters the cleanup" do
       write "generated/included1/old_part.json", "whatever"
@@ -111,8 +111,8 @@ describe Kennel::PartsWriter do
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
       parts = [
-        *make_project('included1', ['foo1']).validated_parts,
-        *make_project('included2', ['foo2']).validated_parts,
+        *make_project("included1", ["foo1"]).validated_parts,
+        *make_project("included2", ["foo2"]).validated_parts
       ]
       Kennel::PartsWriter.new(filter: filter).write(parts)
 
@@ -136,8 +136,8 @@ describe Kennel::PartsWriter do
     # Kennel.generated
     #
     # For tracking_id filtering, this means that we never clean up.
-    let(:project_filter) { ['included1', 'included2'] }
-    let(:tracking_id_filter) { ['included1:foo1', 'included2:foo2'] }
+    let(:project_filter) { ["included1", "included2"] }
+    let(:tracking_id_filter) { ["included1:foo1", "included2:foo2"] }
 
     it "does not clean up" do
       write "generated/included1/included1:old_part.json", "whatever"
@@ -148,8 +148,8 @@ describe Kennel::PartsWriter do
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
       parts = [
-        *make_project('included1', ['foo1']).validated_parts,
-        *make_project('included2', ['foo2']).validated_parts,
+        *make_project("included1", ["foo1"]).validated_parts,
+        *make_project("included2", ["foo2"]).validated_parts
       ]
       Kennel::PartsWriter.new(filter: filter).write(parts)
 
