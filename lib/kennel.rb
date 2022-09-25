@@ -9,6 +9,7 @@ require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
+require "kennel/parts_writer"
 require "kennel/projects_generator"
 require "kennel/syncer"
 require "kennel/id_map"
@@ -57,7 +58,7 @@ module Kennel
 
     def generate
       out = generated
-      store out if ENV["STORE"] != "false" # quicker when debugging
+      parts_writer.write(out) if ENV["STORE"] != "false" # quicker when debugging
       out
     end
 
@@ -76,45 +77,6 @@ module Kennel
 
     private
 
-    def store(parts)
-      Progress.progress "Storing" do
-        old = Dir[[
-          "generated",
-          if filter.project_filter || filter.tracking_id_filter
-            [
-              "{" + (filter.project_filter || ["*"]).join(",") + "}",
-              "{" + (filter.tracking_id_filter || ["*"]).join(",") + "}.json"
-            ]
-          else
-            "**"
-          end
-        ].join("/")]
-        used = []
-
-        Utils.parallel(parts, max: 2) do |part|
-          path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-          used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
-          payload = part.as_json.merge(api_resource: part.class.api_resource)
-          write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
-        end
-
-        # deleting all is slow, so only delete the extras
-        (old - used).each { |p| FileUtils.rm_rf(p) }
-      end
-    end
-
-    def write_file_if_necessary(path, content)
-      # 99% case
-      begin
-        return if File.read(path) == content
-      rescue Errno::ENOENT
-        FileUtils.mkdir_p(File.dirname(path))
-      end
-
-      # slow 1% case
-      File.write(path, content)
-    end
-
     def filter
       @filter ||= Filter.new
     end
@@ -129,6 +91,10 @@ module Kennel
 
     def projects_generator
       @projects_generator ||= ProjectsGenerator.new
+    end
+
+    def parts_writer
+      @parts_writer ||= PartsWriter.new(filter: filter)
     end
 
     def generated

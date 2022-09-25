@@ -15,7 +15,6 @@ describe Kennel::ProjectsGenerator do
 
   after do
     Kennel::Models::Project.recursive_subclasses.each do |klass|
-      p klass
       Object.send(:remove_const, klass.name.to_sym) if defined?(klass.name.to_sym)
     end
     Kennel::Models::Project.subclasses.delete_if { true }
