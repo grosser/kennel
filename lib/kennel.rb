@@ -89,8 +89,8 @@ module Kennel
       @api ||= Api.new(ENV.fetch("DATADOG_APP_KEY"), ENV.fetch("DATADOG_API_KEY"))
     end
 
-    def projects_generator
-      @projects_generator ||= ProjectsProvider.new
+    def projects_provider
+      @projects_provider ||= ProjectsProvider.new
     end
 
     def parts_serializer
@@ -100,7 +100,7 @@ module Kennel
     def generated
       @generated ||= begin
         Progress.progress "Generating" do
-          projects = projects_generator.projects
+          projects = projects_provider.projects
           Kennel::Filter.filter_resources!(projects, :kennel_id, filter.project_filter, "projects", "PROJECT")
 
           parts = Utils.parallel(projects, &:validated_parts).flatten(1)
