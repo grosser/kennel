@@ -57,9 +57,9 @@ module Kennel
     attr_accessor :out, :err, :strict_imports
 
     def generate
-      out = generated
-      parts_writer.write(out) if ENV["STORE"] != "false" # quicker when debugging
-      out
+      parts = generated
+      parts_writer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
+      parts
     end
 
     def plan
