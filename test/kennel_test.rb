@@ -17,6 +17,12 @@ describe Kennel do
   in_temp_dir
   with_env DATADOG_APP_KEY: "app", DATADOG_API_KEY: "api"
 
+  let(:filter) { Struct.new(:project_filter, :tracking_id_filter).new(nil, nil) }
+
+  before do
+    Kennel::Filter.stubs(:new).returns(filter)
+  end
+
   before do
     write "projects/simple.rb", <<~RUBY
       class TempProject < Kennel::Models::Project
@@ -144,9 +150,8 @@ describe Kennel do
     end
 
     describe "project filtering" do
-      with_env PROJECT: "temp_project"
-
       it "can filter by project" do
+        filter.project_filter = ["temp_project"]
         other = "generated/foo/bar.json"
         write other, "HO"
         Kennel.generate
@@ -155,39 +160,20 @@ describe Kennel do
       end
 
       it "does not generate for other projects" do
+        filter.project_filter = ["temp_project", "temp_project3"]
         write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
         write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
-        with_env(PROJECT: "temp_project,temp_project3") { Kennel.generate }
+        Kennel.generate
         refute File.exist?("generated/temp_project2/foo.json")
         assert File.exist?("generated/temp_project/foo.json")
         assert File.exist?("generated/temp_project3/foo.json")
       end
-
-      it "complains when everything would be filtered" do
-        e = assert_raises(RuntimeError) { with_env(PROJECT: "foo") { Kennel.generate } }
-        e.message.must_equal <<~TXT.strip
-          PROJECT=foo matched 0 projects, try any of these:
-          sub_test_project
-          temp_project
-          test_project
-        TXT
-      end
-
-      it "does not complain when multiple projects have the same kennel_id" do
-        same = File.read("projects/simple.rb")
-        assert same.sub!("TempProject", "TempProject4") # same kennel_id different class
-        assert same.sub!("parts: -> { [", "kennel_id: -> { 'temp_project' },\nparts: -> { [")
-        assert same.sub!("foo", "bar")
-        write "projects/no2.rb", same
-        with_env(PROJECT: "temp_project") { Kennel.generate }
-        assert File.exist?("generated/temp_project/foo.json")
-      end
     end
 
     describe "tracking id filtering" do
-      with_env TRACKING_ID: "temp_project:foo"
-
       it "can filter by id" do
+        filter.project_filter = ["temp_project"]
+        filter.tracking_id_filter = ["temp_project:foo"]
         other = "generated/foo/bar.json"
         write other, "HO"
         Kennel.generate
@@ -196,39 +182,14 @@ describe Kennel do
       end
 
       it "does not generate for other ids" do
+        filter.project_filter = ["temp_project", "temp_project3"]
+        filter.tracking_id_filter = ["temp_project:foo", "temp_project3:foo"]
         write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
         write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
-        with_env(TRACKING_ID: "temp_project:foo,temp_project3:foo") { Kennel.generate }
+        Kennel.generate
         refute File.exist?("generated/temp_project2/foo.json")
         assert File.exist?("generated/temp_project/foo.json")
         assert File.exist?("generated/temp_project3/foo.json")
-      end
-
-      it "complains when everything would be filtered on project level" do
-        e = assert_raises(RuntimeError) { with_env(TRACKING_ID: "foo:bar") { Kennel.generate } }
-        e.message.must_equal <<~TXT.strip
-          PROJECT=foo matched 0 projects, try any of these:
-          sub_test_project
-          temp_project
-          test_project
-        TXT
-      end
-
-      it "complains when everything would be filtered" do
-        e = assert_raises(RuntimeError) { with_env(TRACKING_ID: "temp_project:bar") { Kennel.generate } }
-        e.message.must_equal <<~TXT.strip
-          TRACKING_ID=temp_project:bar matched 0 resources, try any of these:
-          temp_project:foo
-        TXT
-      end
-
-      it "complains when using mismatching project filter" do
-        e = assert_raises(RuntimeError) { with_env(PROJECT: "other_project") { Kennel.generate } }
-        e.message.must_equal "do not set PROJECT= when using TRACKING_ID="
-      end
-
-      it "ignores when using same project filter" do
-        with_env(PROJECT: "temp_project") { Kennel.generate }
       end
     end
   end
