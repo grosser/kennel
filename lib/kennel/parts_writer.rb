@@ -10,18 +10,13 @@ module Kennel
 
     def write(parts)
       Progress.progress "Storing" do
-        old = old_paths
-        used = ["generated"]
-
-        Utils.parallel(parts, max: 2) do |part|
-          path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-          used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
-          payload = part.as_json.merge(api_resource: part.class.api_resource)
-          write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
+        if filter.tracking_id_filter
+          write_changed(parts)
+        else
+          old = old_paths
+          used = write_changed(parts)
+          (old - used).each { |p| FileUtils.rm_rf(p) }
         end
-
-        # deleting all is slow, so only delete the extras
-        (old - used).each { |p| FileUtils.rm_rf(p) }
       end
     end
 
@@ -29,10 +24,21 @@ module Kennel
 
     attr_reader :filter
 
+    def write_changed(parts)
+      used = ["generated"]
+
+      Utils.parallel(parts, max: 2) do |part|
+        path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
+        used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
+        payload = part.as_json.merge(api_resource: part.class.api_resource)
+        write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
+      end
+
+      used
+    end
+
     def apply_cleanup_to
-      if filter.tracking_id_filter
-        [] # No cleanup
-      elsif filter.project_filter
+      if filter.project_filter
         filter.project_filter.map { |project| "generated/#{project}" }
       else
         ["generated"]
