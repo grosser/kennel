@@ -57,7 +57,7 @@ describe Kennel do
     it "stores if requested" do
       writer = "some writer".dup
 
-      Kennel::PartsWriter.stubs(:new).returns(writer)
+      Kennel::PartsSerializer.stubs(:new).returns(writer)
 
       writer.stubs(:write).with do |parts|
         parts.map(&:tracking_id) == ["temp_project:foo"]
@@ -68,7 +68,7 @@ describe Kennel do
 
     it "does not store if requested" do
       writer = "some writer".dup
-      Kennel::PartsWriter.stubs(:new).returns(writer)
+      Kennel::PartsSerializer.stubs(:new).returns(writer)
       writer.stubs(:write).never
 
       with_env(STORE: "false") { Kennel.generate }

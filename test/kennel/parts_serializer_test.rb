@@ -4,7 +4,7 @@ require "find"
 
 SingleCov.covered!
 
-describe Kennel::PartsWriter do
+describe Kennel::PartsSerializer do
   def write(file, content)
     folder = File.dirname(file)
     FileUtils.mkdir_p folder unless File.exist?(folder)
@@ -49,7 +49,7 @@ describe Kennel::PartsWriter do
   describe "#write" do
     it "saves formatted json" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
       content = File.read("generated/temp_project/foo.json")
       assert content.start_with?("{\n") # pretty generated
       json = JSON.parse(content, symbolize_names: true)
@@ -58,25 +58,25 @@ describe Kennel::PartsWriter do
 
     it "keeps same" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       old = Time.now - 10
       FileUtils.touch "generated/temp_project/foo.json", mtime: old
 
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       File.mtime("generated/temp_project/foo.json").must_equal old
     end
 
     it "overrides different" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       old = Time.now - 10
       File.write "generated/temp_project/foo.json", "x"
       File.utime(old, old, "generated/temp_project/foo.json")
 
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       File.mtime("generated/temp_project/foo.json").wont_equal old
     end
@@ -88,7 +88,7 @@ describe Kennel::PartsWriter do
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsWriter.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       Find.find("generated").to_a.sort.must_equal [
         "generated",
@@ -114,7 +114,7 @@ describe Kennel::PartsWriter do
           *make_project("included1", ["foo1"]).validated_parts,
           *make_project("included2", ["foo2"]).validated_parts
         ]
-        Kennel::PartsWriter.new(filter: filter).write(parts)
+        Kennel::PartsSerializer.new(filter: filter).write(parts)
 
         Find.find("generated").to_a.sort.must_equal %w[
           generated
@@ -151,7 +151,7 @@ describe Kennel::PartsWriter do
           *make_project("included1", ["foo1"]).validated_parts,
           *make_project("included2", ["foo2"]).validated_parts
         ]
-        Kennel::PartsWriter.new(filter: filter).write(parts)
+        Kennel::PartsSerializer.new(filter: filter).write(parts)
 
         Find.find("generated").to_a.sort.must_equal %w[
           generated

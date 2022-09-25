@@ -4,7 +4,7 @@ require "find"
 require "set"
 
 module Kennel
-  class PartsWriter
+  class PartsSerializer
     def initialize(filter:)
       @filter = filter
     end

@@ -9,7 +9,7 @@ require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
-require "kennel/parts_writer"
+require "kennel/parts_serializer"
 require "kennel/projects_provider"
 require "kennel/syncer"
 require "kennel/id_map"
@@ -58,7 +58,7 @@ module Kennel
 
     def generate
       parts = generated
-      parts_writer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
+      parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
       parts
     end
 
@@ -93,8 +93,8 @@ module Kennel
       @projects_generator ||= ProjectsProvider.new
     end
 
-    def parts_writer
-      @parts_writer ||= PartsWriter.new(filter: filter)
+    def parts_serializer
+      @parts_serializer ||= PartsSerializer.new(filter: filter)
     end
 
     def generated
