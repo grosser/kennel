@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 module Kennel
-  class ProjectsGenerator
+  class ProjectsProvider
     def projects
       load_all
       Models::Project.recursive_subclasses.map(&:new)

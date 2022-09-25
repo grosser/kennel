@@ -10,7 +10,7 @@ require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
 require "kennel/parts_writer"
-require "kennel/projects_generator"
+require "kennel/projects_provider"
 require "kennel/syncer"
 require "kennel/id_map"
 require "kennel/api"
@@ -90,7 +90,7 @@ module Kennel
     end
 
     def projects_generator
-      @projects_generator ||= ProjectsGenerator.new
+      @projects_generator ||= ProjectsProvider.new
     end
 
     def parts_writer

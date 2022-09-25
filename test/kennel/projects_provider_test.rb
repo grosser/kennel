@@ -3,7 +3,7 @@ require_relative "../test_helper"
 
 SingleCov.covered!
 
-describe Kennel::ProjectsGenerator do
+describe Kennel::ProjectsProvider do
   def write(file, content)
     folder = File.dirname(file)
     FileUtils.mkdir_p folder unless File.exist?(folder)
@@ -39,7 +39,7 @@ describe Kennel::ProjectsGenerator do
       end
     RUBY
 
-    projects = Kennel::ProjectsGenerator.new.projects.map(&:name)
+    projects = Kennel::ProjectsProvider.new.projects.map(&:name)
     projects.must_equal ["Project1"]
   end
 
