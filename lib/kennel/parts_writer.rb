@@ -37,7 +37,7 @@ module Kennel
       used
     end
 
-    def apply_cleanup_to
+    def directories_to_clean_up
       if filter.project_filter
         filter.project_filter.map { |project| "generated/#{project}" }
       else
@@ -46,7 +46,7 @@ module Kennel
     end
 
     def old_paths
-      apply_cleanup_to.flat_map do |path|
+      directories_to_clean_up.flat_map do |path|
         if File.exist?(path)
           Find.find(path).to_a
         else
