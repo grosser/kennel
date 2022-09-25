@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "find"
+require "set"
 
 module Kennel
   class PartsWriter
@@ -25,11 +26,12 @@ module Kennel
     attr_reader :filter
 
     def write_changed(parts)
-      used = ["generated"]
+      used = Set.new(["generated"])
 
       Utils.parallel(parts, max: 2) do |part|
         path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-        used.concat [File.dirname(path), path] # only 1 level of sub folders, so this is safe
+        used << File.dirname(path) # only 1 level of sub folders, so this is safe
+        used << path
         payload = part.as_json.merge(api_resource: part.class.api_resource)
         write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
       end
@@ -52,7 +54,7 @@ module Kennel
         else
           []
         end
-      end
+      end.to_set
     end
 
     def write_file_if_necessary(path, content)
