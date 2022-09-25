@@ -11,18 +11,6 @@ describe Kennel::PartsWriter do
     File.write file, content
   end
 
-  let(:project_filter) { nil }
-  let(:tracking_id_filter) { nil }
-
-  let(:filter) do
-    filter = "some filter".dup
-    filter.stubs(:project_filter).returns(project_filter)
-    filter.stubs(:tracking_id_filter).returns(tracking_id_filter)
-    filter
-  end
-
-  capture_all
-
   def make_project(kennel_id, monitor_kennel_ids)
     Kennel::Models::Project.new(
       team: Kennel::Models::Team.new(
@@ -45,6 +33,17 @@ describe Kennel::PartsWriter do
     )
   end
 
+  let(:project_filter) { nil }
+  let(:tracking_id_filter) { nil }
+
+  let(:filter) do
+    filter = "some filter".dup
+    filter.stubs(:project_filter).returns(project_filter)
+    filter.stubs(:tracking_id_filter).returns(tracking_id_filter)
+    filter
+  end
+
+  capture_all
   in_temp_dir
 
   it "saves formatted json" do
