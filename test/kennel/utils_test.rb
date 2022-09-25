@@ -84,31 +84,6 @@ describe Kennel::Utils do
     end
   end
 
-  describe ".tee_output" do
-    it "captures and prints" do
-      Kennel::Utils.capture_stderr do
-        Kennel::Utils.capture_stdout do
-          Kennel::Utils.tee_output do
-            Kennel.out.puts "hello"
-            Kennel.err.puts "error"
-            Kennel.out.puts "world"
-          end.must_equal "hello\nerror\nworld\n"
-        end.must_equal "hello\nworld\n"
-      end.must_equal "error\n"
-    end
-  end
-
-  describe ".capture_sh" do
-    it "captures" do
-      Kennel::Utils.capture_sh("echo 111").must_equal "111\n"
-    end
-
-    it "fails on failure" do
-      e = assert_raises(RuntimeError) { Kennel::Utils.capture_sh("whooops") }
-      e.message.must_include "whooops"
-    end
-  end
-
   describe ".ask" do
     capture_all
 

@@ -3,16 +3,6 @@ module Kennel
   module Utils
     COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, magenta: 35, default: 0 }.freeze
 
-    class TeeIO < IO
-      def initialize(ios)
-        @ios = ios
-      end
-
-      def write(string)
-        @ios.each { |io| io.write string }
-      end
-    end
-
     class << self
       def snake_case(string)
         string
@@ -75,25 +65,6 @@ module Kennel
         Kennel.err.string
       ensure
         Kennel.err = old
-      end
-
-      def tee_output
-        old_stdout = Kennel.out
-        old_stderr = Kennel.err
-        capture = StringIO.new
-        Kennel.out = TeeIO.new([capture, Kennel.out])
-        Kennel.err = TeeIO.new([capture, Kennel.err])
-        yield
-        capture.string
-      ensure
-        Kennel.out = old_stdout
-        Kennel.err = old_stderr
-      end
-
-      def capture_sh(command)
-        result = `#{command} 2>&1`
-        raise "Command failed:\n#{command}\n#{result}" unless $CHILD_STATUS.success?
-        result
       end
 
       def path_to_url(path, subdomain: nil)
