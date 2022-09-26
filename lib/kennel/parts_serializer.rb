@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
-
 module Kennel
   class PartsSerializer
     def initialize(filter:)
@@ -15,7 +13,7 @@ module Kennel
         else
           old = old_paths
           used = write_changed(parts)
-          (old - used).each { |p| FileUtils.rm_rf(p) }
+          (old - used).uniq.each { |p| FileUtils.rm_rf(p) }
         end
       end
     end
@@ -25,7 +23,7 @@ module Kennel
     attr_reader :filter
 
     def write_changed(parts)
-      used = Set.new
+      used = []
 
       Utils.parallel(parts, max: 2) do |part|
         path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
@@ -49,7 +47,7 @@ module Kennel
     end
 
     def old_paths
-      Dir["{#{directories_to_clean_up.join(",")}}/**/*"].to_set
+      Dir["{#{directories_to_clean_up.join(",")}}/**/*"]
     end
 
     def write_file_if_necessary(path, content)
