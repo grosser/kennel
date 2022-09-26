@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
-require "find"
 
 SingleCov.covered!
 
@@ -37,10 +36,11 @@ describe Kennel::PartsSerializer do
   let(:tracking_id_filter) { nil }
 
   let(:filter) do
-    filter = "some filter".dup
-    filter.stubs(:project_filter).returns(project_filter)
-    filter.stubs(:tracking_id_filter).returns(tracking_id_filter)
-    filter
+    stub(
+      "Filter",
+      project_filter: project_filter,
+      tracking_id_filter: tracking_id_filter
+    )
   end
 
   capture_all
@@ -90,8 +90,7 @@ describe Kennel::PartsSerializer do
       parts = make_project("temp_project", ["foo"]).validated_parts
       Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-      Find.find("generated").to_a.sort.must_equal [
-        "generated",
+      Dir["generated/**/*"].sort.must_equal [
         "generated/temp_project",
         "generated/temp_project/foo.json"
       ]
@@ -116,8 +115,7 @@ describe Kennel::PartsSerializer do
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-        Find.find("generated").to_a.sort.must_equal %w[
-          generated
+        Dir["generated/**/*"].sort.must_equal %w[
           generated/excluded
           generated/excluded/old_part.json
           generated/included1
@@ -153,8 +151,7 @@ describe Kennel::PartsSerializer do
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-        Find.find("generated").to_a.sort.must_equal %w[
-          generated
+        Dir["generated/**/*"].sort.must_equal %w[
           generated/excluded
           generated/excluded/old_part.json
           generated/included1
