@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "find"
 require "set"
 
 module Kennel
@@ -26,12 +25,14 @@ module Kennel
     attr_reader :filter
 
     def write_changed(parts)
-      used = Set.new(["generated"])
+      used = Set.new
 
       Utils.parallel(parts, max: 2) do |part|
         path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
-        used << File.dirname(path) # only 1 level of sub folders, so this is safe
+
+        used << File.dirname(path) # only 1 level of sub folders, so this is enough
         used << path
+
         payload = part.as_json.merge(api_resource: part.class.api_resource)
         write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
       end
@@ -48,13 +49,7 @@ module Kennel
     end
 
     def old_paths
-      directories_to_clean_up.flat_map do |path|
-        if File.exist?(path)
-          Find.find(path).to_a
-        else
-          []
-        end
-      end.to_set
+      Dir["{#{directories_to_clean_up.join(",")}}/**/*"].to_set
     end
 
     def write_file_if_necessary(path, content)
