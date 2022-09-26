@@ -5,6 +5,8 @@ require "kennel/importer"
 SingleCov.covered!
 
 describe Kennel::Importer do
+  with_test_classes
+
   def import_requests(requests)
     response = {
       id: "abc",

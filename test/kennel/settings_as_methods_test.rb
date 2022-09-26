@@ -4,6 +4,8 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::SettingsAsMethods do
+  with_test_classes
+
   class TestSetting
     include Kennel::SettingsAsMethods
     settings :foo, :bar, :override, :unset

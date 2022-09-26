@@ -4,6 +4,8 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::SyntheticTest do
+  with_test_classes
+
   class TestSynth < Kennel::Models::SyntheticTest
   end
 

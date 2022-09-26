@@ -18,27 +18,31 @@ $LOAD_PATH.unshift "lib"
 
 require "kennel"
 
-class TestProject < Kennel::Models::Project
-  defaults(
-    team: -> { TestTeam.new },
-    parts: -> { [] }
-  )
-end
-
-class SubTestProject < TestProject
-end
-
-class TestTeam < Kennel::Models::Team
-  defaults(mention: -> { "@slack-foo" })
-end
-
-module Teams
-  class MyTeam < Kennel::Models::Team
-    defaults(mention: -> { "@slack-my" })
-  end
-end
-
 Minitest::Test.class_eval do
+  def self.with_test_classes
+    eval <<~'RUBY', nil, "test/test_helper.rb", __LINE__ + 1
+      class TestProject < Kennel::Models::Project
+        defaults(
+          team: -> { TestTeam.new },
+          parts: -> { [] }
+        )
+      end
+
+      class SubTestProject < TestProject
+      end
+
+      class TestTeam < Kennel::Models::Team
+        defaults(mention: -> { "@slack-foo" })
+      end
+
+      module Teams
+        class MyTeam < Kennel::Models::Team
+          defaults(mention: -> { "@slack-my" })
+        end
+      end
+    RUBY
+  end
+
   def reset_instance
     Kennel.instance_variable_set(:@instance, nil)
   end

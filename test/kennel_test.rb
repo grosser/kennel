@@ -5,6 +5,8 @@ require "tmpdir"
 SingleCov.covered!
 
 describe Kennel do
+  with_test_classes
+
   def write(file, content)
     folder = File.dirname(file)
     FileUtils.mkdir_p folder unless File.exist?(folder)
@@ -52,48 +54,24 @@ describe Kennel do
   end
 
   describe ".generate" do
-    it "generates" do
-      Kennel.generate
-      content = File.read("generated/temp_project/foo.json")
-      assert content.start_with?("{\n") # pretty generated
-      json = JSON.parse(content, symbolize_names: true)
-      json[:query].must_equal "avg(last_5m) > 1"
-    end
+    it "stores if requested" do
+      writer = "some writer".dup
 
-    it "keeps same" do
-      old = Time.now - 10
-      Kennel.generate
-      FileUtils.touch "generated/temp_project/foo.json", mtime: old
-      Kennel.generate
-      File.mtime("generated/temp_project/foo.json").must_equal old
-    end
+      Kennel::PartsSerializer.stubs(:new).returns(writer)
 
-    it "overrides different" do
-      old = Time.now - 10
-      Kennel.generate
-      FileUtils.touch "generated/temp_project/foo.json", mtime: old
-      File.write "generated/temp_project/foo.json", "x"
-      Kennel.generate
-      File.mtime("generated/temp_project/foo.json").wont_equal old
-    end
+      writer.stubs(:write).with do |parts|
+        parts.map(&:tracking_id) == ["temp_project:foo"]
+      end.once
 
-    it "cleans up old stuff" do
-      nested = "generated/foo/bar.json"
-      write nested, "HO"
-      plain = "generated/bar.json"
-      write plain, "HO"
-      folder = "generated/bar"
-      Dir.mkdir folder
-      Kennel.generate
-      refute File.exist?(nested)
-      refute File.exist?(plain)
-      refute Dir.exist?(folder)
+      with_env(STORE: nil) { Kennel.generate }
     end
 
     it "does not store if requested" do
-      with_env(STORE: "false") { Kennel.generate }
+      writer = "some writer".dup
+      Kennel::PartsSerializer.stubs(:new).returns(writer)
+      writer.stubs(:write).never
 
-      refute File.exist?("generated/temp_project/foo.json")
+      with_env(STORE: "false") { Kennel.generate }
     end
 
     it "complains when duplicates would be written" do
@@ -107,90 +85,6 @@ describe Kennel do
         test_project2:bar is defined 2 times
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
       ERROR
-    end
-
-    it "shows helpful autoload errors for parts" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject3 < Kennel::Models::Project
-          FooBar::BazFoo
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
-        uninitialized constant TestProject3::FooBar
-        Unable to load TestProject3::FooBar from parts/test_project3/foo_bar.rb
-        - Option 1: rename the constant or the file it lives in, to make them match
-        - Option 2: Use `require` or `require_relative` to load the constant
-      MSG
-    end
-
-    it "shows helpful autoload errors for teams" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject4 < Kennel::Models::Project
-          Teams::BazFoo
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
-        uninitialized constant Teams::BazFoo
-        Unable to load Teams::BazFoo from teams/baz_foo.rb
-        - Option 1: rename the constant or the file it lives in, to make them match
-        - Option 2: Use `require` or `require_relative` to load the constant
-      MSG
-    end
-
-    it "shows unparseable NameError" do
-      write "projects/a.rb", <<~RUBY
-        class TestProject5 < Kennel::Models::Project
-          raise NameError, "wut"
-        end
-      RUBY
-      e = assert_raises(NameError) { Kennel.generate }
-      e.message.must_equal "wut"
-    end
-
-    describe "project filtering" do
-      it "can filter by project" do
-        filter.project_filter = ["temp_project"]
-        other = "generated/foo/bar.json"
-        write other, "HO"
-        Kennel.generate
-        assert File.exist?(other)
-        assert File.exist?("generated/temp_project/foo.json")
-      end
-
-      it "does not generate for other projects" do
-        filter.project_filter = ["temp_project", "temp_project3"]
-        write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
-        write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
-        Kennel.generate
-        refute File.exist?("generated/temp_project2/foo.json")
-        assert File.exist?("generated/temp_project/foo.json")
-        assert File.exist?("generated/temp_project3/foo.json")
-      end
-    end
-
-    describe "tracking id filtering" do
-      it "can filter by id" do
-        filter.project_filter = ["temp_project"]
-        filter.tracking_id_filter = ["temp_project:foo"]
-        other = "generated/foo/bar.json"
-        write other, "HO"
-        Kennel.generate
-        assert File.exist?(other)
-        assert File.exist?("generated/temp_project/foo.json")
-      end
-
-      it "does not generate for other ids" do
-        filter.project_filter = ["temp_project", "temp_project3"]
-        filter.tracking_id_filter = ["temp_project:foo", "temp_project3:foo"]
-        write "projects/no2.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject2")
-        write "projects/no3.rb", File.read("projects/simple.rb").sub("TempProject", "TempProject3")
-        Kennel.generate
-        refute File.exist?("generated/temp_project2/foo.json")
-        assert File.exist?("generated/temp_project/foo.json")
-        assert File.exist?("generated/temp_project3/foo.json")
-      end
     end
   end
 

@@ -5,6 +5,8 @@ require "stringio"
 SingleCov.covered!
 
 describe Kennel::Syncer do
+  with_test_classes
+
   def project(pid)
     project = TestProject.new
     project.define_singleton_method(:kennel_id) { pid }
