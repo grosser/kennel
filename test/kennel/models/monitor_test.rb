@@ -109,7 +109,12 @@ describe Kennel::Models::Monitor do
     end
 
     it "does not set thresholds for composite monitors" do
-      json = monitor(critical: -> { raise }, query: -> { "1 || 2" }, type: -> { "composite" }).as_json
+      json = monitor(
+        critical: -> { raise },
+        query: -> { "1 || 2" },
+        type: -> { "composite" },
+        validate_using_links: ->(*) {}
+      ).as_json
       refute json[:options].key?(:thresholds)
     end
 
@@ -370,6 +375,39 @@ describe Kennel::Models::Monitor do
           mon.stubs(:query).returns("\"foo\".over(\"bar\").by(\"*\")")
           mon.as_json
         end
+      end
+    end
+  end
+
+  describe "#validate_using_links" do
+    def build_invalid
+      monitor(
+        critical: -> { raise },
+        query: -> { "1 || 2" },
+        type: -> { "composite" }
+      ).as_json
+    end
+
+    def with_allow_list(items)
+      const = Kennel::Models::Monitor::ALLOWED_UNLINKED
+      begin
+        const.concat items
+        yield
+      ensure
+        const.pop(items.size)
+      end
+    end
+
+    it "fails when not using links" do
+      e = assert_raises Kennel::ValidationError do
+        build_invalid
+      end
+      e.message.must_include '["1", "2"]'
+    end
+
+    it "allows external list" do
+      with_allow_list [["test_project:m1", "1"], ["test_project:m1", "2"]] do
+        build_invalid
       end
     end
   end
