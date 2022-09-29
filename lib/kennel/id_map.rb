@@ -18,5 +18,10 @@ module Kennel
     def new?(type, tracking_id)
       @map[type][tracking_id] == NEW
     end
+
+    def reverse_get(type, id)
+      @inverse_map ||= @map.transform_values(&:invert)
+      @inverse_map[type][id]
+    end
   end
 end

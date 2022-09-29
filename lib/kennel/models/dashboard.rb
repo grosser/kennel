@@ -209,6 +209,28 @@ module Kennel
         end
       end
 
+      def find_links
+        widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
+
+        widgets.flat_map do |widget|
+          next unless definition = widget[:definition]
+          case definition[:type]
+          when "uptime"
+            if ids = definition[:monitor_ids]
+              ids.map { |id| Record::IdLink.new(Monitor, id) }
+            end
+          when "alert_graph"
+            if id = definition[:alert_id]
+              Record::IdLink.new(Monitor, id)
+            end
+          when "slo"
+            if id = definition[:slo_id]
+              Record::IdLink.new(Slo, id)
+            end
+          end
+        end
+      end
+
       def validate_update!(_actuals, diffs)
         if bad_diff = diffs.find { |diff| diff[1] == "layout_type" }
           invalid! "Datadog does not allow update of #{bad_diff[1]} (#{bad_diff[2].inspect} -> #{bad_diff[3].inspect})"

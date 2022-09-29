@@ -2,6 +2,15 @@
 module Kennel
   module Models
     class Record < Base
+      class IdLink
+        def initialize(klass, id)
+          @klass = klass
+          @id = id.to_s
+        end
+
+        attr_reader :klass, :id
+      end
+
       # Apart from if you just don't like the default for some reason,
       # overriding MARKER_TEXT allows for namespacing within the same
       # Datadog account. If you run one Kennel setup with marker text
@@ -103,6 +112,9 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(*)
+      end
+
+      def find_links
       end
 
       def add_tracking_id

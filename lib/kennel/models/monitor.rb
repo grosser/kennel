@@ -135,6 +135,20 @@ module Kennel
         end
       end
 
+      def find_links
+        case as_json[:type]
+        when "composite"
+          as_json[:query].scan(/%{(.*?)}|\b([0-9]+)\b/).map do |tracking_id, datadog_id|
+            Record::IdLink.new(Monitor, tracking_id || datadog_id)
+          end
+        when "slo alert"
+          as_json[:query].scan(/%{(.*?)}|\b([0-9a-f]{32})\b/).map do |tracking_id, datadog_id|
+            Record::IdLink.new(Slo, tracking_id || datadog_id)
+          end
+        else # do nothing
+        end
+      end
+
       def validate_update!(_actuals, diffs)
         # ensure type does not change, but not if it's metric->query which is supported and used by importer.rb
         _, path, from, to = diffs.detect { |_, path, _, _| path == "type" }

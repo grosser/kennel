@@ -128,6 +128,7 @@ module Kennel
 
       Progress.progress "Diffing" do
         populate_id_map @expected, actual
+        check_links(@id_map, @expected, actual)
         filter_actual! actual
         resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
 
@@ -345,6 +346,56 @@ module Kennel
           !tracking_id || tracking_id.start_with?(*project_prefixes)
         end
       end
+    end
+
+    def check_links(id_map, expected, actual)
+      all_links = expected.to_h do |ex|
+        links = ex.find_links
+        links = links&.compact
+        links = nil if links&.empty?
+        [ex, links]
+      end.compact
+
+      puts "Links by kennel id:"
+      all_links.each do |from, to_list|
+        to_list.each do |to|
+          if to.id.include?(":")
+            puts "#{from.class.api_resource} #{from.tracking_id} -> #{to.klass.api_resource} #{to.id}"
+          end
+        end
+      end
+      puts
+
+      actual_map = Hash.new { |h, k| h[k] = {} }
+      actual.each do |a|
+        actual_map[a[:klass]][a[:id].to_s] = a
+        if a[:klass] == Kennel::Models::SyntheticTest
+          actual_map[Kennel::Models::Monitor][a[:monitor_id].to_s] = a
+        end
+      end
+
+      puts "Links by datadog id:"
+      all_links.each do |from, to_list|
+        to_list.each do |to|
+          unless to.id.include?(":")
+            print "#{from.class.api_resource} #{from.tracking_id} -> #{to.klass.api_resource} #{to.id}"
+
+            tracking_id = id_map.reverse_get(to.klass.api_resource, to.id.to_s) \
+              || id_map.reverse_get(to.klass.api_resource, to.id.to_i)
+
+            if tracking_id
+              puts " can be replaced by #{tracking_id}"
+            else
+              if actual_map[to.klass][to.id]
+                puts " exists but not in kennel"
+              else
+                puts " doesn't exist"
+              end
+            end
+          end
+        end
+      end
+      puts
     end
   end
 end

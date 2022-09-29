@@ -74,6 +74,14 @@ module Kennel
         end
       end
 
+      def find_links
+        return unless ids = as_json[:monitor_ids]
+
+        ids.map do |tracking_id, datadog_id|
+          Record::IdLink.new(Monitor, tracking_id || datadog_id)
+        end
+      end
+
       def self.normalize(expected, actual)
         super
 
