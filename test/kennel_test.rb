@@ -19,12 +19,6 @@ describe Kennel do
   in_temp_dir
   with_env DATADOG_APP_KEY: "app", DATADOG_API_KEY: "api"
 
-  let(:filter) { Struct.new(:project_filter, :tracking_id_filter).new(nil, nil) }
-
-  before do
-    Kennel::Filter.stubs(:new).returns(filter)
-  end
-
   before do
     write "projects/simple.rb", <<~RUBY
       class TempProject < Kennel::Models::Project

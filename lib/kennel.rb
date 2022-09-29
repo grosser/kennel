@@ -101,10 +101,10 @@ module Kennel
       @generated ||= begin
         Progress.progress "Generating" do
           projects = projects_provider.projects
-          Kennel::Filter.filter_resources!(projects, :kennel_id, filter.project_filter, "projects", "PROJECT")
+          projects = filter.filter_projects projects
 
           parts = Utils.parallel(projects, &:validated_parts).flatten(1)
-          Kennel::Filter.filter_resources!(parts, :tracking_id, filter.tracking_id_filter, "resources", "TRACKING_ID")
+          parts = filter.filter_parts parts
 
           parts.group_by(&:tracking_id).each do |tracking_id, same|
             next if same.size == 1
