@@ -27,11 +27,12 @@ module Kennel
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
+      ALLOWED_UNLINKED = [] # rubocop:disable Style/MutableConstant placeholder for custom overrides
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :new_group_delay, :priority
+        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links
       )
 
       defaults(
@@ -238,6 +239,8 @@ module Kennel
           validate_message_variables(data)
         end
 
+        validate_using_links(data)
+
         if type == "service check" && !data[:query].to_s.include?(".by(")
           invalid! "query must include a .by() at least .by(\"*\")"
         end
@@ -285,6 +288,21 @@ module Kennel
           Used #{forbidden.join(", ")} in the message, but can only be used with #{allowed.join(", ")}.
           Group or filter the query by #{forbidden.map { |f| f.sub(".name", "") }.join(", ")} to use it.
         MSG
+      end
+
+      def validate_using_links(data)
+        case data[:type]
+        when "composite" # TODO: add slo to mirror resolve_linked_tracking_ids! logic
+          ids = data[:query].tr("-", "_").scan(/\b\d+\b/)
+          ids.reject! { |id| ALLOWED_UNLINKED.include?([tracking_id, id]) }
+          if ids.any?
+            invalid! <<~MSG.rstrip
+              Used #{ids} in the query, but should only use links in the form of %{<project id>:<monitor id>}
+              If that is not possible, add `validate_using_links: ->(*){} # linked monitors are not in kennel
+            MSG
+          end
+        else # do nothing
+        end
       end
     end
   end
