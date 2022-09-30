@@ -43,6 +43,24 @@ describe Kennel::ProjectsProvider do
     projects.must_equal ["Project1"]
   end
 
+  it "avoids loading twice" do
+    write "projects/project1.rb", <<~RUBY
+      class Project1 < Kennel::Models::Project
+        defaults(
+          team: Kennel::Models::Team.new,
+          kennel_id: 'p1',
+          parts: [],
+        )
+      end
+    RUBY
+
+    Zeitwerk::Loader.any_instance.expects(:setup).times(1)
+
+    2.times do
+      Kennel::ProjectsProvider.new.projects.map(&:name).must_equal ["Project1"]
+    end
+  end
+
   it "shows helpful autoload errors for parts" do
     write "projects/a.rb", <<~RUBY
       class TestProject3 < Kennel::Models::Project

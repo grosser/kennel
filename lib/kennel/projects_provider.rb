@@ -8,17 +8,15 @@ module Kennel
 
     private
 
+    # load_all's purpose is to "require" all the .rb files under './projects',
+    # while allowing them to resolve reference to ./teams and ./parts via autoload
     def load_all
-      # load_all's purpose is to "require" all the .rb files under './projects',
-      # also with reference to ./teams and ./parts. What happens if you call it
-      # more than once?
-      #
-      # For a reason yet to be investigated, Zeitwerk rejects second and subsequent calls.
-      # But even if we skip over the Zeitwerk part, the nature of 'require' is
-      # somewhat one-way: we're not providing any mechanism to *un*load things.
-      # As long as the contents of `./projects`, `./teams` and `./parts` doesn't
-      # change between calls, then simply by no-op'ing subsequent calls to `load_all`
-      # we can have `load_all` appear to be idempotent.
+      # Zeitwerk rejects second and subsequent calls.
+      # Even if we skip over the Zeitwerk part, the nature of 'require' is
+      # one-way: ruby does not provide a mechanism to *un*require things.
+      return if defined?(@@load_all) && @@load_all
+      @@load_all = true
+
       loader = Zeitwerk::Loader.new
       Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
       Dir.exist?("parts") && loader.push_dir("parts")

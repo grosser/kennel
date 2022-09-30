@@ -43,12 +43,11 @@ Minitest::Test.class_eval do
     RUBY
   end
 
-  def reset_instance
-    Kennel.instance_variable_set(:@instance, nil)
-  end
-
   def self.reset_instance
-    after { reset_instance }
+    after do
+      Kennel.instance_variable_set(:@instance, nil)
+      Kennel::ProjectsProvider.remove_class_variable(:@@load_all) if Kennel::ProjectsProvider.class_variable_defined?(:@@load_all)
+    end
   end
 
   def with_env(hash)
