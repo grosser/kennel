@@ -6,6 +6,7 @@ require "English"
 
 require "kennel/version"
 require "kennel/compatibility"
+require "kennel/deep_freeze"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
