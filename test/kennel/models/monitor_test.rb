@@ -278,103 +278,103 @@ describe Kennel::Models::Monitor do
         ).as_json[:options][:renotify_statuses].must_be_nil
       end
     end
+  end
 
-    describe "#validate_message_variables" do
-      describe "with query alert style queries" do
-        let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
+  describe "#validate_message_variables" do
+    describe "with query alert style queries" do
+      let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
 
-        it "passes without is_match" do
-          mon.as_json
-        end
-
-        it "fails when using invalid is_match" do
-          mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
-        end
-
-        it "fails when using invalid negative is_match" do
-          mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
-        end
-
-        it "fails when using invalid is_exact_match" do
-          mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
-        end
-
-        it "fails when not using .name" do
-          mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
-        end
-
-        it "ignores when not using quotes" do
-          mon.stubs(:message).returns('{{#is_match env.name "production"}}TEST{{/is_match}}')
-          mon.as_json
-        end
-
-        it "passes when using valid is_match" do
-          mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
-          mon.as_json
-        end
-
-        it "passes when using valid variable" do
-          mon.expects(:message).returns("{{env.name}}")
-          mon.as_json
-        end
-
-        it "passes when using variable from filter" do
-          mon.stubs(:query).returns("avg(last_5m):avg:foo{bar:foo} by {env} > 123.0")
-          mon.expects(:message).returns("{{bar.name}}")
-          mon.as_json
-        end
-
-        it "passes when using unknown query" do
-          mon.stubs(:query).returns("wuuut")
-          mon.expects(:message).returns("{{bar.name}}")
-          mon.as_json
-        end
-
-        it "does not show * from filter" do
-          mon.stubs(:query).returns("avg(last_5m):avg:foo{*} by {env} > 123.0")
-          mon.expects(:message).returns("{{bar.name}}")
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
-        end
-
-        it "fails when using invalid variable" do
-          mon.expects(:message).returns("{{foo.name}}")
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
-        end
+      it "passes without is_match" do
+        mon.as_json
       end
 
-      describe "with service check style queries" do
-        let(:mon) { monitor(query: -> { "\"foo\".over(\"bar\").by(\"env\")" }) }
+      it "fails when using invalid is_match" do
+        mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+      end
 
-        it "passes without is_match" do
-          mon.as_json
-        end
+      it "fails when using invalid negative is_match" do
+        mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+      end
 
-        it "fails when using invalid is_match" do
-          mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-          e = assert_raises(Kennel::ValidationError) { mon.as_json }
-          e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
-        end
+      it "fails when using invalid is_exact_match" do
+        mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+      end
 
-        it "passes when using valid is_match" do
-          mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
-          mon.as_json
-        end
+      it "fails when not using .name" do
+        mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
+      end
 
-        it "allows everything when using *" do
-          mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-          mon.stubs(:query).returns("\"foo\".over(\"bar\").by(\"*\")")
-          mon.as_json
-        end
+      it "ignores when not using quotes" do
+        mon.stubs(:message).returns('{{#is_match env.name "production"}}TEST{{/is_match}}')
+        mon.as_json
+      end
+
+      it "passes when using valid is_match" do
+        mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
+        mon.as_json
+      end
+
+      it "passes when using valid variable" do
+        mon.expects(:message).returns("{{env.name}}")
+        mon.as_json
+      end
+
+      it "passes when using variable from filter" do
+        mon.stubs(:query).returns("avg(last_5m):avg:foo{bar:foo} by {env} > 123.0")
+        mon.expects(:message).returns("{{bar.name}}")
+        mon.as_json
+      end
+
+      it "passes when using unknown query" do
+        mon.stubs(:query).returns("wuuut")
+        mon.expects(:message).returns("{{bar.name}}")
+        mon.as_json
+      end
+
+      it "does not show * from filter" do
+        mon.stubs(:query).returns("avg(last_5m):avg:foo{*} by {env} > 123.0")
+        mon.expects(:message).returns("{{bar.name}}")
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
+      end
+
+      it "fails when using invalid variable" do
+        mon.expects(:message).returns("{{foo.name}}")
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
+      end
+    end
+
+    describe "with service check style queries" do
+      let(:mon) { monitor(query: -> { "\"foo\".over(\"bar\").by(\"env\")" }) }
+
+      it "passes without is_match" do
+        mon.as_json
+      end
+
+      it "fails when using invalid is_match" do
+        mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
+        e = assert_raises(Kennel::ValidationError) { mon.as_json }
+        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+      end
+
+      it "passes when using valid is_match" do
+        mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
+        mon.as_json
+      end
+
+      it "allows everything when using *" do
+        mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
+        mon.stubs(:query).returns("\"foo\".over(\"bar\").by(\"*\")")
+        mon.as_json
       end
     end
   end
