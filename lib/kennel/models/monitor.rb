@@ -264,6 +264,7 @@ module Kennel
         return if used.empty?
         used.flatten!(1)
         used.uniq!
+        used.map! { |w| w.tr("[]", "") }
 
         # TODO
         # - also match without by

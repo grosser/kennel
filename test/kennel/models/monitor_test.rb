@@ -351,6 +351,12 @@ describe Kennel::Models::Monitor do
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
         e.message.must_equal "test_project:m1 Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
       end
+
+      it "passes with [escaped] query style" do
+        mon.stubs(:query).returns("avg(last_5m):avg:foo{bar.baz:foo} by {env} > 123.0")
+        mon.expects(:message).returns("{{[bar.baz].name}}")
+        mon.as_json
+      end
     end
 
     describe "with service check style queries" do
