@@ -138,13 +138,13 @@ module Kennel
         add_expected_to_id_map(expected) # mark everything as new
         add_actual_to_id_map(actual) # and then override those resources that exist with their actual id
 
-        filter_actual! actual
+        filtered_actual = filter_actual(actual)
         resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff
 
         expected.each(&:add_tracking_id) # avoid diff with actual
 
         lookup_map = matching_expected_lookup_map
-        items = actual.map do |a|
+        items = filtered_actual.map do |a|
           e = matching_expected(a, lookup_map)
           if e && expected.delete?(e)
             [e, a]
@@ -342,18 +342,20 @@ module Kennel
       list.each { |e| e.resolve_linked_tracking_ids!(id_map, force: force) }
     end
 
-    def filter_actual!(actual)
+    def filter_actual(actual)
       if tracking_id_filter
-        actual.select! do |a|
+        actual.select do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id_filter.include?(tracking_id)
         end
       elsif project_filter
         project_prefixes = project_filter.map { |p| "#{p}:" }
-        actual.select! do |a|
+        actual.select do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
         end
+      else
+        actual
       end
     end
   end
