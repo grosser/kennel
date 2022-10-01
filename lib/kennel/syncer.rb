@@ -54,7 +54,7 @@ module Kennel
       each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
-        reply = @api.create e.class.api_resource, e.working_json
+        reply = api.create e.class.api_resource, e.working_json
         cache_metadata reply, e.class
         id = reply.fetch(:id)
         update_log << [:create, e.class.api_resource, id]
@@ -65,7 +65,7 @@ module Kennel
       each_resolved @update do |id, e|
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
-        @api.update e.class.api_resource, id, e.working_json
+        api.update e.class.api_resource, id, e.working_json
         update_log << [:update, e.class.api_resource, id]
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
@@ -74,7 +74,7 @@ module Kennel
         klass = a.fetch(:klass)
         message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
-        @api.delete klass.api_resource, id
+        api.delete klass.api_resource, id
         update_log << [:delete, klass.api_resource, id]
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
@@ -83,6 +83,8 @@ module Kennel
     end
 
     private
+
+    attr_reader :api, :project_filter, :tracking_id_filter, :expected
 
     # loop over items until everything is resolved or crash when we get stuck
     # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
@@ -129,16 +131,16 @@ module Kennel
       actual = Progress.progress("Downloading definitions") { download_definitions }
 
       Progress.progress "Diffing" do
-        populate_id_map @expected, actual
+        populate_id_map expected, actual
         filter_actual! actual
-        resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
+        resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff
 
-        @expected.each(&:add_tracking_id) # avoid diff with actual
+        expected.each(&:add_tracking_id) # avoid diff with actual
 
         lookup_map = matching_expected_lookup_map
         items = actual.map do |a|
           e = matching_expected(a, lookup_map)
-          if e && @expected.delete?(e)
+          if e && expected.delete?(e)
             [e, a]
           else
             [nil, a]
@@ -147,7 +149,7 @@ module Kennel
 
         # fill details of things we need to compare
         details = items.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
-        @api.fill_details! "dashboard", details
+        api.fill_details! "dashboard", details
 
         # pick out things to update or delete
         items.each do |e, a|
@@ -165,7 +167,7 @@ module Kennel
         end
 
         ensure_all_ids_found
-        @create = @expected.map { |e| [nil, e] }
+        @create = expected.map { |e| [nil, e] }
         @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
         @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
@@ -173,7 +175,7 @@ module Kennel
 
     def download_definitions
       Utils.parallel(Models::Record.subclasses) do |klass|
-        results = @api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+        results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
         results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
         results.each { |a| cache_metadata(a, klass) }
       end.flatten(1)
@@ -185,7 +187,7 @@ module Kennel
     end
 
     def ensure_all_ids_found
-      @expected.each do |e|
+      expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
         if Kennel.strict_imports
@@ -198,7 +200,7 @@ module Kennel
 
     # index list by all the thing we look up by: tracking id and actual id
     def matching_expected_lookup_map
-      @expected.each_with_object({}) do |e, all|
+      expected.each_with_object({}) do |e, all|
         keys = [e.tracking_id]
         keys << "#{e.class.api_resource}:#{e.id}" if e.id
         keys.compact.each do |key|
@@ -282,7 +284,7 @@ module Kennel
     # - make sure the diff is clean, by kicking out the now noop-update
     # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
     def prevent_irreversible_partial_updates
-      return unless @project_filter
+      return unless project_filter
       @update.select! do |_, e, _, diff|
         next true unless e.id # safe to add tracking when not having id
 
@@ -310,7 +312,7 @@ module Kennel
       end
 
       # override resources that exist with their id
-      project_prefixes = @project_filter&.map { |p| "#{p}:" }
+      project_prefixes = project_filter&.map { |p| "#{p}:" }
       actual.each do |a|
         # ignore when not managed by kennel
         next unless tracking_id = a.fetch(:tracking_id)
@@ -321,7 +323,7 @@ module Kennel
         next if
           !@id_map.get(api_resource, tracking_id) &&
           (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
-          (!@tracking_id_filter || @tracking_id_filter.include?(tracking_id))
+          (!tracking_id_filter || tracking_id_filter.include?(tracking_id))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
         if a[:klass].api_resource == "synthetics/tests"
@@ -335,13 +337,13 @@ module Kennel
     end
 
     def filter_actual!(actual)
-      if @tracking_id_filter
+      if tracking_id_filter
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
-          !tracking_id || @tracking_id_filter.include?(tracking_id)
+          !tracking_id || tracking_id_filter.include?(tracking_id)
         end
-      elsif @project_filter
-        project_prefixes = @project_filter.map { |p| "#{p}:" }
+      elsif project_filter
+        project_prefixes = project_filter.map { |p| "#{p}:" }
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
