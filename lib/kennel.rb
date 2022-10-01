@@ -58,8 +58,10 @@ module Kennel
     attr_accessor :out, :err, :strict_imports
 
     def generate
-      parts = generated
-      parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
+      # At this point, the parts given by 'generated' has had the filter applied,
+      # and (assuming we don't call generate then plan then generate again), working_json
+      # is the "clean" form (i.e. == as_json)
+      parts_serializer.write(generated) if ENV["STORE"] != "false" # quicker when debugging
       parts
     end
 
