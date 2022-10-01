@@ -28,17 +28,17 @@ module Kennel
         Kennel.out.puts Utils.color(:green, "Nothing to do")
       else
         @warnings.each { |message| Kennel.out.puts Utils.color(:yellow, "Warning: #{message}") }
-        print_plan "Create", @create, :green
-        print_plan "Update", @update, :yellow
-        print_plan "Delete", @delete, :red
+        print_plan "Create", @items_to_create, :green
+        print_plan "Update", @items_to_update, :yellow
+        print_plan "Delete", @items_to_delete, :red
       end
 
       Plan.new(
         noop?: noop?,
-        no_change: @no_change,
-        create: @create,
-        update: @update,
-        delete: @delete
+        no_change: @items_without_changes,
+        create: @items_to_create,
+        update: @items_to_update,
+        delete: @items_to_delete
       )
     end
 
@@ -51,7 +51,7 @@ module Kennel
     def update
       update_log = []
 
-      each_resolved @create do |_, e|
+      each_resolved @items_to_create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = api.create e.class.api_resource, e.working_json
@@ -62,7 +62,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
-      each_resolved @update do |id, e|
+      each_resolved @items_to_update do |id, e|
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
         api.update e.class.api_resource, id, e.working_json
@@ -70,7 +70,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
-      @delete.each do |id, _, a|
+      @items_to_delete.each do |id, _, a|
         klass = a.fetch(:klass)
         message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
@@ -118,14 +118,14 @@ module Kennel
     end
 
     def noop?
-      @create.empty? && @update.empty? && @delete.empty?
+      @items_to_create.empty? && @items_to_update.empty? && @items_to_delete.empty?
     end
 
     def calculate_diff
       @warnings = []
-      @update = []
-      @delete = []
-      @no_change = []
+      @items_to_update = []
+      @items_to_delete = []
+      @items_without_changes = []
       @id_map = IdMap.new
 
       actual = Progress.progress("Downloading definitions") { download_definitions }
@@ -157,19 +157,19 @@ module Kennel
           if e
             diff = e.diff(a) # slow ...
             if diff.any?
-              @update << [id, e, a, diff]
+              @items_to_update << [id, e, a, diff]
             else
-              @no_change << [id, e, a]
+              @items_without_changes << [id, e, a]
             end
           elsif a.fetch(:tracking_id) # was previously managed
-            @delete << [id, nil, a]
+            @items_to_delete << [id, nil, a]
           end
         end
 
         ensure_all_ids_found
-        @create = expected.map { |e| [nil, e] }
-        @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
-        @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
+        @items_to_create = expected.map { |e| [nil, e] }
+        @items_to_delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
+        @items_to_update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
     end
 
@@ -274,7 +274,7 @@ module Kennel
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
     def validate_plan
-      @update.each do |_, expected, actuals, diffs|
+      @items_to_update.each do |_, expected, actuals, diffs|
         expected.validate_update!(actuals, diffs)
       end
     end
@@ -285,7 +285,7 @@ module Kennel
     # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
     def prevent_irreversible_partial_updates
       return unless project_filter
-      @update.select! do |_, e, _, diff|
+      @items_to_update.select! do |_, e, _, diff|
         next true unless e.id # safe to add tracking when not having id
 
         diff.select! do |field_diff|
