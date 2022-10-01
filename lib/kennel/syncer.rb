@@ -10,6 +10,8 @@ module Kennel
     Plan = Struct.new(:noop?, :no_change, :create, :update, :delete, keyword_init: true)
     Update = Struct.new(:update_log, keyword_init: true)
 
+    # Assuming we follow the normal call flow sequence, 'expected' is
+    # a filtered list of parts where working_json is "clean" (== as_json).
     def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
       @api = api
       @project_filter = project_filter
