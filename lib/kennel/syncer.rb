@@ -58,7 +58,7 @@ module Kennel
         cache_metadata reply, e.class
         id = reply.fetch(:id)
         update_log << [:create, e.class.api_resource, id]
-        populate_id_map [], [reply] # allow resolving ids we could previously no resolve
+        add_actual_to_id_map([reply]) # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
@@ -131,10 +131,13 @@ module Kennel
       @items_without_changes = []
       @id_map = IdMap.new
 
+      # An array of items in Datadog, as hashes including :id, :klass, :tracking_id
       actual = Progress.progress("Downloading definitions") { download_definitions }
 
       Progress.progress "Diffing" do
-        populate_id_map expected, actual
+        add_expected_to_id_map(expected) # mark everything as new
+        add_actual_to_id_map(actual) # and then override those resources that exist with their actual id
+
         filter_actual! actual
         resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff
 
@@ -305,18 +308,18 @@ module Kennel
       end
     end
 
-    def populate_id_map(expected, actual)
-      # mark everything as new
-      expected.each do |e|
+    def add_expected_to_id_map(items)
+      items.each do |e|
         id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
         if e.class.api_resource == "synthetics/tests"
           id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
         end
       end
+    end
 
-      # override resources that exist with their id
+    def add_actual_to_id_map(items)
       project_prefixes = project_filter&.map { |p| "#{p}:" }
-      actual.each do |a|
+      items.each do |a|
         # ignore when not managed by kennel
         next unless tracking_id = a.fetch(:tracking_id)
 
