@@ -111,6 +111,32 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "#working_json / #working_json!" do
+    let(:first_value) { "the first value" }
+    let(:json) { [first_value] }
+
+    before do
+      copy = json
+      monitor.define_singleton_method(:as_json) { copy }
+    end
+
+    it "uses as_json" do
+      monitor.working_json.must_equal(json)
+    end
+
+    it "takes a copy" do
+      monitor.working_json << 'foo'
+      monitor.working_json.must_equal [first_value, 'foo']
+      json.must_equal [first_value]
+    end
+
+    it "can be reset" do
+      monitor.working_json << 'foo'
+      monitor.working_json!.must_equal [first_value]
+      monitor.working_json.must_equal [first_value]
+    end
+  end
+
   describe "#diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)

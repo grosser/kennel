@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Record < Base
+      include DeepFreeze
+
       # Apart from if you just don't like the default for some reason,
       # overriding MARKER_TEXT allows for namespacing within the same
       # Datadog account. If you run one Kennel setup with marker text
@@ -78,6 +80,15 @@ module Kennel
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
         @project = project
         super(*args)
+      end
+
+      def working_json
+        @working_json ||= deep_dup_thaw(as_json)
+      end
+
+      def working_json!
+        @working_json = nil
+        working_json
       end
 
       def diff(actual)

@@ -116,7 +116,7 @@ module Kennel
           end
 
           # trigger json caching here so it counts into generating
-          Utils.parallel(parts, &:working_json)
+          Utils.parallel(parts, &:working_json!)
 
           parts
         end
