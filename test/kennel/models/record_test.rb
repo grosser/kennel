@@ -125,13 +125,13 @@ describe Kennel::Models::Record do
     end
 
     it "takes a copy" do
-      monitor.working_json << 'foo'
-      monitor.working_json.must_equal [first_value, 'foo']
+      monitor.working_json << "foo"
+      monitor.working_json.must_equal [first_value, "foo"]
       json.must_equal [first_value]
     end
 
     it "can be reset" do
-      monitor.working_json << 'foo'
+      monitor.working_json << "foo"
       monitor.working_json!.must_equal [first_value]
       monitor.working_json.must_equal [first_value]
     end

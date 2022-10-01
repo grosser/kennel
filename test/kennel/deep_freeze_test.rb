@@ -11,7 +11,7 @@ describe Kennel::DeepFreeze do
     end.new
   end
 
-  describe '#deep_freeze' do
+  describe "#deep_freeze" do
     it "can freeze strings" do
       input = "foo".dup
       output = target.deep_freeze(input)
@@ -21,7 +21,7 @@ describe Kennel::DeepFreeze do
     end
 
     it "can freeze hashes" do
-      input = { ['a'] => "bar".dup }
+      input = { ["a"] => "bar".dup }
       input.frozen?.must_equal(false)
       input.keys.first.frozen?.must_equal(false)
       input.values.first.frozen?.must_equal(false)
@@ -39,7 +39,7 @@ describe Kennel::DeepFreeze do
     end
 
     it "can freeze arrays" do
-      input = [ ['a'], "bar".dup ]
+      input = [["a"], "bar".dup]
       input.frozen?.must_equal(false)
       input[0].frozen?.must_equal(false)
       input[1].frozen?.must_equal(false)
@@ -57,10 +57,10 @@ describe Kennel::DeepFreeze do
     end
   end
 
-  describe '#deep_dup_thaw' do
+  describe "#deep_dup_thaw" do
     it "can deeply thaw" do
       input = {
-        ['a'.freeze].freeze => "b".freeze
+        ["a"].freeze => "b"
       }.freeze
 
       output = target.deep_dup_thaw(input)

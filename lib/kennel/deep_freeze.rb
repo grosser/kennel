@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Kennel
   module DeepFreeze
     # There'll be a gem for this somewhere.
@@ -6,7 +8,7 @@ module Kennel
     def deep_freeze(item)
       case item
       when Hash
-        item.map { |k, v| [ deep_freeze(k), deep_freeze(v) ] }.to_h
+        item.map { |k, v| [deep_freeze(k), deep_freeze(v)] }.to_h
       when Array
         item.map { |v| deep_freeze(v) }
       else
@@ -19,7 +21,7 @@ module Kennel
       when Array
         value.map { |v| deep_dup_thaw(v) }
       when Hash
-        value.map { |k, v| [ deep_dup_thaw(k), deep_dup_thaw(v) ] }.to_h
+        value.map { |k, v| [deep_dup_thaw(k), deep_dup_thaw(v)] }.to_h
       else
         value.dup
       end

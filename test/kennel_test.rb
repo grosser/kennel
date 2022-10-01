@@ -84,15 +84,15 @@ describe Kennel do
     it "resets the working_json" do
       project = Kennel::Models::Project.new(
         team: TestTeam.new,
-        kennel_id: 'a_project',
-        parts: [],
+        kennel_id: "a_project",
+        parts: []
       ).instance_eval do
         def parts
           @parts ||= [
             Kennel::Models::Monitor.new(
               self,
               type: -> { "query alert" },
-              kennel_id: -> { 'foo' },
+              kennel_id: -> { "foo" },
               query: -> { "avg(last_5m) > \#{critical}" },
               critical: -> { 1 }
             )
@@ -105,8 +105,8 @@ describe Kennel do
       Kennel::ProjectsProvider.stubs(:new).returns(OpenStruct.new(projects: [project]))
 
       Kennel::Engine.new.generate
-      project.parts[0].working_json[:new_key] = 'whatever'
-      project.parts[0].working_json[:new_key].must_equal 'whatever'
+      project.parts[0].working_json[:new_key] = "whatever"
+      project.parts[0].working_json[:new_key].must_equal "whatever"
 
       Kennel::Engine.new.generate
       project.parts[0].working_json[:new_key].must_be_nil
