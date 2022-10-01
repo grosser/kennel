@@ -62,7 +62,7 @@ module Kennel
       # and (assuming we don't call generate then plan then generate again), working_json
       # is the "clean" form (i.e. == as_json)
       parts_serializer.write(generated) if ENV["STORE"] != "false" # quicker when debugging
-      parts
+      nil
     end
 
     def plan

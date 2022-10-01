@@ -57,7 +57,8 @@ describe Kennel do
         parts.map(&:tracking_id) == ["temp_project:foo"]
       end.once
 
-      with_env(STORE: nil) { Kennel.generate }
+      result = with_env(STORE: nil) { Kennel.generate }
+      result.must_be_nil
     end
 
     it "does not store if requested" do
