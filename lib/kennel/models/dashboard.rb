@@ -152,7 +152,7 @@ module Kennel
         end
       end
 
-      def as_json
+      def working_json
         return @json if @json
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
@@ -186,7 +186,7 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
-        widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
+        widgets = working_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
         widgets.each do |widget|
           next unless definition = widget[:definition]
           case definition[:type]

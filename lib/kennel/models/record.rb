@@ -81,7 +81,7 @@ module Kennel
       end
 
       def diff(actual)
-        expected = as_json
+        expected = working_json
         expected.delete(:id)
 
         self.class.send(:normalize, expected, actual)
@@ -106,7 +106,7 @@ module Kennel
       end
 
       def add_tracking_id
-        json = as_json
+        json = working_json
         if self.class.parse_tracking_id(json)
           invalid! "remove \"-- #{MARKER_TEXT}\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
         end
@@ -116,7 +116,7 @@ module Kennel
       end
 
       def remove_tracking_id
-        self.class.remove_tracking_id(as_json)
+        self.class.remove_tracking_id(working_json)
       end
 
       def validate_update!(*)

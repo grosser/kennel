@@ -62,10 +62,10 @@ describe Kennel::Models::Slo do
     end
   end
 
-  describe "#as_json" do
+  describe "#working_json" do
     it "creates a basic json" do
       assert_json_equal(
-        slo.as_json,
+        slo.working_json,
         expected_basic_json
       )
     end
@@ -73,7 +73,7 @@ describe Kennel::Models::Slo do
     it "sets query for metrics" do
       expected_basic_json[:query] = "foo"
       assert_json_equal(
-        slo(query: -> { "foo" }).as_json,
+        slo(query: -> { "foo" }).working_json,
         expected_basic_json
       )
     end
@@ -81,7 +81,7 @@ describe Kennel::Models::Slo do
     it "sets id when updating by id" do
       expected_basic_json[:id] = 123
       assert_json_equal(
-        slo(id: -> { 123 }).as_json,
+        slo(id: -> { 123 }).working_json,
         expected_basic_json
       )
     end
@@ -89,7 +89,7 @@ describe Kennel::Models::Slo do
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
-        slo(groups: -> { ["foo"] }).as_json,
+        slo(groups: -> { ["foo"] }).working_json,
         expected_basic_json
       )
     end
@@ -99,27 +99,27 @@ describe Kennel::Models::Slo do
     it "ignores empty caused by ignore_default" do
       slo = slo(monitor_ids: -> { nil })
       slo.resolve_linked_tracking_ids!(id_map, force: false)
-      refute slo.as_json[:monitor_ids]
+      refute slo.working_json[:monitor_ids]
     end
 
     it "does nothing for hardcoded ids" do
       slo = slo(monitor_ids: -> { [123] })
       slo.resolve_linked_tracking_ids!(id_map, force: false)
-      slo.as_json[:monitor_ids].must_equal [123]
+      slo.working_json[:monitor_ids].must_equal [123]
     end
 
     it "resolves relative ids" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
       id_map.set("monitor", "#{project.kennel_id}:mon", 123)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
-      slo.as_json[:monitor_ids].must_equal [123]
+      slo.working_json[:monitor_ids].must_equal [123]
     end
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
       id_map.set("monitor", "#{project.kennel_id}:mon", Kennel::IdMap::NEW)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
-      slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
+      slo.working_json[:monitor_ids].must_equal ["test_project:mon"]
     end
 
     it "fails with typos" do

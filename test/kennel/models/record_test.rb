@@ -91,9 +91,9 @@ describe Kennel::Models::Record do
 
   describe "#add_tracking_id" do
     it "adds" do
-      monitor.as_json[:message].wont_include "kennel"
+      monitor.working_json[:message].wont_include "kennel"
       monitor.add_tracking_id
-      monitor.as_json[:message].must_include "kennel"
+      monitor.working_json[:message].must_include "kennel"
     end
 
     it "fails when it would have been added twice (user already added it by mistake)" do
@@ -104,10 +104,10 @@ describe Kennel::Models::Record do
 
   describe "#remove_tracking_id" do
     it "removes" do
-      old = monitor.as_json[:message].dup
+      old = monitor.working_json[:message].dup
       monitor.add_tracking_id
       monitor.remove_tracking_id
-      monitor.as_json[:message].must_equal old
+      monitor.working_json[:message].must_equal old
     end
   end
 
@@ -116,7 +116,7 @@ describe Kennel::Models::Record do
     def diff_resource(e, a)
       default = { tags: [] }
       b = Kennel::Models::Record.new TestProject.new
-      b.define_singleton_method(:as_json) { default.merge(e) }
+      b.define_singleton_method(:working_json) { default.merge(e) }
       b.diff(default.merge(a))
     end
 

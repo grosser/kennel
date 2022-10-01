@@ -52,7 +52,7 @@ module Kennel
       each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
-        reply = @api.create e.class.api_resource, e.as_json
+        reply = @api.create e.class.api_resource, e.working_json
         cache_metadata reply, e.class
         id = reply.fetch(:id)
         update_log << [:create, e.class.api_resource, id]
@@ -63,7 +63,7 @@ module Kennel
       each_resolved @update do |id, e|
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
-        @api.update e.class.api_resource, id, e.as_json
+        @api.update e.class.api_resource, id, e.working_json
         update_log << [:update, e.class.api_resource, id]
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end

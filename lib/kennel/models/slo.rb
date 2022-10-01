@@ -32,7 +32,6 @@ module Kennel
       end
 
       def as_json
-        return @as_json if @as_json
         data = {
           name: "#{name}#{LOCK}",
           description: description,
@@ -52,7 +51,7 @@ module Kennel
           data[:groups] = v
         end
 
-        @as_json = data
+        data
       end
 
       def self.api_resource
@@ -68,8 +67,8 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
-        return unless ids = as_json[:monitor_ids] # ignore_default can remove it
-        as_json[:monitor_ids] = ids.map do |id|
+        return unless ids = working_json[:monitor_ids] # ignore_default can remove it
+        working_json[:monitor_ids] = ids.map do |id|
           resolve(id, :monitor, id_map, **args) || id
         end
       end

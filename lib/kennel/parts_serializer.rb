@@ -31,7 +31,7 @@ module Kennel
         used << File.dirname(path) # only 1 level of sub folders, so this is enough
         used << path
 
-        payload = part.as_json.merge(api_resource: part.class.api_resource)
+        payload = part.working_json.merge(api_resource: part.class.api_resource)
         write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
       end
 

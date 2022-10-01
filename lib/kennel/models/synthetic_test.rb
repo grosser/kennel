@@ -17,7 +17,6 @@ module Kennel
       )
 
       def as_json
-        return @as_json if @as_json
         locations = locations()
         data = {
           message: message,
@@ -34,7 +33,7 @@ module Kennel
           data[:id] = v
         end
 
-        @as_json = data
+        data
       end
 
       def self.api_resource

@@ -57,7 +57,6 @@ module Kennel
       )
 
       def as_json
-        return @as_json if @as_json
         data = {
           name: "#{name}#{LOCK}",
           type: type,
@@ -122,14 +121,14 @@ module Kennel
 
         validate_json(data) if validate
 
-        @as_json = data
+        data
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
-        case as_json[:type]
+        case working_json[:type]
         when "composite", "slo alert"
-          type = (as_json[:type] == "composite" ? :monitor : :slo)
-          as_json[:query] = as_json[:query].gsub(/%{(.*?)}/) do
+          type = (working_json[:type] == "composite" ? :monitor : :slo)
+          working_json[:query] = working_json[:query].gsub(/%{(.*?)}/) do
             resolve($1, type, id_map, **args) || $&
           end
         else # do nothing

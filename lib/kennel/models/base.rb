@@ -18,7 +18,7 @@ module Kennel
       end
 
       def to_json # rubocop:disable Lint/ToJSON
-        raise NotImplementedError, "Use as_json"
+        raise NotImplementedError, "Use working_json"
       end
 
       private

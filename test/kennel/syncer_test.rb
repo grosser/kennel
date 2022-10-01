@@ -32,12 +32,12 @@ describe Kennel::Syncer do
     )
 
     # make the diff simple
-    monitor.as_json[:options] = {
+    monitor.working_json[:options] = {
       escalation_message: nil,
       evaluation_delay: nil
     }
-    monitor.as_json.delete_if { |k, _| ![:tags, :message, :options].include?(k) }
-    monitor.as_json.merge!(extra)
+    monitor.working_json.delete_if { |k, _| ![:tags, :message, :options].include?(k) }
+    monitor.working_json.merge!(extra)
 
     monitor
   end
@@ -57,8 +57,8 @@ describe Kennel::Syncer do
       options: -> { nil }
     )
 
-    synthetic.as_json.delete_if { |k, _| ![:tags, :message].include?(k) }
-    synthetic.as_json.merge!(extra)
+    synthetic.working_json.delete_if { |k, _| ![:tags, :message].include?(k) }
+    synthetic.working_json.merge!(extra)
 
     synthetic
   end
@@ -72,8 +72,8 @@ describe Kennel::Syncer do
       kennel_id: -> { cid },
       id: -> { extra[:id]&.to_s }
     )
-    dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
-    dash.as_json.merge!(extra)
+    dash.working_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
+    dash.working_json.merge!(extra)
     dash
   end
 
@@ -87,8 +87,8 @@ describe Kennel::Syncer do
       id: -> { extra[:id]&.to_s },
       thresholds: -> { [] }
     )
-    # dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
-    dash.as_json.merge!(extra)
+    # dash.working_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
+    dash.working_json.merge!(extra)
     dash
   end
 
@@ -393,7 +393,7 @@ describe Kennel::Syncer do
       end
 
       it "can update renamed components without other diff" do
-        expected.last.as_json.delete(:foo)
+        expected.last.working_json.delete(:foo)
         monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
         output.must_equal <<~TEXT
           Plan:
@@ -484,7 +484,7 @@ describe Kennel::Syncer do
 
     it "creates" do
       expected << monitor("a", "b")
-      api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      api.expects(:create).with("monitor", expected.first.working_json).returns(expected.first.working_json.merge(id: 123))
       output.must_equal <<~TXT
         Creating monitor a:b
         \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -493,7 +493,7 @@ describe Kennel::Syncer do
 
     it "sets values we do not compare on" do
       expected << monitor("a", "b", type: "event alert", options: { thresholds: { critical: 2 } })
-      sent = deep_dup(expected.first.as_json)
+      sent = deep_dup(expected.first.working_json)
       sent[:message] = "@slack-foo\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually".lstrip
       api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
       output.must_equal <<~TXT
@@ -505,7 +505,7 @@ describe Kennel::Syncer do
     it "updates" do
       expected << monitor("a", "b", foo: "bar")
       monitors << monitor_api_response("a", "b", id: 123)
-      api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      api.expects(:update).with("monitor", 123, expected.first.working_json).returns(expected.first.working_json.merge(id: 123))
       output.must_equal <<~TXT
         Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
         \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -527,17 +527,17 @@ describe Kennel::Syncer do
       expected << slo
       expected << monitor
 
-      # Slightly misleading, since monitor.as_json remains the same object (which
+      # Slightly misleading, since monitor.working_json remains the same object (which
       # is good enough for api.expects.with), but its contents are mutated by
       # the syncer.
       api.expects(:create)
-        .with("monitor", monitor.as_json)
-        .returns(monitor.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
+        .with("monitor", monitor.working_json)
+        .returns(monitor.working_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
 
       api.expects(:create)
         .with(
           "slo",
-          slo.as_json.merge(
+          slo.working_json.merge(
             monitor_ids: [1],
             description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
           )
@@ -629,11 +629,11 @@ describe Kennel::Syncer do
         expected << slo
 
         api.expects(:create)
-          .with("slo", slo.as_json)
-          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+          .with("slo", slo.working_json)
+          .returns(slo.working_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
 
         output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=1000\n"
-        slo.as_json[:monitor_ids].must_equal [456]
+        slo.working_json[:monitor_ids].must_equal [456]
       end
 
       it "can resolve a monitor id from a new synthetic" do
@@ -644,11 +644,11 @@ describe Kennel::Syncer do
         expected << slo
 
         api.expects(:create)
-          .with("synthetics/tests", synthetic.as_json)
-          .returns(synthetic.as_json.merge(id: 1001, monitor_id: 456, message: "\n-- Managed by kennel a:b"))
+          .with("synthetics/tests", synthetic.working_json)
+          .returns(synthetic.working_json.merge(id: 1001, monitor_id: 456, message: "\n-- Managed by kennel a:b"))
         api.expects(:create)
-          .with("slo", slo.as_json)
-          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+          .with("slo", slo.working_json)
+          .returns(slo.working_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
 
         output.must_equal <<~OUTPUT
           Creating synthetics/tests a:b
@@ -656,7 +656,7 @@ describe Kennel::Syncer do
           Creating slo a:c
           \e[1A\e[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=1000
         OUTPUT
-        slo.as_json[:monitor_ids].must_equal [456]
+        slo.working_json[:monitor_ids].must_equal [456]
       end
     end
 
@@ -669,7 +669,7 @@ describe Kennel::Syncer do
           modified: "2015-12-17T23:12:26.726234+00:00",
           graphs: []
         }
-        api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
+        api.expects(:update).with("dashboard", "abc", expected.first.working_json).returns(expected.first.working_json.merge(id: "abc"))
         output.must_equal <<~TXT
           Updating dashboard a:b https://app.datadoghq.com/dashboard/abc
           \e[1A\033[KUpdated dashboard a:b https://app.datadoghq.com/dashboard/abc
