@@ -139,7 +139,7 @@ module Kennel
         add_actual_to_id_map(actual) # and then override those resources that exist with their actual id
 
         filtered_actual = filter_actual(actual)
-        resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff
+        resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff. FIXME, untested!
 
         expected.each(&:add_tracking_id) # avoid diff with actual
 
