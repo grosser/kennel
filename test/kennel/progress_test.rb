@@ -6,12 +6,10 @@ SingleCov.covered!
 describe Kennel::Progress do
   capture_all
 
-  before { Kennel::Progress.stubs(:sleep) } # make things fast
-
   describe ".progress" do
     it "shows progress" do
-      result = Kennel::Progress.progress("foo") do
-        sleep 0.01 # make progress print
+      result = Kennel::Progress.progress("foo", interval: 0.01) do
+        sleep 0.1 # make progress print
         123
       end
       result.must_equal 123
