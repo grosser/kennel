@@ -19,7 +19,6 @@ module Kennel
       @expected = Set.new expected # need set to speed up deletion
       calculate_diff
       validate_plan
-      prevent_irreversible_partial_updates
     end
 
     def plan
@@ -141,12 +140,14 @@ module Kennel
         filtered_actual = filter_actual(actual)
         resolve_linked_tracking_ids! expected # resolve dependencies to avoid diff. FIXME, untested!
 
-        expected.each(&:add_tracking_id) # avoid diff with actual
+        unused_expected = Set.new(expected)
+        on_a_branch = !project_filter.nil?
 
-        lookup_map = matching_expected_lookup_map
+        lookup_map = index_expected_by_ids
         items = filtered_actual.map do |a|
           e = matching_expected(a, lookup_map)
-          if e && expected.delete?(e)
+          if e && unused_expected.delete?(e)
+            e.add_tracking_id unless a.fetch(:tracking_id).nil? && on_a_branch
             [e, a]
           else
             [nil, a]
@@ -172,8 +173,9 @@ module Kennel
           end
         end
 
-        ensure_all_ids_found
-        @items_to_create = expected.map { |e| [nil, e] }
+        ensure_all_ids_found(unused_expected)
+        unused_expected.each(&:add_tracking_id)
+        @items_to_create = unused_expected.map { |e| [nil, e] }
         items_to_delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
         items_to_update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
@@ -192,8 +194,8 @@ module Kennel
       a[:tracking_id] = a.fetch(:klass).parse_tracking_id(a)
     end
 
-    def ensure_all_ids_found
-      expected.each do |e|
+    def ensure_all_ids_found(expected_to_create)
+      expected_to_create.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
         if Kennel.strict_imports
@@ -205,7 +207,7 @@ module Kennel
     end
 
     # index list by all the thing we look up by: tracking id and actual id
-    def matching_expected_lookup_map
+    def index_expected_by_ids
       expected.each_with_object({}) do |e, all|
         keys = [e.tracking_id]
         keys << "#{e.class.api_resource}:#{e.id}" if e.id
@@ -282,29 +284,6 @@ module Kennel
     def validate_plan
       items_to_update.each do |_, expected, actuals, diffs|
         expected.validate_update!(actuals, diffs)
-      end
-    end
-
-    # - do not add tracking-id when working with existing ids on a branch,
-    #   so resource do not get deleted when running an update on master (for example merge->CI)
-    # - make sure the diff is clean, by kicking out the now noop-update
-    # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
-    def prevent_irreversible_partial_updates
-      return unless project_filter
-      items_to_update.select! do |_, e, _, diff|
-        next true unless e.id # safe to add tracking when not having id
-
-        diff.select! do |field_diff|
-          (_, field, actual) = field_diff
-          # TODO: refactor this so TRACKING_FIELD stays record-private
-          next true if e.class::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
-          next true if e.class.parse_tracking_id(field.to_sym => actual) # already has tracking id
-
-          field_diff[3] = e.remove_tracking_id # make `rake plan` output match what we are sending
-          actual != field_diff[3] # discard diff if now nothing changes
-        end
-
-        !diff.empty?
       end
     end
 
