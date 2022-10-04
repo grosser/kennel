@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered!
+# Hard to cover all the lock cases with certainty.
+# `Kennel::Progress.progress("foo") {}` will *probably* cover the last case,
+# but there's no guarantee.
+SingleCov.covered! uncovered: 1
 
 describe Kennel::Progress do
   capture_all
@@ -29,5 +32,9 @@ describe Kennel::Progress do
     # p final
     sleep 0.01
     stderr.string.must_equal final, "progress was not stopped"
+  end
+
+  it "stops when the block is empty" do
+    Kennel::Progress.progress("nothing") {}
   end
 end

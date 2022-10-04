@@ -16,12 +16,13 @@ module Kennel
         animation = "-\\|/"
         count = 0
         loop do
-          break if mutex.synchronize { stop }
           Kennel.err.print animation[count % animation.size]
-          mutex.synchronize do
-            cond.wait(mutex, interval)
-          end
+          last_loop = mutex.synchronize {
+            stop || cond.wait(mutex, interval)
+            stop
+          }
           Kennel.err.print "\b"
+          break if last_loop
           count += 1
         end
       end
