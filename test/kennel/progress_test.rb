@@ -6,30 +6,37 @@ SingleCov.covered!
 describe Kennel::Progress do
   capture_all
 
-  before { Kennel::Progress.stubs(:sleep) } # make things fast
-
   describe ".progress" do
     it "shows progress" do
-      result = Kennel::Progress.progress("foo") do
-        sleep 0.01 # make progress print
+      result = Kennel::Progress.progress("foo", interval: 0.01) do
+        sleep 0.10 # make progress print multiple times
         123
       end
       result.must_equal 123
       stderr.string.must_include "|\b/\b-\b\\\b|\b"
       stderr.string.sub(/-.*?0/, "0").gsub(/\d\.\d+/, "1.11").must_equal "foo ... 1.11s\n"
     end
-  end
 
-  it "stops when worker crashed" do
-    assert_raises NotImplementedError do
-      Kennel::Progress.progress("foo") do
-        sleep 0.01 # make progress print
-        raise NotImplementedError
-      end
+    it "stops immediately when block finishes" do
+      Benchmark.realtime do
+        Kennel::Progress.progress("foo", interval: 1) do
+          sleep 0.01 # make it do at least 1 loop
+          123
+        end.must_equal 123
+      end.must_be :<, 0.1
     end
-    final = stderr.string
-    # p final
-    sleep 0.01
-    stderr.string.must_equal final, "progress was not stopped"
+
+    it "stops when worker crashed" do
+      assert_raises NotImplementedError do
+        Kennel::Progress.progress("foo") do
+          sleep 0.01 # make progress print
+          raise NotImplementedError
+        end
+      end
+      final = stderr.string
+      # p final
+      sleep 0.01
+      stderr.string.must_equal final, "progress was not stopped"
+    end
   end
 end
