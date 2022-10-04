@@ -4,7 +4,7 @@ require "benchmark"
 module Kennel
   class Progress
     # print what we are doing and a spinner until it is done ... then show how long it took
-    def self.progress(name)
+    def self.progress(name, interval: 0.2)
       Kennel.err.print "#{name} ... "
 
       stop = false
@@ -16,7 +16,7 @@ module Kennel
         loop do
           break if stop
           Kennel.err.print animation[count % animation.size]
-          sleep 0.2
+          sleep interval
           Kennel.err.print "\b"
           count += 1
         end
@@ -25,6 +25,7 @@ module Kennel
       time = Benchmark.realtime { result = yield }
 
       stop = true
+      spinner.run # wake thread, so it stops itself
       spinner.join
       Kennel.err.print "#{time.round(2)}s\n"
 
