@@ -60,6 +60,8 @@ module Kennel
         data[:critical] = data[:critical].to_i if data[:type] == "event alert"
 
         data[:type] = "query alert" if data[:type] == "metric alert"
+
+        link_composite_monitors(data)
       when "dashboard"
         widgets = data[:widgets]&.flat_map { |widget| widget.dig(:definition, :widgets) || [widget] }
         widgets&.each do |widget|
@@ -90,6 +92,18 @@ module Kennel
     end
 
     private
+
+    def link_composite_monitors(data)
+      if data[:type] == "composite"
+        data[:query].gsub!(/\d+/) do |id|
+          object = Kennel.send(:api).show("monitor", id)
+          tracking_id = Kennel::Models::Monitor.parse_tracking_id(object)
+          tracking_id ? "%{#{tracking_id}}" : id
+        rescue StandardError # monitor not found
+          id # keep the id
+        end
+      end
+    end
 
     # reduce duplication in imports by using dry `q: :metadata` when possible
     def dry_up_widget_metadata!(widget)
