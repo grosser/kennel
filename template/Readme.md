@@ -388,3 +388,11 @@ https://foo.datadog.com/monitor/123
 ### Find all monitors with No-Data
 `rake kennel:nodata TAG=team:foo`
 
+### Finding the tracking id of a resource
+
+When trying to link resources together, this avoids having to go through datadog UI.
+
+```Bash
+rake kennel:tracking_id ID=123 RESOURCE=monitor
+```
+

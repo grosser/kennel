@@ -17,7 +17,7 @@ describe Kennel do
 
   capture_all
   in_temp_dir
-  with_env DATADOG_APP_KEY: "app", DATADOG_API_KEY: "api"
+  enable_api
 
   before do
     write "projects/simple.rb", <<~RUBY

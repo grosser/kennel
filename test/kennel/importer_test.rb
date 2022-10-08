@@ -535,7 +535,7 @@ describe Kennel::Importer do
     end
 
     it "links composite monitors" do
-      with_env({ "DATADOG_APP_KEY" => "x", "DATADOG_API_KEY" => "y" }) do
+      enable_api do
         response = { id: 123, name: "hello", type: "composite", query: "111 && 222 && 333", options: {} }
         stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
         missing = stub_datadog_request(:get, "monitor/111").to_return(status: 404)

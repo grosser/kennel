@@ -89,6 +89,14 @@ Minitest::Test.class_eval do
     Marshal.load(Marshal.dump(value))
   end
 
+  def self.enable_api
+    around { |t| enable_api(&t) }
+  end
+
+  def enable_api(&block)
+    with_env("DATADOG_APP_KEY" => "x", "DATADOG_API_KEY" => "y", &block)
+  end
+
   def stub_datadog_request(method, path, extra = "")
     stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?#{extra}")
   end
