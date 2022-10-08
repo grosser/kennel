@@ -25,7 +25,11 @@ module Kennel
       time = Benchmark.realtime { result = yield }
 
       stop = true
-      spinner.run # wake thread, so it stops itself
+      begin
+        spinner.run # wake thread, so it stops itself
+      rescue ThreadError
+        # thread was already dead, but we can't check with .alive? since it's a race condition
+      end
       spinner.join
       Kennel.err.print "#{time.round(2)}s\n"
 
