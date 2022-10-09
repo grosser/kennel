@@ -534,6 +534,30 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "links composite monitors" do
+      enable_api do
+        response = { id: 123, name: "hello", type: "composite", query: "111 && 222 && 333", options: {} }
+        stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+        missing = stub_datadog_request(:get, "monitor/111").to_return(status: 404)
+        not_kennel = stub_datadog_request(:get, "monitor/222").to_return(body: { message: "not in kennel" }.to_json)
+        from_kennel = stub_datadog_request(:get, "monitor/333").to_return(body: { message: "-- Managed by kennel foo:bar" }.to_json)
+        dash = importer.import("monitor", 123)
+        dash.must_equal <<~RUBY
+          Kennel::Models::Monitor.new(
+            self,
+            name: -> { "hello" },
+            id: -> { 123 },
+            kennel_id: -> { "hello" },
+            type: -> { "composite" },
+            query: -> { "111 && 222 && %{foo:bar}" }
+          )
+        RUBY
+        assert_requested missing
+        assert_requested not_kennel
+        assert_requested from_kennel
+      end
+    end
+
     describe "synthetic test" do
       it "import basic" do
         response = { public_id: 123, name: "hello", tags: ["foo"], locations: ["abc"] }

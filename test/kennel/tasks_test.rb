@@ -6,7 +6,7 @@ require "kennel/tasks"
 SingleCov.covered! uncovered: 42 # TODO: reduce this
 
 describe "tasks" do
-  with_env DATADOG_APP_KEY: "foo", DATADOG_API_KEY: "bar"
+  enable_api
 
   def execute(env = {})
     with_env(env) { Rake::Task[task].execute }
@@ -216,6 +216,17 @@ describe "tasks" do
     it "fails when neither is given" do
       e = assert_raises(RuntimeError) { execute(ID: "123") }
       e.message.must_equal "Aborted Call with URL= or call with RESOURCE=dashboard or monitor or slo or synthetics/tests and ID="
+    end
+  end
+
+  describe "kennel:tracking_id" do
+    let(:task) { "kennel:tracking_id" }
+
+    it "finds tracking id" do
+      get = stub_datadog_request(:get, "monitor/123").to_return(body: { message: "-- Managed by kennel foo:bar" }.to_json)
+      execute ID: "123", RESOURCE: "monitor"
+      stdout.string.must_equal "foo:bar\n"
+      assert_requested get
     end
   end
 end

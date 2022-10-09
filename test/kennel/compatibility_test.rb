@@ -19,7 +19,7 @@ describe Kennel::Compatibility do
   end
 
   it "provides private :api compatibility" do
-    with_env({ "DATADOG_APP_KEY" => "x", "DATADOG_API_KEY" => "y" }) do
+    enable_api do
       api = Kennel::Api.allocate
       Kennel::Api.expects(:new).times(1).returns(api)
 
