@@ -40,11 +40,14 @@ describe "Integration" do
     # result = sh "echo y | bundle exec rake kennel:update_datadog" # Uncomment this to apply know good diff
     result = sh "bundle exec rake plan 2>&1"
     result.gsub!(/\d\.\d+s/, "0.00s")
-    result = Kennel::Utils.strip_shell_control(result)
     result.must_equal <<~TXT
+      Generating ...
       Generating ... 0.00s
+      Storing ...
       Storing ... 0.00s
+      Downloading definitions ...
       Downloading definitions ... 0.00s
+      Diffing ...
       Diffing ... 0.00s
       Plan:
       Nothing to do

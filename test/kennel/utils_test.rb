@@ -49,26 +49,24 @@ describe Kennel::Utils do
   end
 
   describe ".color" do
-    it "colors" do
+    it "colors (with a tty)" do
+      Kennel.out.stubs(:tty?).returns(true)
       Kennel::Utils.color(:red, "FOO").must_equal "\e[31mFOO\e[0m"
     end
 
+    it "does not color (without a tty)" do
+      Kennel.out.stubs(:tty?).returns(false)
+      Kennel::Utils.color(:red, "FOO").must_equal "FOO"
+    end
+
+    it "colors (without a tty, but with force)" do
+      Kennel.out.stubs(:tty?).returns(false)
+      Kennel::Utils.color(:red, "FOO", force: true).must_equal "\e[31mFOO\e[0m"
+    end
+
     it "refuses unknown color" do
+      Kennel.out.stubs(:tty?).returns(true)
       assert_raises(KeyError) { Kennel::Utils.color(:sdffsd, "FOO") }
-    end
-  end
-
-  describe ".strip_shell_control" do
-    it "removes color" do
-      text = "#{Kennel::Utils.color(:red, "abc")}--#{Kennel::Utils.color(:green, "efg")}"
-      Kennel::Utils.strip_shell_control(text).must_equal "abc--efg"
-    end
-
-    it "removes control characters from progress" do
-      text = Kennel::Utils.capture_stderr { Kennel::Progress.progress("Foo") { sleep 0.01 } }
-      text.must_include "\b"
-      text.gsub!(/\d+/, "0")
-      Kennel::Utils.strip_shell_control(text).must_equal "Foo ... 0.0s\n"
     end
   end
 

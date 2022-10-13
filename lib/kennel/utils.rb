@@ -42,7 +42,7 @@ module Kennel
       end
 
       def ask(question)
-        Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ")
+        Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ", force: true)
         begin
           STDIN.gets.chomp == "y"
         rescue Interrupt # do not show a backtrace if user decides to Ctrl+C here
@@ -51,12 +51,10 @@ module Kennel
         end
       end
 
-      def color(color, text)
-        "\e[#{COLORS.fetch(color)}m#{text}\e[0m"
-      end
+      def color(color, text, force: false)
+        return text unless force || Kennel.out.tty?
 
-      def strip_shell_control(text)
-        text.gsub(/\e\[\d+m(.*?)\e\[0m/, "\\1").gsub(/.#{Regexp.escape("\b")}/, "")
+        "\e[#{COLORS.fetch(color)}m#{text}\e[0m"
       end
 
       def capture_stdout

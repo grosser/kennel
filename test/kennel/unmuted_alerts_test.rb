@@ -45,6 +45,7 @@ describe Kennel::UnmutedAlerts do
       Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
       Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([monitor])
       out = Kennel::Utils.capture_stdout do
+        Kennel.out.stubs(:tty?).returns(true)
         Kennel::UnmutedAlerts.send(:print, nil, tag)
       end
       out.must_equal <<~TEXT
