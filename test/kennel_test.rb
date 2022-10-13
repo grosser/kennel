@@ -84,6 +84,7 @@ describe Kennel do
 
   describe ".plan" do
     it "plans" do
+      stdout.stubs(:tty?).returns(true)
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       Kennel.plan
       stdout.string.must_include "Plan:\n\e[32mCreate monitor temp_project:foo\e[0m\n"
@@ -91,7 +92,10 @@ describe Kennel do
   end
 
   describe ".update" do
-    before { STDIN.expects(:tty?).returns(true) }
+    before do
+      STDIN.expects(:tty?).returns(true)
+      Kennel.err.stubs(:tty?).returns(true)
+    end
 
     it "update" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
@@ -107,6 +111,8 @@ describe Kennel do
     it "does not update when user does not confirm" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       STDIN.expects(:gets).returns("n\n") # proceed ? ... no!
+      stdout.expects(:tty?).returns(true)
+      stderr.expects(:tty?).returns(true)
 
       Kennel.update
 

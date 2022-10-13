@@ -237,7 +237,12 @@ describe Kennel::Syncer do
     it "shows progress" do
       Kennel::Progress.unstub(:print)
       output.must_equal "Plan:\nNothing to do\n"
-      stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal "Downloading definitions ... 0.0s\nDiffing ... 0.0s\n"
+      stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal <<~OUTPUT
+        Downloading definitions ...
+        Downloading definitions ... 0.0s
+        Diffing ...
+        Diffing ... 0.0s
+      OUTPUT
     end
 
     it "fails when user copy-pasted existing message with kennel id since that would lead to bad updates" do
@@ -440,6 +445,7 @@ describe Kennel::Syncer do
     before do
       expected << monitor("a", "b")
       STDIN.stubs(:tty?).returns(true)
+      Kennel.err.stubs(:tty?).returns(true)
       STDIN.expects(:gets).with { raise "unexpected STDIN.gets called" }.never
     end
 
@@ -688,8 +694,12 @@ describe Kennel::Syncer do
   end
 
   describe "#diff" do
+    before do
+      Kennel.out.stubs(:tty?).returns(false)
+    end
+
     def call(a, b)
-      syncer.send(:diff, a, b).map { |l| Kennel::Utils.strip_shell_control(l) }
+      syncer.send(:diff, a, b)
     end
 
     it "can replace" do

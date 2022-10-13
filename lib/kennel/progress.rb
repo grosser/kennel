@@ -4,7 +4,9 @@ require "benchmark"
 module Kennel
   class Progress
     # print what we are doing and a spinner until it is done ... then show how long it took
-    def self.progress(name, interval: 0.2)
+    def self.progress(name, interval: 0.2, &block)
+      return progress_no_tty(name, &block) unless Kennel.err.tty?
+
       Kennel.err.print "#{name} ... "
 
       stop = false
@@ -22,7 +24,7 @@ module Kennel
         end
       end
 
-      time = Benchmark.realtime { result = yield }
+      time = Benchmark.realtime { result = block.call }
 
       stop = true
       begin
@@ -36,6 +38,18 @@ module Kennel
       result
     ensure
       stop = true # make thread stop without killing it
+    end
+
+    class << self
+      private
+
+      def progress_no_tty(name)
+        Kennel.err.puts "#{name} ..."
+        result = nil
+        time = Benchmark.realtime { result = yield }
+        Kennel.err.puts "#{name} ... #{time.round(2)}s"
+        result
+      end
     end
   end
 end
