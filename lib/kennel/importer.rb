@@ -38,6 +38,8 @@ module Kennel
 
       case resource
       when "monitor"
+        raise "Import the synthetic test page and not the monitor" if data[:type] == "synthetics alert"
+
         # flatten monitor options so they are all on the base which is how Monitor builds them
         data.merge!(data.delete(:options))
         data.merge!(data.delete(:thresholds) || {})

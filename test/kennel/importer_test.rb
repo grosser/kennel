@@ -581,6 +581,14 @@ describe Kennel::Importer do
         test = importer.import("synthetics/tests", 123)
         test.must_include "locations: -> { :all }"
       end
+
+      # "synthetics alert" monitors are not in the monitor index
+      it "blocks bad import of monitors that could never be synced" do
+        response = { id: 123, name: "hello", type: "synthetics alert", options: {} }
+        stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+        e = assert_raises { importer.import("monitor", 123) }
+        e.message.must_include "synthetic test"
+      end
     end
 
     describe "converting verbose api format to simple" do
