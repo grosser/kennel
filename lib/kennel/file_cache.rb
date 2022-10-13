@@ -49,6 +49,7 @@ module Kennel
 
       Tempfile.create "kennel-file-cache", dir do |tmp|
         Marshal.dump @data, tmp
+        tmp.flush
         File.rename tmp.path, @file
       end
     end
