@@ -73,9 +73,8 @@ describe Kennel::Models::Project do
       bad_project = TestProject.new(parts: -> {
         Kennel::Models::Monitor.new(self)
       })
-      validation_error_message do
-        bad_project.validated_parts
-      end.must_equal "test_project #parts must return an array of Records"
+      assert_raises(RuntimeError) { bad_project.validated_parts } \
+        .message.must_equal "Project test_project #parts must return an array of Records"
     end
   end
 end
