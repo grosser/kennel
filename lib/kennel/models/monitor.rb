@@ -2,8 +2,6 @@
 module Kennel
   module Models
     class Monitor < Record
-      include OptionalValidations
-
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
@@ -115,8 +113,6 @@ module Kennel
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
         end
-
-        validate_json(data) if validate
 
         data
       end

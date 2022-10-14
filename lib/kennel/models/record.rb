@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Record < Base
+      include OptionalValidations
+
       # Apart from if you just don't like the default for some reason,
       # overriding MARKER_TEXT allows for namespacing within the same
       # Datadog account. If you run one Kennel setup with marker text
@@ -128,7 +130,11 @@ module Kennel
       end
 
       def as_json
-        @as_json ||= build_json
+        @as_json ||= begin
+                       json = build_json
+                       validate_json(json) if validate
+                       json
+                     end
       end
 
       # Can raise DisallowedUpdateError

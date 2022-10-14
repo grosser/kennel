@@ -174,6 +174,44 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "#as_json" do
+    let(:record) do
+      r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
+
+      r.define_singleton_method(:build_json) do
+        super().merge(some_field: "some value")
+      end
+
+      r
+    end
+
+    it "calls build_json" do
+      assert_json_equal(record.as_json, { some_field: "some value" })
+    end
+
+    it "includes the id if set" do
+      record.define_singleton_method(:id) { 123 }
+      assert_json_equal(record.as_json, { id: 123, some_field: "some value" })
+    end
+
+    it "only calls build_json once" do
+      record.stubs(:build_json).once.returns({})
+      record.as_json
+      record.as_json
+    end
+
+    it "validates the json" do
+      record.stubs(:validate_json).once.with(some_field: "some value")
+      record.as_json
+    end
+
+    it "can skip the validation" do
+      record.stubs(:validate).returns(false)
+      record.stubs(:validate_json).never
+      record.as_json
+    end
+  end
+
   describe ".ignore_default" do
     it "ignores defaults" do
       a = { a: 1 }

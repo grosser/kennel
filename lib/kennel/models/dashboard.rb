@@ -3,7 +3,6 @@ module Kennel
   module Models
     class Dashboard < Record
       include TemplateVariables
-      include OptionalValidations
 
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles
@@ -167,8 +166,6 @@ module Kennel
         )
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
-
-        validate_json(json) if validate
 
         json
       end
