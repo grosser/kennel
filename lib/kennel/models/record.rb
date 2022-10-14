@@ -132,6 +132,7 @@ module Kennel
       def as_json
         @as_json ||= begin
                        json = build_json
+                       (id = json.delete(:id)) && json[:id] = id
                        validate_json(json) if validate
                        json
                      end
