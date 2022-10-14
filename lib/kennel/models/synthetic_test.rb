@@ -16,10 +16,10 @@ module Kennel
         message: -> { "\n\n#{project.mention}" }
       )
 
-      def as_json
-        return @as_json if @as_json
+      def build_json
         locations = locations()
-        data = {
+
+        super.merge(
           message: message,
           tags: tags,
           config: config,
@@ -28,13 +28,7 @@ module Kennel
           options: options,
           name: "#{name}#{LOCK}",
           locations: locations == :all ? LOCATIONS : locations
-        }
-
-        if v = id
-          data[:id] = v
-        end
-
-        @as_json = data
+        )
       end
 
       def self.api_resource

@@ -119,6 +119,16 @@ module Kennel
         self.class.remove_tracking_id(as_json)
       end
 
+      def build_json
+        {
+          id: id
+        }.compact
+      end
+
+      def as_json
+        @as_json ||= build_json
+      end
+
       # Can raise DisallowedUpdateError
       def validate_update!(*)
       end

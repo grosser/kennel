@@ -152,29 +152,26 @@ module Kennel
         end
       end
 
-      def as_json
-        return @json if @json
+      def build_json
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
         tags = tags()
         tags_as_string = (tags.empty? ? "" : " (#{tags.join(" ")})")
 
-        @json = {
+        json = super.merge(
           layout_type: layout_type,
           title: "#{title}#{tags_as_string}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
           widgets: all_widgets
-        }
+        )
 
-        @json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
+        json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
 
-        @json[:id] = id if id
+        validate_json(json) if validate
 
-        validate_json(@json) if validate
-
-        @json
+        json
       end
 
       def self.url(id)

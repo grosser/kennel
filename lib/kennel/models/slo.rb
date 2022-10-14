@@ -31,28 +31,25 @@ module Kennel
         end
       end
 
-      def as_json
-        return @as_json if @as_json
-        data = {
+      def build_json
+        data = super.merge(
           name: "#{name}#{LOCK}",
           description: description,
           thresholds: thresholds,
           monitor_ids: monitor_ids,
           tags: tags.uniq,
           type: type
-        }
+        )
 
         if v = query
           data[:query] = v
         end
-        if v = id
-          data[:id] = v
-        end
+
         if v = groups
           data[:groups] = v
         end
 
-        @as_json = data
+        data
       end
 
       def self.api_resource

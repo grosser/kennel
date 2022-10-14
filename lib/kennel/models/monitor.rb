@@ -56,9 +56,8 @@ module Kennel
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) }
       )
 
-      def as_json
-        return @as_json if @as_json
-        data = {
+      def build_json
+        data = super.merge(
           name: "#{name}#{LOCK}",
           type: type,
           query: query.strip,
@@ -79,9 +78,7 @@ module Kennel
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
             renotify_interval: renotify_interval || 0
           }
-        }
-
-        data[:id] = id if id
+        )
 
         options = data[:options]
         if data.fetch(:type) != "composite"
@@ -122,7 +119,7 @@ module Kennel
 
         validate_json(data) if validate
 
-        @as_json = data
+        data
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
