@@ -87,8 +87,7 @@ module Kennel
         tags: -> do # not inherited by default to make onboarding to using dashboard tags simple
           team = project.team
           team.tag_dashboards ? team.tags : []
-        end,
-        id: -> { nil }
+        end
       )
 
       class << self

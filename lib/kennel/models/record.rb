@@ -30,6 +30,8 @@ module Kennel
 
       settings :id, :kennel_id
 
+      defaults(id: nil)
+
       class << self
         def parse_any_url(url)
           subclasses.detect do |s|

@@ -15,7 +15,6 @@ module Kennel
       settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups
 
       defaults(
-        id: -> { nil },
         tags: -> { @project.tags },
         query: -> { DEFAULTS.fetch(:query) },
         description: -> { DEFAULTS.fetch(:description) },

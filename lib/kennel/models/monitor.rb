@@ -41,7 +41,6 @@ module Kennel
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
-        id: -> { nil },
         notify_no_data: -> { true }, # datadog sets this to false by default, but true is the safer
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },

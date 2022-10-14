@@ -11,7 +11,6 @@ module Kennel
       settings :tags, :config, :message, :subtype, :type, :name, :locations, :options
 
       defaults(
-        id: -> { nil },
         tags: -> { @project.tags },
         message: -> { "\n\n#{project.mention}" }
       )
