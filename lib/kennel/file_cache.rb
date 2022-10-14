@@ -15,11 +15,13 @@ module Kennel
     end
 
     def open
-      load_data
-      expire_old_data
-      yield self
-    ensure
-      persist
+      @data = load_data || {}
+      begin
+        expire_old_data
+        yield self
+      ensure
+        persist
+      end
     end
 
     def fetch(key, key_version)
@@ -35,12 +37,9 @@ module Kennel
     private
 
     def load_data
-      @data =
-        begin
-          Marshal.load(File.read(@file)) # rubocop:disable Security/MarshalLoad
-        rescue StandardError
-          {}
-        end
+      Marshal.load(File.read(@file)) # rubocop:disable Security/MarshalLoad
+    rescue Errno::ENOENT, TypeError, ArgumentError
+      nil
     end
 
     def persist
@@ -49,6 +48,7 @@ module Kennel
 
       Tempfile.create "kennel-file-cache", dir do |tmp|
         Marshal.dump @data, tmp
+        tmp.flush
         File.rename tmp.path, @file
       end
     end
