@@ -23,13 +23,6 @@ module Kennel
         groups: -> { DEFAULTS.fetch(:groups) }
       )
 
-      def initialize(*)
-        super
-        if thresholds.any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
-          raise ValidationError, "Threshold warning must be greater-than critical value"
-        end
-      end
-
       def build_json
         data = super.merge(
           name: "#{name}#{LOCK}",
@@ -84,6 +77,16 @@ module Kennel
         actual[:tags].sort!
 
         ignore_default(expected, actual, DEFAULTS)
+      end
+
+      private
+
+      def validate_json(data)
+        super
+
+        if data[:thresholds].any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
+          invalid! "Threshold warning must be greater-than critical value"
+        end
       end
     end
   end
