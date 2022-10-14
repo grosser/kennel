@@ -100,7 +100,7 @@ module Kennel
         @tracking_id ||= begin
           id = "#{project.kennel_id}:#{kennel_id}"
           unless id.match?(ALLOWED_KENNEL_ID_REGEX) # <-> parse_tracking_id
-            raise ValidationError, "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
+            raise "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
           end
           id
         end
@@ -112,7 +112,7 @@ module Kennel
       def add_tracking_id
         json = as_json
         if self.class.parse_tracking_id(json)
-          invalid! "remove \"-- #{MARKER_TEXT}\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
+          raise "#{tracking_id} Remove \"-- #{MARKER_TEXT}\" line from #{self.class::TRACKING_FIELD} to copy a resource"
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \

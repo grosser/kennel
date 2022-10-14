@@ -98,7 +98,7 @@ describe Kennel::Models::Record do
 
     it "fails when it would have been added twice (user already added it by mistake)" do
       monitor.add_tracking_id
-      assert_raises(Kennel::ValidationError) { monitor.add_tracking_id }
+      assert_raises(RuntimeError) { monitor.add_tracking_id }.message.must_include("to copy a resource")
     end
   end
 
@@ -170,7 +170,7 @@ describe Kennel::Models::Record do
         "hey ho"
       end
       base = TestRecord.new project
-      assert_raises(Kennel::ValidationError) { base.tracking_id }
+      assert_raises(RuntimeError) { base.tracking_id }
     end
   end
 
