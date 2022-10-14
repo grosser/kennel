@@ -124,7 +124,7 @@ describe Kennel::Models::Slo do
 
     it "fails with typos" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
-      assert_raises Kennel::ValidationError do
+      assert_raises Kennel::UnresolvableIdError do
         slo.resolve_linked_tracking_ids!(id_map, force: false)
       end
     end

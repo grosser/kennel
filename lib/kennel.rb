@@ -40,8 +40,8 @@ module Teams
 end
 
 module Kennel
-  class ValidationError < RuntimeError
-  end
+  ValidationError = Class.new(RuntimeError)
+  UnresolvableIdError = Class.new(RuntimeError)
 
   include Kennel::Compatibility
 

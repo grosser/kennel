@@ -136,17 +136,21 @@ module Kennel
       def resolve_link(tracking_id, type, id_map, force:)
         if id_map.new?(type.to_s, tracking_id)
           if force
-            invalid!(
-              "#{type} #{tracking_id} was referenced but is also created by the current run.\n" \
-              "It could not be created because of a circular dependency, try creating only some of the resources"
-            )
+            raise UnresolvableIdError, <<~MESSAGE
+              #{self.tracking_id} #{type} #{tracking_id} was referenced but is also created by the current run.
+              It could not be created because of a circular dependency. Try creating only some of the resources.
+            MESSAGE
           else
             nil # will be re-resolved after the linked object was created
           end
         elsif id = id_map.get(type.to_s, tracking_id)
           id
         else
-          invalid! "Unable to find #{type} #{tracking_id} (does not exist and is not being created by the current run)"
+          raise UnresolvableIdError, <<~MESSAGE
+            #{self.tracking_id} Unable to find #{type} #{tracking_id}
+            This is either because it doesn't exist, and isn't being created by the current run;
+            or it does exist, but is being deleted.
+          MESSAGE
         end
       end
 

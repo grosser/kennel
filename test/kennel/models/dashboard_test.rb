@@ -176,7 +176,7 @@ describe Kennel::Models::Dashboard do
       it "fail hard when id is still missing after dependent monitors were created by syncer" do
         definition[:monitor_ids] = ["missing:the_id"]
         id_map.set("monitor", "missing:the_id", Kennel::IdMap::NEW)
-        e = assert_raises Kennel::ValidationError do
+        e = assert_raises Kennel::UnresolvableIdError do
           resolve(force: true)
         end
         e.message.must_include "circular dependency"

@@ -104,11 +104,11 @@ module Kennel
     def resolved?(e)
       assert_resolved e
       true
-    rescue ValidationError
+    rescue UnresolvableIdError
       false
     end
 
-    # raises ValidationError when not resolved
+    # raises UnresolvableIdError when not resolved
     def assert_resolved(e)
       resolve_linked_tracking_ids! [e], force: true
     end
