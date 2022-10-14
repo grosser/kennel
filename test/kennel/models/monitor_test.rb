@@ -559,7 +559,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "disallows update of type" do
-      e = assert_raises Kennel::ValidationError do
+      e = assert_raises Kennel::DisallowedUpdateError do
         monitor.validate_update!(nil, [["~", "type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*type/i)

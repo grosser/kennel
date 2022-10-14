@@ -119,7 +119,12 @@ module Kennel
         self.class.remove_tracking_id(as_json)
       end
 
+      # Can raise DisallowedUpdateError
       def validate_update!(*)
+      end
+
+      def invalid_update!(field, old_value, new_value)
+        raise DisallowedUpdateError, "#{tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
       end
 
       private

@@ -370,7 +370,7 @@ describe Kennel::Models::Dashboard do
     end
 
     it "disallows update of layout_type" do
-      e = assert_raises Kennel::ValidationError do
+      e = assert_raises Kennel::DisallowedUpdateError do
         dashboard.validate_update!(nil, [["~", "layout_type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*layout_type/i)

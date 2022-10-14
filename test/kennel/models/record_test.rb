@@ -111,6 +111,13 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "#invalid_update!" do
+    it "raises the right error" do
+      error = assert_raises(Kennel::DisallowedUpdateError) { monitor.invalid_update!(:foo, "bar", "baz") }
+      error.message.must_equal("#{monitor.tracking_id} Datadog does not allow update of foo (\"bar\" -> \"baz\")")
+    end
+  end
+
   describe "#diff" do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
