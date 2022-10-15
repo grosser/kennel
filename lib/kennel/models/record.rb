@@ -158,30 +158,39 @@ module Kennel
 
         if caught.nil?
           unless skip_validations.empty?
-            invalid! :skip_validations_must_be_unset, "skip_validations must not be used when no validations need skipping"
+            invalid! nil, "skip_validations must not be used when no validations need skipping"
           end
 
           unless validate
-            invalid! :validate_must_be_unset, "validate must not be set to false when no validations need skipping"
-          end
-        else
-          raise caught unless skip_validations.include?(caught.tag) || !validate
-
-          unless validate
-            if ENV["PROJECT"] || ENV["TRACKING_ID"] || ENV["SHOW_VALIDATE_DEPRECATION"]
-              Kennel.out.puts <<~MESSAGE
-                #{tracking_id} W: `validate` is deprecated
-                - remove the `validate: false` line
-                - run `rake generate`, and see what error comes up (e.g. "foo:bar E: some_error: Here is a problem")
-                - add `skip_validations: [:some_error]`
-              MESSAGE
+            if ENV["PROJECT"] || ENV["TRACKING_ID"]
+              invalid! nil, "validate must not be set to false when no validations need skipping"
+            elsif ENV["SHOW_DISABLED_VALIDATION"]
+              Kennel.out.puts "#{tracking_id} I: validate must not be set to false when no validations need skipping"
             end
           end
+        else
+          unless validate
+            if caught.tag
+              if ENV["PROJECT"] || ENV["TRACKING_ID"]
+                invalid! nil, "`validate: false` is deprecated. Replace `validate: false` by `skip_validations: [#{caught.tag.inspect}]`"
+              elsif ENV["SHOW_DISABLED_VALIDATION"]
+                Kennel.out.puts <<~MESSAGE
+                  #{tracking_id} W: `validate: false` is deprecated. Replace `validate: false` by `skip_validations: [#{caught.tag.inspect}]`
+                MESSAGE
+              end
+            end
 
-          # Because the validation errors are raised exceptions, we can
-          # currently only have up to 1 per record. Therefore if
-          # skipped_validations contains :foo and :bar, and error :foo
-          # is in fact thrown, we can't tell whether or not :bar is unnecessary.
+            return
+          end
+
+          if skip_validations.include?(caught.tag)
+            # Ideally we'd check that skip_validations contains _only_ those
+            # validations while fail. However because the validation errors
+            # are raised exceptions, we can only see up to 1 per record, so
+            # we can't do that.
+          else
+            raise caught
+          end
         end
       end
 
@@ -216,7 +225,13 @@ module Kennel
       end
 
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
-      def invalid!(tag, message)
+      def invalid!(tag, message = nil)
+        if message.nil?
+          message = tag
+          tag = :default_error_tag
+          Kennel.out.puts "I: untagged validation error '#{message}'" if ENV["SHOW_DISABLED_VALIDATION"]
+        end
+
         raise ValidationError.new(self, tag, message)
       end
 

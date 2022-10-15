@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../../test_helper"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 7
 
 describe Kennel::Models::Record do
   with_test_classes
@@ -211,13 +211,13 @@ describe Kennel::Models::Record do
         it "rejects unnecessary :skip_validations" do
           record.stubs(:skip_validations).returns([:never_happens])
           e = assert_raises(Kennel::ValidationError) { record.as_json }
-          e.tag.must_equal :skip_validations_must_be_unset
+          e.tag.must_equal "[unskippable]"
         end
 
         it "rejects unnecessary validate: false" do
           record.stubs(:validate).returns(false)
-          e = assert_raises(Kennel::ValidationError) { record.as_json }
-          e.tag.must_equal :validate_must_be_unset
+          e = assert_raises(Kennel::ValidationError) { with_env("PROJECT" => "x") { record.as_json } }
+          e.tag.must_equal "[unskippable]"
         end
       end
 
@@ -239,8 +239,9 @@ describe Kennel::Models::Record do
 
         it "can be suppressed via validate: false" do
           record.define_singleton_method(:validate) { false }
-          out, _err = capture_io { with_env("SHOW_VALIDATE_DEPRECATION" => "true") { record.as_json } }
-          out.must_include "`validate` is deprecated"
+          out, _err = capture_io { with_env("SHOW_DISABLED_VALIDATION" => "true") { record.as_json } }
+          out.must_include "`validate: false` is deprecated"
+          out.must_include ":some_error"
         end
       end
     end

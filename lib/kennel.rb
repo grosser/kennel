@@ -43,9 +43,9 @@ module Kennel
   class ValidationError < RuntimeError
     def initialize(part, tag, message)
       @part = part
-      @tag = tag
+      @tag = tag || "[unskippable]"
       @base_message = message # for testing
-      super("#{part.tracking_id} E: #{tag}: #{message}")
+      super("#{part.tracking_id} E: #{@tag}: #{message}")
     end
 
     attr_reader :part, :tag, :base_message
