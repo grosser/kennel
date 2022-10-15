@@ -210,9 +210,8 @@ module Kennel
       end
 
       def validate_update!(_actuals, diffs)
-        if bad_diff = diffs.find { |diff| diff[1] == "layout_type" }
-          invalid! "Datadog does not allow update of #{bad_diff[1]} (#{bad_diff[2].inspect} -> #{bad_diff[3].inspect})"
-        end
+        _, path, from, to = diffs.find { |diff| diff[1] == "layout_type" }
+        invalid_update!(path, from, to) if path
       end
 
       private

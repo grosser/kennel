@@ -119,7 +119,12 @@ module Kennel
         self.class.remove_tracking_id(as_json)
       end
 
+      # Can raise DisallowedUpdateError
       def validate_update!(*)
+      end
+
+      def invalid_update!(field, old_value, new_value)
+        raise DisallowedUpdateError, "#{tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
       end
 
       private
@@ -133,20 +138,24 @@ module Kennel
         id.is_a?(String) && id.include?(":")
       end
 
-      def resolve_link(tracking_id, type, id_map, force:)
-        if id_map.new?(type.to_s, tracking_id)
+      def resolve_link(sought_tracking_id, sought_type, id_map, force:)
+        if id_map.new?(sought_type.to_s, sought_tracking_id)
           if force
-            invalid!(
-              "#{type} #{tracking_id} was referenced but is also created by the current run.\n" \
-              "It could not be created because of a circular dependency, try creating only some of the resources"
-            )
+            raise UnresolvableIdError, <<~MESSAGE
+              #{tracking_id} #{sought_type} #{sought_tracking_id} was referenced but is also created by the current run.
+              It could not be created because of a circular dependency. Try creating only some of the resources.
+            MESSAGE
           else
             nil # will be re-resolved after the linked object was created
           end
-        elsif id = id_map.get(type.to_s, tracking_id)
+        elsif id = id_map.get(sought_type.to_s, sought_tracking_id)
           id
         else
-          invalid! "Unable to find #{type} #{tracking_id} (does not exist and is not being created by the current run)"
+          raise UnresolvableIdError, <<~MESSAGE
+            #{tracking_id} Unable to find #{sought_type} #{sought_tracking_id}
+            This is either because it doesn't exist, and isn't being created by the current run;
+            or it does exist, but is being deleted.
+          MESSAGE
         end
       end
 

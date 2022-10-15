@@ -434,7 +434,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails when matching monitor is missing" do
-        e = assert_raises Kennel::ValidationError do
+        e = assert_raises Kennel::UnresolvableIdError do
           mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
         e.message.must_include "test_project:m1 Unable to find monitor foo:mon_a"
@@ -462,7 +462,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails when matching monitor is missing" do
-        e = assert_raises Kennel::ValidationError do
+        e = assert_raises Kennel::UnresolvableIdError do
           mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
         e.message.must_include "test_project:m1 Unable to find slo foo:slo_a"
@@ -559,7 +559,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "disallows update of type" do
-      e = assert_raises Kennel::ValidationError do
+      e = assert_raises Kennel::DisallowedUpdateError do
         monitor.validate_update!(nil, [["~", "type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*type/i)
