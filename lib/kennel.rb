@@ -44,10 +44,11 @@ module Kennel
     def initialize(part, tag, message)
       @part = part
       @tag = tag
-      super(message)
+      @base_message = message # for testing
+      super("#{part.tracking_id} E: #{tag}: #{message}")
     end
 
-    attr_reader :part, :tag
+    attr_reader :part, :tag, :base_message
   end
 
   UnresolvableIdError = Class.new(RuntimeError)
