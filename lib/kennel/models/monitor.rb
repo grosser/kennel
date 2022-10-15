@@ -205,26 +205,26 @@ module Kennel
         super
 
         if data[:name]&.start_with?(" ")
-          invalid! "name cannot start with a space"
+          invalid! :xxx2, "name cannot start with a space"
         end
 
         type = data.fetch(:type)
 
         # do not allow deprecated type that will be coverted by datadog and then produce a diff
         if type == "metric alert"
-          invalid! "type 'metric alert' is deprecated, please set to a different type (e.g. 'query alert')"
+          invalid! :xxx3, "type 'metric alert' is deprecated, please set to a different type (e.g. 'query alert')"
         end
 
         # verify query includes critical value
         if query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1]
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
-            invalid! "critical and value used in query must match"
+            invalid! :xxx4, "critical and value used in query must match"
           end
         end
 
         # verify renotify interval is valid
         unless RENOTIFY_INTERVALS.include? data.dig(:options, :renotify_interval)
-          invalid! "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
+          invalid! :xxx5, "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
         end
 
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
@@ -234,15 +234,15 @@ module Kennel
         validate_using_links(data)
 
         if type == "service check" && !data[:query].to_s.include?(".by(")
-          invalid! "query must include a .by() at least .by(\"*\")"
+          invalid! :xxx6, "query must include a .by() at least .by(\"*\")"
         end
 
         unless ALLOWED_PRIORITY_CLASSES.include?(priority.class)
-          invalid! "priority needs to be an Integer"
+          invalid! :xxx7, "priority needs to be an Integer"
         end
 
         if data.dig(:options, :timeout_h)&.> 24
-          invalid! "timeout_h must be <= 24"
+          invalid! :xxx8, "timeout_h must be <= 24"
         end
       end
 
@@ -277,7 +277,7 @@ module Kennel
         forbidden = used - allowed
         return if forbidden.empty?
 
-        invalid! <<~MSG.rstrip
+        invalid! :xxx9, <<~MSG.rstrip
           Used #{forbidden.join(", ")} in the message, but can only be used with #{allowed.join(", ")}.
           Group or filter the query by #{forbidden.map { |f| f.sub(".name", "") }.join(", ")} to use it.
         MSG
@@ -289,7 +289,7 @@ module Kennel
           ids = data[:query].tr("-", "_").scan(/\b\d+\b/)
           ids.reject! { |id| ALLOWED_UNLINKED.include?([tracking_id, id]) }
           if ids.any?
-            invalid! <<~MSG.rstrip
+            invalid! :xxx10, <<~MSG.rstrip
               Used #{ids} in the query, but should only use links in the form of %{<project id>:<monitor id>}
               If that is not possible, add `validate_using_links: ->(*){} # linked monitors are not in kennel
             MSG

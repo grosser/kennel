@@ -179,8 +179,8 @@ module Kennel
       end
 
       # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
-      def invalid!(message)
-        raise ValidationError.new(self, :xxx, "#{tracking_id} #{message}")
+      def invalid!(tag, message)
+        raise ValidationError.new(self, tag, "#{tracking_id} #{message}")
       end
 
       def raise_with_location(error, message)

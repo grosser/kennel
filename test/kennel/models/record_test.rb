@@ -48,7 +48,7 @@ describe Kennel::Models::Record do
   describe "#invalid!" do
     it "raises a validation error whit project name to help when backtrace is generic" do
       e = assert_raises Kennel::ValidationError do
-        Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }, kennel_id: -> { "x" }).send(:invalid!, "X")
+        Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }, kennel_id: -> { "x" }).send(:invalid!, :xxx16, "X")
       end
       e.message.must_equal "test_project:x X"
     end
