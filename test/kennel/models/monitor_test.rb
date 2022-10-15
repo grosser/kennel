@@ -130,13 +130,13 @@ describe Kennel::Models::Monitor do
 
     it "does not allow mismatching query and critical" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }).as_json }
-      e.tag.must_equal :xxx4
+      e.tag.must_equal :query_must_compare_against_critical
       e.base_message.must_equal "critical and value used in query must match"
     end
 
     it "does not allow mismatching query and critical with >=" do
       e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }).as_json }
-      e.tag.must_equal :xxx4
+      e.tag.must_equal :query_must_compare_against_critical
       e.base_message.must_equal "critical and value used in query must match"
     end
 
@@ -243,7 +243,7 @@ describe Kennel::Models::Monitor do
 
       it "fails on invalid" do
         e = assert_raises(RuntimeError) { monitor(renotify_interval: -> { 123 }).as_json }
-        e.tag.must_equal :xxx5
+        e.tag.must_equal :renotify_interval_must_be_valid
         e.base_message.must_include "renotify_interval must be one of 0, 10, 20,"
       end
     end
@@ -294,28 +294,28 @@ describe Kennel::Models::Monitor do
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when using invalid negative is_match" do
         mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when using invalid is_exact_match" do
         mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when not using .name" do
         mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
       end
 
@@ -350,14 +350,14 @@ describe Kennel::Models::Monitor do
         mon.stubs(:query).returns("avg(last_5m):avg:foo{*} by {env} > 123.0")
         mon.expects(:message).returns("{{bar.name}}")
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
       end
 
       it "fails when using invalid variable" do
         mon.expects(:message).returns("{{foo.name}}")
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
       end
 
@@ -378,7 +378,7 @@ describe Kennel::Models::Monitor do
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
         e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.tag.must_equal :xxx9
+        e.tag.must_equal :message_must_only_use_valid_variables
         e.base_message.must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 

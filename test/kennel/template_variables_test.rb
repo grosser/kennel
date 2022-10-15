@@ -51,9 +51,11 @@ describe Kennel::TemplateVariables do
     end
 
     it "is invalid when vars are not used" do
-      assert_raises Kennel::ValidationError do
+      e = assert_raises Kennel::ValidationError do
         validate ["a"], [{ definition: { requests: [{ q: "$b" }] } }]
       end
+      e.tag.must_equal :queries_must_use_template_variables
+      e.base_message.must_include "must use the template variables"
     end
 
     it "is invalid when some vars are not used" do

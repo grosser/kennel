@@ -29,7 +29,7 @@ module Kennel
       return if queries.empty?
 
       invalid!(
-        :xxx13,
+        :queries_must_use_template_variables,
         "queries #{queries.join(", ")} must use the template variables #{variables.join(", ")}\n" \
         "If that is not possible, add `validate: -> { false } # query foo in bar does not have baz tag`"
       )
