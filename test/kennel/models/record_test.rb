@@ -201,15 +201,48 @@ describe Kennel::Models::Record do
       record.as_json
     end
 
-    it "validates the json" do
-      record.stubs(:validate_json).once.with(some_field: "some value")
-      record.as_json
-    end
+    describe "validation" do
+      context "no error" do
+        it "validates the json" do
+          record.stubs(:validate_json).once.with(some_field: "some value")
+          record.as_json
+        end
 
-    it "can skip the validation" do
-      record.stubs(:validate).returns(false)
-      record.stubs(:validate_json).never
-      record.as_json
+        it "rejects unnecessary :skip_validations" do
+          record.stubs(:skip_validations).returns([:never_happens])
+          e = assert_raises(Kennel::ValidationError) { record.as_json }
+          e.tag.must_equal :skip_validations_must_be_unset
+        end
+
+        it "rejects unnecessary validate: false" do
+          record.stubs(:validate).returns(false)
+          e = assert_raises(Kennel::ValidationError) { record.as_json }
+          e.tag.must_equal :validate_must_be_unset
+        end
+      end
+
+      context "an error" do
+        before do
+          record.define_singleton_method(:validate_json) do |_data|
+            invalid! :some_error, "Some error"
+          end
+        end
+
+        it "throws an error on validation" do
+          assert_raises(Kennel::ValidationError) { record.as_json }
+        end
+
+        it "can be suppressed via skip_validations" do
+          record.define_singleton_method(:skip_validations) { [:some_error] }
+          record.as_json
+        end
+
+        it "can be suppressed via validate: false" do
+          record.define_singleton_method(:validate) { false }
+          out, _err = capture_io { with_env("SHOW_VALIDATE_DEPRECATION" => "true") { record.as_json } }
+          out.must_include "`validate` is deprecated"
+        end
+      end
     end
   end
 

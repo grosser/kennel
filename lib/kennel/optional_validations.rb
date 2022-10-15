@@ -2,8 +2,8 @@
 module Kennel
   module OptionalValidations
     def self.included(base)
-      base.settings :validate
-      base.defaults(validate: -> { true })
+      base.settings :validate, :skip_validations
+      base.defaults(validate: true, skip_validations: -> { [] })
     end
 
     private

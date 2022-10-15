@@ -133,7 +133,7 @@ module Kennel
         @as_json ||= begin
                        json = build_json
                        (id = json.delete(:id)) && json[:id] = id
-                       validate_json(json) if validate
+                       validate_json_respecting_filters(json)
                        json
                      end
       end
@@ -147,6 +147,43 @@ module Kennel
       end
 
       private
+
+      def validate_json_respecting_filters(data)
+        caught = begin
+                   validate_json(data)
+                   nil
+                 rescue ValidationError => e
+                   e
+                 end
+
+        if caught.nil?
+          unless skip_validations.empty?
+            invalid! :skip_validations_must_be_unset, "skip_validations must not be used when no validations need skipping"
+          end
+
+          unless validate
+            invalid! :validate_must_be_unset, "validate must not be set to false when no validations need skipping"
+          end
+        else
+          raise caught unless skip_validations.include?(caught.tag) || !validate
+
+          unless validate
+            if ENV["PROJECT"] || ENV["TRACKING_ID"] || ENV["SHOW_VALIDATE_DEPRECATION"]
+              Kennel.out.puts <<~MESSAGE
+                #{tracking_id} W: `validate` is deprecated
+                - remove the `validate: false` line
+                - run `rake generate`, and see what error comes up (e.g. "foo:bar E: some_error: Here is a problem")
+                - add `skip_validations: [:some_error]`
+              MESSAGE
+            end
+          end
+
+          # Because the validation errors are raised exceptions, we can
+          # currently only have up to 1 per record. Therefore if
+          # skipped_validations contains :foo and :bar, and error :foo
+          # is in fact thrown, we can't tell whether or not :bar is unnecessary.
+        end
+      end
 
       def resolve(value, type, id_map, force:)
         return value unless tracking_id?(value)
