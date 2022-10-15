@@ -119,4 +119,14 @@ describe Kennel do
       stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end
   end
+
+  describe Kennel::ValidationError do
+    it "constructs" do
+      part = {}
+      e = Kennel::ValidationError.new(part, :some_tag, "a message")
+      e.part.must_equal part
+      e.tag.must_equal :some_tag
+      e.message.must_equal "a message"
+    end
+  end
 end

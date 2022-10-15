@@ -40,7 +40,16 @@ module Teams
 end
 
 module Kennel
-  ValidationError = Class.new(RuntimeError)
+  class ValidationError < RuntimeError
+    def initialize(part, tag, message)
+      @part = part
+      @tag = tag
+      super(message)
+    end
+
+    attr_reader :part, :tag
+  end
+
   UnresolvableIdError = Class.new(RuntimeError)
   DisallowedUpdateError = Class.new(RuntimeError)
 
