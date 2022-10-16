@@ -15,7 +15,6 @@ module Kennel
       settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups
 
       defaults(
-        id: -> { nil },
         tags: -> { @project.tags },
         query: -> { DEFAULTS.fetch(:query) },
         description: -> { DEFAULTS.fetch(:description) },
@@ -24,35 +23,25 @@ module Kennel
         groups: -> { DEFAULTS.fetch(:groups) }
       )
 
-      def initialize(*)
-        super
-        if thresholds.any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
-          raise ValidationError, "Threshold warning must be greater-than critical value"
-        end
-      end
-
-      def as_json
-        return @as_json if @as_json
-        data = {
+      def build_json
+        data = super.merge(
           name: "#{name}#{LOCK}",
           description: description,
           thresholds: thresholds,
           monitor_ids: monitor_ids,
           tags: tags.uniq,
           type: type
-        }
+        )
 
         if v = query
           data[:query] = v
         end
-        if v = id
-          data[:id] = v
-        end
+
         if v = groups
           data[:groups] = v
         end
 
-        @as_json = data
+        data
       end
 
       def self.api_resource
@@ -88,6 +77,16 @@ module Kennel
         actual[:tags].sort!
 
         ignore_default(expected, actual, DEFAULTS)
+      end
+
+      private
+
+      def validate_json(data)
+        super
+
+        if data[:thresholds].any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
+          invalid! "Threshold warning must be greater-than critical value"
+        end
       end
     end
   end

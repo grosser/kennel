@@ -101,8 +101,21 @@ Minitest::Test.class_eval do
     stub_request(method, "https://app.datadoghq.com/api/v1/#{path}?#{extra}")
   end
 
+  def with_sorted_hash_keys(value)
+    case value
+    when Hash
+      value.entries.sort_by(&:first).to_h.transform_values { |v| with_sorted_hash_keys(v) }
+    when Array
+      value.map { |v| with_sorted_hash_keys(v) }
+    else
+      value
+    end
+  end
+
   # generate readables diffs when things are not equal
   def assert_json_equal(a, b)
+    a = with_sorted_hash_keys(a)
+    b = with_sorted_hash_keys(b)
     JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
   end
 

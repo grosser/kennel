@@ -249,7 +249,7 @@ describe Kennel::Syncer do
       expected << monitor("a", "b", id: 234, foo: "bar", message: "foo\n-- Managed by kennel foo:bar in foo.rb")
       monitors << monitor_api_response("a", "b", id: 234)
       assert_raises(RuntimeError) { output }.message.must_equal(
-        "a:b remove \"-- Managed by kennel\" line it from message to copy a resource"
+        "a:b Remove \"-- Managed by kennel\" line from message to copy a resource"
       )
     end
 

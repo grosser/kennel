@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Record < Base
+      include OptionalValidations
+
       # Apart from if you just don't like the default for some reason,
       # overriding MARKER_TEXT allows for namespacing within the same
       # Datadog account. If you run one Kennel setup with marker text
@@ -29,6 +31,8 @@ module Kennel
       ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/.freeze
 
       settings :id, :kennel_id
+
+      defaults(id: nil)
 
       class << self
         def parse_any_url(url)
@@ -96,7 +100,7 @@ module Kennel
         @tracking_id ||= begin
           id = "#{project.kennel_id}:#{kennel_id}"
           unless id.match?(ALLOWED_KENNEL_ID_REGEX) # <-> parse_tracking_id
-            raise ValidationError, "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
+            raise "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
           end
           id
         end
@@ -108,7 +112,7 @@ module Kennel
       def add_tracking_id
         json = as_json
         if self.class.parse_tracking_id(json)
-          invalid! "remove \"-- #{MARKER_TEXT}\" line it from #{self.class::TRACKING_FIELD} to copy a resource"
+          raise "#{tracking_id} Remove \"-- #{MARKER_TEXT}\" line from #{self.class::TRACKING_FIELD} to copy a resource"
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \
@@ -117,6 +121,21 @@ module Kennel
 
       def remove_tracking_id
         self.class.remove_tracking_id(as_json)
+      end
+
+      def build_json
+        {
+          id: id
+        }.compact
+      end
+
+      def as_json
+        @as_json ||= begin
+                       json = build_json
+                       (id = json.delete(:id)) && json[:id] = id
+                       validate_json(json) if validate
+                       json
+                     end
       end
 
       # Can raise DisallowedUpdateError

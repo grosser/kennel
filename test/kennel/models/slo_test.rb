@@ -15,8 +15,7 @@ describe Kennel::Models::Slo do
       {
         type: -> { "metric" },
         name: -> { "Foo" },
-        kennel_id: -> { "m1" },
-        thresholds: -> { [] }
+        kennel_id: -> { "m1" }
       }.merge(options)
     )
   end
@@ -41,24 +40,6 @@ describe Kennel::Models::Slo do
 
     it "stores options" do
       TestSlo.new(project, name: -> { "XXX" }).name.must_equal "XXX"
-    end
-
-    describe "validates threshold" do
-      it "is valid when warning not set" do
-        Kennel::Models::Slo.new(project, thresholds: -> { [{ critical: 99 }] })
-      end
-
-      it "is invalid if warning > critical" do
-        assert_raises Kennel::ValidationError do
-          Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 0, critical: 99 }] })
-        end
-      end
-
-      it "is invalid if warning == critical" do
-        assert_raises Kennel::ValidationError do
-          Kennel::Models::Slo.new(project, thresholds: -> { [{ warning: 99, critical: 99 }] })
-        end
-      end
     end
   end
 
@@ -127,6 +108,27 @@ describe Kennel::Models::Slo do
       assert_raises Kennel::UnresolvableIdError do
         slo.resolve_linked_tracking_ids!(id_map, force: false)
       end
+    end
+  end
+
+  describe "#validate_json" do
+    it "is valid with no thresholds" do
+      slo.as_json
+    end
+
+    it "is valid when warning not set" do
+      s = slo(thresholds: [{ critical: 99 }])
+      s.as_json
+    end
+
+    it "is invalid if warning < critical" do
+      s = slo(thresholds: [{ warning: 0, critical: 99 }])
+      assert_raises(Kennel::ValidationError) { s.as_json }
+    end
+
+    it "is invalid if warning == critical" do
+      s = slo(thresholds: [{ warning: 99, critical: 99 }])
+      assert_raises(Kennel::ValidationError) { s.as_json }
     end
   end
 

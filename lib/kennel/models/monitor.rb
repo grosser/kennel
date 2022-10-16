@@ -2,8 +2,6 @@
 module Kennel
   module Models
     class Monitor < Record
-      include OptionalValidations
-
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
@@ -41,7 +39,6 @@ module Kennel
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
-        id: -> { nil },
         notify_no_data: -> { true }, # datadog sets this to false by default, but true is the safer
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
@@ -56,9 +53,8 @@ module Kennel
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) }
       )
 
-      def as_json
-        return @as_json if @as_json
-        data = {
+      def build_json
+        data = super.merge(
           name: "#{name}#{LOCK}",
           type: type,
           query: query.strip,
@@ -79,9 +75,7 @@ module Kennel
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
             renotify_interval: renotify_interval || 0
           }
-        }
-
-        data[:id] = id if id
+        )
 
         options = data[:options]
         if data.fetch(:type) != "composite"
@@ -120,9 +114,7 @@ module Kennel
           options[:renotify_statuses] = statuses
         end
 
-        validate_json(data) if validate
-
-        @as_json = data
+        data
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
