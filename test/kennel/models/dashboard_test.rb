@@ -96,6 +96,16 @@ describe Kennel::Models::Dashboard do
     end
 
     describe "definitions" do
+      def prepare_error_of(expected)
+        matcher = Module.new
+        matcher.define_singleton_method(:===) do |caught|
+          # rubocop:disable Style/CaseEquality
+          Kennel::Models::Record::PrepareError === caught && expected === caught.cause
+          # rubocop:enable Style/CaseEquality
+        end
+        matcher
+      end
+
       it "can add definitions" do
         dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests
       end
@@ -111,25 +121,25 @@ describe Kennel::Models::Dashboard do
       end
 
       it "fails with too little args" do
-        assert_raises ArgumentError do
+        assert_raises prepare_error_of(ArgumentError) do
           dashboard(definitions: -> { [["bar", "timeseries", "area"]] }).as_json
         end
       end
 
       it "fails with many args" do
-        assert_raises ArgumentError do
+        assert_raises prepare_error_of(ArgumentError) do
           dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", {}, 1]] }).as_json
         end
       end
 
       it "fails with non-hash options" do
-        assert_raises ArgumentError do
+        assert_raises prepare_error_of(ArgumentError) do
           dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", 1]] }).as_json
         end
       end
 
       it "fails with unknown options" do
-        assert_raises ArgumentError do
+        assert_raises prepare_error_of(ArgumentError) do
           dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", { a: 1 }]] }).as_json
         end
       end

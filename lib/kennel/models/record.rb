@@ -2,6 +2,12 @@
 module Kennel
   module Models
     class Record < Base
+      class PrepareError < StandardError
+        def initialize(tracking_id)
+          super("Error while preparing #{tracking_id}")
+        end
+      end
+
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -76,7 +82,7 @@ module Kennel
         end
       end
 
-      attr_reader :project
+      attr_reader :project, :validation_errors
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
@@ -112,7 +118,7 @@ module Kennel
       def add_tracking_id
         json = as_json
         if self.class.parse_tracking_id(json)
-          raise "#{tracking_id} Remove \"-- #{MARKER_TEXT}\" line from #{self.class::TRACKING_FIELD} to copy a resource"
+          raise "#{safe_tracking_id} Remove \"-- #{MARKER_TEXT}\" line from #{self.class::TRACKING_FIELD} to copy a resource"
         end
         json[self.class::TRACKING_FIELD] =
           "#{json[self.class::TRACKING_FIELD]}\n" \
@@ -129,19 +135,34 @@ module Kennel
         }.compact
       end
 
+      # One of three outcomes:
+      # - throws (on non-validation error)
+      # - returns, validation_errors is not empty, and as_json is nil (invalid)
+      # - returns, validation_errors is empty, and as_json is not nil (valid)
+      def prepare
+        @validation_errors = []
+        json = nil
+
+        begin
+          json = build_json
+          (id = json.delete(:id)) && json[:id] = id
+          validate_json(json) if validate
+        rescue StandardError
+          if validation_errors.empty?
+            @validation_errors = nil
+            raise PrepareError, safe_tracking_id
+          end
+        end
+
+        @as_json = (json if validation_errors.empty?)
+      end
+
       def as_json
-        @as_json ||= begin
-                       json = build_json
-                       (id = json.delete(:id)) && json[:id] = id
-                       @validation_errors = []
-                       begin
-                        validate_json(json) if validate
-                        raise Kennel::ValidationError, "#{tracking_id} #{@validation_errors.first}" unless @validation_errors.empty?
-                       ensure
-                         remove_instance_variable(:@validation_errors)
-                       end
-                       json
-                     end
+        # A courtesy to those tests that still expect as_json to perform validation and raise on error
+        prepare if @validation_errors.nil?
+        raise Kennel::ValidationError, "#{safe_tracking_id} #{@validation_errors.first}" unless validation_errors.empty?
+
+        @as_json
       end
 
       # Can raise DisallowedUpdateError
@@ -149,10 +170,17 @@ module Kennel
       end
 
       def invalid_update!(field, old_value, new_value)
-        raise DisallowedUpdateError, "#{tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
+        raise DisallowedUpdateError, "#{safe_tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
       end
 
       private
+
+      # For use during error handling
+      def safe_tracking_id
+        tracking_id
+      rescue StandardError
+        "<unknown; #tracking_id crashed>"
+      end
 
       def resolve(value, type, id_map, force:)
         return value unless tracking_id?(value)
@@ -185,7 +213,7 @@ module Kennel
       end
 
       def invalid!(message)
-        @validation_errors << message
+        validation_errors << message
       end
 
       def raise_with_location(error, message)
