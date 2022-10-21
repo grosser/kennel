@@ -9,7 +9,7 @@ module Kennel
     private
 
     def validate_json(data)
-      bad = Kennel::Utils.all_keys(data).grep_v(Symbol)
+      bad = Kennel::Utils.all_keys(data).grep_v(Symbol).sort.uniq
       return if bad.empty?
       invalid!(
         "Only use Symbols as hash keys to avoid permanent diffs when updating.\n" \
