@@ -133,7 +133,13 @@ module Kennel
         @as_json ||= begin
                        json = build_json
                        (id = json.delete(:id)) && json[:id] = id
-                       validate_json(json) if validate
+                       @validation_errors = []
+                       begin
+                        validate_json(json) if validate
+                        raise Kennel::ValidationError, "#{tracking_id} #{@validation_errors.first}" unless @validation_errors.empty?
+                       ensure
+                         remove_instance_variable(:@validation_errors)
+                       end
                        json
                      end
       end
@@ -178,9 +184,8 @@ module Kennel
         end
       end
 
-      # let users know which project/resource failed when something happens during diffing where the backtrace is hidden
       def invalid!(message)
-        raise ValidationError, "#{tracking_id} #{message}"
+        @validation_errors << message
       end
 
       def raise_with_location(error, message)

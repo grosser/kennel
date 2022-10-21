@@ -47,10 +47,15 @@ describe Kennel::Models::Record do
 
   describe "#invalid!" do
     it "raises a validation error with project name to help when backtrace is generic" do
-      e = assert_raises Kennel::ValidationError do
-        Kennel::Models::Monitor.new(TestProject.new, name: -> { "My Bad monitor" }, kennel_id: -> { "x" }).send(:invalid!, "X")
+      record = Kennel::Models::Record.new(TestProject.new, kennel_id: -> { "x" })
+      record.define_singleton_method(:validate_json) do |_data|
+        invalid! "Bang"
       end
-      e.message.must_equal "test_project:x X"
+
+      e = assert_raises Kennel::ValidationError do
+        record.as_json
+      end
+      e.message.must_equal "test_project:x Bang"
     end
   end
 
