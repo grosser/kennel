@@ -101,7 +101,7 @@ module Kennel
 
     def generated
       @generated ||= begin
-        parts = Progress.progress "Finding applicable projects and parts" do
+        parts = Progress.progress "Finding parts" do
           projects = projects_provider.projects
           projects = filter.filter_projects projects
 
