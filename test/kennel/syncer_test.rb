@@ -182,6 +182,24 @@ describe Kennel::Syncer do
       TEXT
     end
 
+    it "limits the size of diffs" do
+      expected << monitor("a", "b", foo: "")
+      monitors << monitor_api_response("a", "b", foo: 100.times.map(&:to_s).join("\n"))
+      output.must_include "- 48\n"
+      output.wont_include "- 49\n"
+      output.must_include "(Diff for this item truncated after 50 lines. Rerun with MAX_DIFF_LINES=100 to see more)"
+    end
+
+    it "can configure the diff size limit" do
+      with_env("MAX_DIFF_LINES" => "20") do
+        expected << monitor("a", "b", foo: "")
+        monitors << monitor_api_response("a", "b", foo: 100.times.map(&:to_s).join("\n"))
+        output.must_include "- 18\n"
+        output.wont_include "- 19\n"
+        output.must_include "(Diff for this item truncated after 20 lines. Rerun with MAX_DIFF_LINES=40 to see more)"
+      end
+    end
+
     it "shows added tags nicely" do
       expected << monitor("a", "b", tags: ["foo", "bar"])
       monitors << monitor_api_response("a", "b", tags: ["foo", "baz"])
