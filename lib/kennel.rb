@@ -43,6 +43,7 @@ module Kennel
   ValidationError = Class.new(RuntimeError)
   UnresolvableIdError = Class.new(RuntimeError)
   DisallowedUpdateError = Class.new(RuntimeError)
+  GenerationAbortedError = Class.new(RuntimeError)
 
   include Kennel::Compatibility
 
@@ -100,26 +101,30 @@ module Kennel
 
     def generated
       @generated ||= begin
-        Progress.progress "Generating" do
+        parts = Progress.progress "Finding parts" do
           projects = projects_provider.projects
           projects = filter.filter_projects projects
 
           parts = Utils.parallel(projects, &:validated_parts).flatten(1)
-          parts = filter.filter_parts parts
-
-          parts.group_by(&:tracking_id).each do |tracking_id, same|
-            next if same.size == 1
-            raise <<~ERROR
-              #{tracking_id} is defined #{same.size} times
-              use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
-            ERROR
-          end
-
-          # trigger json caching here so it counts into generating
-          Utils.parallel(parts, &:as_json)
-
-          parts
+          filter.filter_parts parts
         end
+
+        parts.group_by(&:tracking_id).each do |tracking_id, same|
+          next if same.size == 1
+          raise <<~ERROR
+            #{tracking_id} is defined #{same.size} times
+            use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
+          ERROR
+        end
+
+        Progress.progress "Building json" do
+          # trigger json caching here so it counts into generating
+          Utils.parallel(parts, &:build)
+        end
+
+        OptionalValidations.valid?(parts) or raise GenerationAbortedError
+
+        parts
       end
     end
   end
