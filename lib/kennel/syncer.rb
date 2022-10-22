@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "diff/lcs"
+require_relative "./output_limiter"
 
 module Kennel
   class Syncer
@@ -15,6 +16,7 @@ module Kennel
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
       @expected = Set.new expected # need set to speed up deletion
+      @max_diff_lines = [Integer(ENV.fetch("MAX_DIFF_LINES", "50")), 10].max
       calculate_diff
       validate_plan
       prevent_irreversible_partial_updates
@@ -81,6 +83,8 @@ module Kennel
     end
 
     private
+
+    attr_reader :max_diff_lines
 
     # loop over items until everything is resolved or crash when we get stuck
     # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
@@ -221,6 +225,12 @@ module Kennel
     end
 
     def print_diff(diff)
+      out = OutputLimiter.new(Kennel.out, max_diff_lines) do
+        message = "(Diff for this item truncated after #{max_diff_lines} lines. " \
+          "Rerun with MAX_DIFF_LINES=#{max_diff_lines * 2} to see more)"
+        Kennel.out.puts "  " + Utils.color(:magenta, message)
+      end
+
       diff.each do |type, field, old, new|
         use_diff = false
         if type == "+"
@@ -235,14 +245,14 @@ module Kennel
         end
 
         if use_diff
-          Kennel.out.puts "  #{type}#{field}"
-          Kennel.out.puts(diff(old, new).map { |l| "    #{l}" })
+          out.puts "  #{type}#{field}"
+          out.puts(diff(old, new).map { |l| "    #{l}" })
         elsif (old + new).size > 100
-          Kennel.out.puts "  #{type}#{field}"
-          Kennel.out.puts "    #{old} ->"
-          Kennel.out.puts "    #{new}"
+          out.puts "  #{type}#{field}"
+          out.puts "    #{old} ->"
+          out.puts "    #{new}"
         else
-          Kennel.out.puts "  #{type}#{field} #{old} -> #{new}"
+          out.puts "  #{type}#{field} #{old} -> #{new}"
         end
       end
     end
