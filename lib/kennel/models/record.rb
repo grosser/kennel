@@ -135,10 +135,6 @@ module Kennel
         }.compact
       end
 
-      # One of three outcomes:
-      # - raises (on non-validation error)
-      # - returns, validation_errors is not empty, and as_json is nil (invalid)
-      # - returns, validation_errors is empty, and as_json is not nil (valid)
       def build
         @validation_errors = []
         json = nil
@@ -154,7 +150,7 @@ module Kennel
           end
         end
 
-        @as_json = (json if validation_errors.empty?)
+        @as_json = json # Only valid if validation_errors.empty?
       end
 
       def as_json

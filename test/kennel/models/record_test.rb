@@ -89,7 +89,7 @@ describe Kennel::Models::Record do
       end
       record.build
       record.validation_errors.must_equal ["This is all wrong"]
-      record.instance_variable_get(:@as_json).must_be_nil
+      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
     it "is capable of collecting multiple errors" do
@@ -100,7 +100,7 @@ describe Kennel::Models::Record do
       end
       record.build
       record.validation_errors.must_equal ["one", "two"]
-      record.instance_variable_get(:@as_json).must_be_nil
+      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
     it "can skip validation entirely" do
