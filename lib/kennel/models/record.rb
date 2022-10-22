@@ -106,7 +106,7 @@ module Kennel
         @tracking_id ||= begin
           id = "#{project.kennel_id}:#{kennel_id}"
           unless id.match?(ALLOWED_KENNEL_ID_REGEX) # <-> parse_tracking_id
-            raise "#{id} must match #{ALLOWED_KENNEL_ID_REGEX}"
+            raise "Bad kennel/tracking id: #{id.inspect} must match #{ALLOWED_KENNEL_ID_REGEX}"
           end
           id
         end
@@ -136,10 +136,10 @@ module Kennel
       end
 
       # One of three outcomes:
-      # - throws (on non-validation error)
+      # - raises (on non-validation error)
       # - returns, validation_errors is not empty, and as_json is nil (invalid)
       # - returns, validation_errors is empty, and as_json is not nil (valid)
-      def prepare
+      def build
         @validation_errors = []
         json = nil
 
@@ -159,7 +159,7 @@ module Kennel
 
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
-        prepare if @validation_errors.nil?
+        build if @validation_errors.nil?
         raise Kennel::ValidationError, "#{safe_tracking_id} #{@validation_errors.first}" unless validation_errors.empty?
 
         @as_json
@@ -173,14 +173,14 @@ module Kennel
         raise DisallowedUpdateError, "#{safe_tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
       end
 
-      private
-
       # For use during error handling
       def safe_tracking_id
         tracking_id
       rescue StandardError
         "<unknown; #tracking_id crashed>"
       end
+
+      private
 
       def resolve(value, type, id_map, force:)
         return value unless tracking_id?(value)

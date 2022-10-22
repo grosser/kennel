@@ -45,13 +45,13 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe "#prepare" do
+  describe "#build" do
     it "works normally on valid json" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       some_json = { some: "json" }
       record.define_singleton_method(:build_json) { some_json }
       record.define_singleton_method(:validate_json) { |data| data.must_equal(some_json) }
-      record.prepare
+      record.build
       record.validation_errors.must_equal []
       record.as_json.must_equal some_json
     end
@@ -59,14 +59,14 @@ describe Kennel::Models::Record do
     it "throws if build_json throws, and there were no validation errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:build_json) { raise "I crashed :-(" }
-      assert_raises("I crashed :-(") { record.prepare }
+      assert_raises("I crashed :-(") { record.build }
       record.validation_errors.must_be_nil
     end
 
     it "throws if validate_json throws, and there were no validation errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:validate_json) { |_data| raise "I crashed :-(" }
-      assert_raises("I crashed :-(") { record.prepare }
+      assert_raises("I crashed :-(") { record.build }
       record.validation_errors.must_be_nil
     end
 
@@ -76,7 +76,7 @@ describe Kennel::Models::Record do
         invalid! "This is all wrong"
         raise "I crashed :-("
       end
-      record.prepare
+      record.build
       record.validation_errors.must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).must_be_nil
     end
@@ -87,7 +87,7 @@ describe Kennel::Models::Record do
         invalid! "This is all wrong"
         raise "I crashed :-("
       end
-      record.prepare
+      record.build
       record.validation_errors.must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).must_be_nil
     end
@@ -98,7 +98,7 @@ describe Kennel::Models::Record do
         invalid! "one"
         invalid! "two"
       end
-      record.prepare
+      record.build
       record.validation_errors.must_equal ["one", "two"]
       record.instance_variable_get(:@as_json).must_be_nil
     end
@@ -108,15 +108,15 @@ describe Kennel::Models::Record do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", validate: false)
       record.stubs(:build_json).returns(some_json)
       record.stubs(:validate_json).never
-      record.prepare
+      record.build
       record.validation_errors.must_be_empty
       record.instance_variable_get(:@as_json).must_equal(some_json)
     end
   end
 
   describe "#as_json" do
-    context "#prepare crashes" do
-      it "calls prepare, and crashes each time" do
+    context "#build crashes" do
+      it "calls build, and crashes each time" do
         r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
         r.stubs(:build_json).returns({})
         r.stubs(:validate_json).raises("Bang")
@@ -138,41 +138,41 @@ describe Kennel::Models::Record do
       end
     end
 
-    context "#prepare finds validation errors" do
+    context "#build finds validation errors" do
       let(:record) do
         r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", validate: true)
         r.define_singleton_method(:validate_json) { |_json| invalid! "oh no" }
         r
       end
 
-      it "does not call prepare if already prepared" do
+      it "does not call build if already built" do
         record.stubs(:build_json).once.returns({})
-        record.prepare
+        record.build
         assert_raises(Kennel::ValidationError) { record.as_json }
         assert_raises(Kennel::ValidationError) { record.as_json }
       end
 
-      it "calls prepare if not already prepared" do
+      it "calls build if not already built" do
         record.stubs(:build_json).once.returns({})
         assert_raises(Kennel::ValidationError) { record.as_json }
         assert_raises(Kennel::ValidationError) { record.as_json }
       end
     end
 
-    context "prepare succeeds" do
+    context "build succeeds" do
       let(:record) do
         Kennel::Models::Record.new(TestProject.new, kennel_id: "x", validate: true)
       end
 
-      it "does not call prepare if already prepared" do
+      it "does not call build if already built" do
         some_data = { some: "data" }
         record.stubs(:build_json).once.returns(some_data)
-        record.prepare
+        record.build
         record.as_json.must_equal(some_data)
         record.as_json.must_equal(some_data)
       end
 
-      it "calls prepare if not already prepared" do
+      it "calls build if not already built" do
         some_data = { some: "data" }
         record.stubs(:build_json).once.returns(some_data)
         record.as_json.must_equal(some_data)

@@ -22,6 +22,52 @@ describe Kennel::OptionalValidations do
     Kennel::Models::Dashboard.new(TestProject.new, kennel_id: -> { "test" }, validate: -> { false }).validate.must_equal false
   end
 
+  describe ".valid?" do
+    capture_all
+
+    def good
+      part = mock
+      part.stubs(:validation_errors).returns([])
+      part
+    end
+
+    def bad(id, errors)
+      part = mock
+      part.stubs(:safe_tracking_id).returns(id)
+      part.stubs(:validation_errors).returns(errors)
+      part
+    end
+
+    it "runs with no parts" do
+      assert(Kennel::OptionalValidations.valid?([]))
+      stdout.string.must_equal ""
+      stderr.string.must_equal ""
+    end
+
+    it "runs with only good parts" do
+      assert(Kennel::OptionalValidations.valid?([good, good, good]))
+      stdout.string.must_equal ""
+      stderr.string.must_equal ""
+    end
+
+    it "runs with a bad part" do
+      refute(
+        Kennel::OptionalValidations.valid?(
+          [
+            bad("foo", ["your data is bad", "and you should feel bad"])
+          ]
+        )
+      )
+      stdout.string.must_equal ""
+      stderr.string.must_equal <<~TEXT
+
+        foo your data is bad
+        foo and you should feel bad
+
+      TEXT
+    end
+  end
+
   describe "#validate_json" do
     def expect_error(bad)
       errors.length.must_equal 1
