@@ -2,7 +2,7 @@
 require_relative "test_helper"
 require "tmpdir"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 2
 
 describe Kennel do
   with_test_classes

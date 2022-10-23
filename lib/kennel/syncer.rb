@@ -10,8 +10,9 @@ module Kennel
     Plan = Struct.new(:changes, keyword_init: true)
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
-    def initialize(api, expected, kennel:, project_filter: nil, tracking_id_filter: nil)
+    def initialize(api:, downloader:, expected:, kennel:, project_filter: nil, tracking_id_filter: nil)
       @api = api
+      @downloader = downloader
       @kennel = kennel
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
@@ -53,7 +54,7 @@ module Kennel
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
-        cache_metadata reply, e.class
+        reply = cache_metadata reply, e.class
         id = reply.fetch(:id)
         changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
         populate_id_map [], [reply] # allow resolving ids we could previously no resolve
@@ -125,7 +126,7 @@ module Kennel
       @delete = []
       @id_map = IdMap.new
 
-      actual = Progress.progress("Downloading definitions") { download_definitions }
+      actual = download_definitions
 
       Progress.progress "Diffing" do
         populate_id_map @expected, actual
@@ -169,16 +170,19 @@ module Kennel
     end
 
     def download_definitions
-      Utils.parallel(Models::Record.subclasses) do |klass|
-        results = @api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
-        results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
-        results.each { |a| cache_metadata(a, klass) }
+      all_by_class = Progress.progress("Downloading definitions") { @downloader.all_by_class }
+      Kennel.err.puts "Download took #{@downloader.time_taken.round(2)}s"
+
+      all_by_class.map do |klass, actuals|
+        actuals.map { |a| cache_metadata(a, klass) }
       end.flatten(1)
     end
 
     def cache_metadata(a, klass)
-      a[:klass] = klass
-      a[:tracking_id] = a.fetch(:klass).parse_tracking_id(a)
+      a.merge(
+        klass: klass,
+        tracking_id: klass.parse_tracking_id(a)
+      )
     end
 
     def ensure_all_ids_found

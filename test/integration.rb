@@ -49,6 +49,7 @@ describe "Integration" do
       Storing ... 0.00s
       Downloading definitions ...
       Downloading definitions ... 0.00s
+      Download took 0.00s
       Diffing ...
       Diffing ... 0.00s
       Plan:

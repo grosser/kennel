@@ -107,12 +107,16 @@ describe Kennel::Syncer do
   let(:slos) { [] }
   let(:synthetics) { [] }
   let(:expected) { [] }
+  let(:downloader) { stub("downloader") }
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
   let(:kennel) { Kennel::Engine.new }
+
   let(:syncer) do
     Kennel::Syncer.new(
-      api, expected,
+      api: api,
+      downloader: downloader,
+      expected: expected,
       kennel: kennel,
       project_filter: Kennel::Utils.presence(project_filter),
       tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
@@ -120,11 +124,19 @@ describe Kennel::Syncer do
   end
 
   before do
+    downloader.stubs(:time_taken).returns(9.9)
+
     Kennel::Progress.stubs(:print).yields
-    api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
-    api.stubs(:list).with("monitor", anything).returns(monitors)
-    api.stubs(:list).with("slo", anything).returns(data: slos)
-    api.stubs(:list).with("synthetics/tests", anything).returns(synthetics)
+
+    all_by_class = {
+      Kennel::Models::Dashboard => dashboards,
+      Kennel::Models::Monitor => monitors,
+      Kennel::Models::Slo => slos,
+      Kennel::Models::SyntheticTest => synthetics
+    }
+
+    downloader.stubs(:all_by_class).returns(all_by_class)
+
     api.stubs(:fill_details!)
   end
 
@@ -262,6 +274,7 @@ describe Kennel::Syncer do
       stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal <<~OUTPUT
         Downloading definitions ...
         Downloading definitions ... 0.0s
+        Download took 9.9s
         Diffing ...
         Diffing ... 0.0s
       OUTPUT
@@ -374,7 +387,8 @@ describe Kennel::Syncer do
           id: "abc",
           template_variables: [],
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00"
+          modified_at: "2015-12-17T23:12:26.726234+00:00",
+          widgets: []
         }
         api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }
         output.must_equal "Plan:\nNothing to do\n"

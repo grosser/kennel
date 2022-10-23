@@ -13,6 +13,7 @@ require "kennel/projects_provider"
 require "kennel/syncer"
 require "kennel/id_map"
 require "kennel/api"
+require "kennel/downloader"
 require "kennel/github_reporter"
 require "kennel/subclass_tracking"
 require "kennel/settings_as_methods"
@@ -54,6 +55,7 @@ module Kennel
   class Engine
     def initialize
       @strict_imports = true
+      preempt_download if preempt_download?
     end
 
     attr_accessor :strict_imports
@@ -79,8 +81,24 @@ module Kennel
       @filter ||= Filter.new
     end
 
+    def downloader
+      @downloader ||= Downloader.new(api)
+    end
+
     def syncer
-      @syncer ||= Syncer.new(api, generated, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      @syncer ||=
+        begin
+          preempt_download # slow (background)
+          expected = generated # slow (foreground)
+          Syncer.new(
+            api: api,
+            downloader: downloader,
+            expected: expected,
+            kennel: self,
+            project_filter: filter.project_filter,
+            tracking_id_filter: filter.tracking_id_filter
+          )
+        end
     end
 
     def api
@@ -122,6 +140,20 @@ module Kennel
 
         parts
       end
+    end
+
+    def preempt_download
+      # Trigger download (which will be memoized), but discard the results
+      Thread.new { downloader.all_by_class }.report_on_exception = false
+    end
+
+    def preempt_download?
+      tasks_which_download = ["kennel:plan", "kennel:update_datadog"]
+      Rake.application.top_level_tasks.any? do |name|
+        tasks_which_download.include?(name) || !(Rake::Task[name].all_prerequisite_tasks.map(&:name) & tasks_which_download).empty?
+      end
+    rescue StandardError
+      false
     end
   end
 end
