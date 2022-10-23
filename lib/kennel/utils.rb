@@ -57,6 +57,12 @@ module Kennel
         "\e[#{COLORS.fetch(color)}m#{text}\e[0m"
       end
 
+      def truncate_lines(text, to:, warning:)
+        lines = text.split(/\n/, to + 1)
+        lines[-1] = warning if lines.size > to
+        lines.join("\n")
+      end
+
       def capture_stdout
         old = Kennel.out
         Kennel.out = StringIO.new

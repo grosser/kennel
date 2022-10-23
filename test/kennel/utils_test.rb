@@ -70,6 +70,24 @@ describe Kennel::Utils do
     end
   end
 
+  describe ".truncate_lines" do
+    def call(text)
+      Kennel::Utils.truncate_lines(text, to: 2, warning: "SNIP!")
+    end
+
+    it "leaves short alone" do
+      call("a\nb").must_equal "a\nb"
+    end
+
+    it "truncates long" do
+      call("a\nb\nc").must_equal "a\nb\nSNIP!"
+    end
+
+    it "keeps sequential newlines" do
+      call("a\n\nb\nc").must_equal "a\n\nSNIP!"
+    end
+  end
+
   describe ".capture_stdout" do
     it "captures" do
       Kennel::Utils.capture_stdout { Kennel.out.puts "hello" }.must_equal "hello\n"
