@@ -14,6 +14,7 @@ require "kennel/projects_provider"
 require "kennel/syncer"
 require "kennel/id_map"
 require "kennel/api"
+require "kennel/downloader"
 require "kennel/github_reporter"
 require "kennel/subclass_tracking"
 require "kennel/settings_as_methods"
@@ -58,6 +59,7 @@ module Kennel
     attr_accessor :out, :err, :strict_imports
 
     def generate
+      Thread.new { puts "pre-downloading" ; downloader.definitions } if will_download?
       parts = generated
       parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
       parts
@@ -82,8 +84,16 @@ module Kennel
       @filter ||= Filter.new
     end
 
+    def downloader
+      @downloader ||= Downloader.new(api)
+    end
+
     def syncer
-      @syncer ||= Syncer.new(api, generated, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      @syncer ||=
+        begin
+          Thread.new { downloader.definitions }
+          Syncer.new(api, downloader, generated, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+        end
     end
 
     def api
@@ -121,6 +131,15 @@ module Kennel
           parts
         end
       end
+    end
+
+    def will_download?
+      tasks_which_download = ["kennel:plan", "kennel:update_datadog"]
+      Rake.application.top_level_tasks.any? do |name|
+        tasks_which_download.include?(name) || !(Rake::Task[name].all_prerequisite_tasks.map(&:name) & tasks_which_download).empty?
+      end
+    rescue StandardError
+      false
     end
   end
 end

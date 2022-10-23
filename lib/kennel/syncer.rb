@@ -10,8 +10,9 @@ module Kennel
     Plan = Struct.new(:noop?, :no_change, :create, :update, :delete, keyword_init: true)
     Update = Struct.new(:update_log, keyword_init: true)
 
-    def initialize(api, expected, project_filter: nil, tracking_id_filter: nil)
+    def initialize(api, downloader, expected, project_filter: nil, tracking_id_filter: nil)
       @api = api
+      @downloader = downloader
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
       @expected = Set.new expected # need set to speed up deletion
@@ -124,7 +125,8 @@ module Kennel
       @no_change = []
       @id_map = IdMap.new
 
-      actual = Progress.progress("Downloading definitions") { download_definitions }
+      actual = Progress.progress("Downloading definitions") { @downloader.definitions }
+      Kennel.err.puts "Download took #{@downloader.time_taken.round(2)}s"
 
       Progress.progress "Diffing" do
         populate_id_map @expected, actual
@@ -167,19 +169,6 @@ module Kennel
         @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
         @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
-    end
-
-    def download_definitions
-      Utils.parallel(Models::Record.subclasses) do |klass|
-        results = @api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
-        results = results[results.keys.first] if results.is_a?(Hash) # dashboards are nested in {dashboards: []}
-        results.each { |a| cache_metadata(a, klass) }
-      end.flatten(1)
-    end
-
-    def cache_metadata(a, klass)
-      a[:klass] = klass
-      a[:tracking_id] = a.fetch(:klass).parse_tracking_id(a)
     end
 
     def ensure_all_ids_found
