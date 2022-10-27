@@ -57,12 +57,10 @@ module Kennel
 
   class Engine
     def initialize
-      @out = $stdout
-      @err = $stderr
       @strict_imports = true
     end
 
-    attr_accessor :out, :err, :strict_imports
+    attr_accessor :strict_imports
 
     def generate
       parts = generated
