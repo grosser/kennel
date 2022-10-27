@@ -8,6 +8,10 @@ require "json"
 module Kennel
   module Tasks
     class << self
+      def kennel
+        @kennel ||= Kennel::Engine.new
+      end
+
       def abort(message = nil)
         Kennel.err.puts message if message
         raise SystemExit.new(1), message
@@ -35,10 +39,10 @@ module Kennel
         load_environment
 
         if on_default_branch? && git_push?
-          Kennel.strict_imports = false
-          Kennel.update
+          Kennel::Tasks.kennel.strict_imports = false
+          Kennel::Tasks.kennel.update
         else
-          Kennel.plan # show plan in CI logs
+          Kennel::Tasks.kennel.plan # show plan in CI logs
         end
       end
 
@@ -93,18 +97,18 @@ namespace :kennel do
 
   desc "generate local definitions"
   task generate: :environment do
-    Kennel.generate
+    Kennel::Tasks.kennel.generate
   end
 
   # also generate parts so users see and commit updated generated automatically
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :generate do
-    Kennel.plan
+    Kennel::Tasks.kennel.plan
   end
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
-    Kennel.update
+    Kennel::Tasks.kennel.update
   end
 
   desc "update on push to the default branch, otherwise show plan"
