@@ -62,7 +62,7 @@ describe "tasks" do
       }]
     end
 
-    before { Kennel.send(:api).stubs(:list).returns monitors }
+    before { Kennel::Api.any_instance.stubs(:list).returns monitors }
 
     it "reports missing data" do
       execute TAG: "team:foo"
@@ -139,7 +139,7 @@ describe "tasks" do
     in_temp_dir # uses file-cache
 
     let(:task) { "kennel:dump" }
-    let(:api) { Kennel.send(:api) }
+    let(:api) { Kennel::Api.any_instance }
 
     before do
       list = [{ id: 1, modified_at: 2, name: "N" }]

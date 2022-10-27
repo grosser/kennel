@@ -98,7 +98,7 @@ module Kennel
     def link_composite_monitors(data)
       if data[:type] == "composite"
         data[:query].gsub!(/\d+/) do |id|
-          object = Kennel.send(:api).show("monitor", id)
+          object = @api.show("monitor", id)
           tracking_id = Kennel::Models::Monitor.parse_tracking_id(object)
           tracking_id ? "%{#{tracking_id}}" : id
         rescue StandardError # monitor not found

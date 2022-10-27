@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 # encapsulates knowledge around how the api works
-# especially 1-off weirdness that should not lak into other parts of the code
+# especially 1-off weirdness that should not leak into other parts of the code
 module Kennel
   class Api
     CACHE_FILE = "tmp/cache/details"
 
-    def initialize(app_key, api_key)
-      @app_key = app_key
-      @api_key = api_key
+    def initialize(app_key = nil, api_key = nil)
+      @app_key = app_key || ENV.fetch("DATADOG_APP_KEY")
+      @api_key = api_key || ENV.fetch("DATADOG_API_KEY")
       url = Utils.path_to_url("", subdomain: "app")
       @client = Faraday.new(url: url) { |c| c.adapter :net_http_persistent }
     end

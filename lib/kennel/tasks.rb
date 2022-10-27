@@ -66,7 +66,7 @@ namespace :kennel do
   # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
   desc "Verify that all used monitor  mentions are valid"
   task validate_mentions: :environment do
-    known = Kennel.send(:api)
+    known = Kennel::Api.new
       .send(:request, :get, "/monitor/notifications")
       .fetch(:handles)
       .values
@@ -115,13 +115,13 @@ namespace :kennel do
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
   task alerts: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
+    Kennel::UnmutedAlerts.print(Kennel::Api.new, tag)
   end
 
   desc "show monitors with no data by TAG, for example TAG=team:foo [THRESHOLD_DAYS=7] [FORMAT=json]"
   task nodata: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
+    monitors = Kennel::Api.new.list("monitor", monitor_tags: tag, group_states: "no data")
     monitors.select! { |m| m[:overall_state] == "No Data" }
     monitors.reject! { |m| m[:tags].include? "nodata:ignore" }
     if monitors.any?
@@ -179,7 +179,7 @@ namespace :kennel do
       Kennel::Tasks.abort("Call with URL= or call with RESOURCE=#{possible_resources.join(" or ")} and ID=")
     end
 
-    Kennel.out.puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
+    Kennel.out.puts Kennel::Importer.new(Kennel::Api.new).import(resource, id)
   end
 
   desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
@@ -190,7 +190,7 @@ namespace :kennel do
       else
         Kennel::Models::Record.api_resource_map.keys
       end
-    api = Kennel.send(:api)
+    api = Kennel::Api.new
     list = nil
     first = true
 
@@ -240,7 +240,7 @@ namespace :kennel do
     klass =
       Kennel::Models::Record.subclasses.detect { |s| s.api_resource == resource } ||
       raise("resource #{resource} not know")
-    object = Kennel.send(:api).show(resource, id)
+    object = Kennel::Api.new.show(resource, id)
     Kennel.out.puts klass.parse_tracking_id(object)
   end
 

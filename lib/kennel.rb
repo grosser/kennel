@@ -5,7 +5,6 @@ require "zeitwerk"
 require "English"
 
 require "kennel/version"
-require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
@@ -45,8 +44,6 @@ module Kennel
   DisallowedUpdateError = Class.new(RuntimeError)
   GenerationAbortedError = Class.new(RuntimeError)
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)
-
-  include Kennel::Compatibility
 
   class << self
     attr_accessor :out, :err
@@ -92,7 +89,7 @@ module Kennel
     end
 
     def api
-      @api ||= Api.new(ENV.fetch("DATADOG_APP_KEY"), ENV.fetch("DATADOG_API_KEY"))
+      @api ||= Api.new
     end
 
     def projects_provider
