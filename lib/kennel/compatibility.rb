@@ -4,7 +4,7 @@ module Kennel
   module Compatibility
     def self.included(into)
       class << into
-        %I[out out= err err= strict_imports strict_imports= generate plan update].each do |sym|
+        %I[out out= err err= strict_imports strict_imports= generate plan].each do |sym|
           define_method(sym) { |*args| instance.public_send(sym, *args) }
         end
 

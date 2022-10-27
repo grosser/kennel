@@ -15,6 +15,8 @@ describe Kennel do
 
   let(:models_count) { 4 }
 
+  let(:kennel) { Kennel::Engine.new }
+
   capture_all
   in_temp_dir
   enable_api
@@ -102,7 +104,7 @@ describe Kennel do
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(id: 123)
 
-      Kennel.update
+      kennel.update
 
       stderr.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo https://app.datadoghq.com/monitors/123"
@@ -114,7 +116,7 @@ describe Kennel do
       stdout.expects(:tty?).returns(true)
       stderr.expects(:tty?).returns(true)
 
-      Kennel.update
+      kennel.update
 
       stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end
