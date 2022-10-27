@@ -14,7 +14,6 @@ describe Kennel do
   end
 
   let(:models_count) { 4 }
-
   let(:kennel) { Kennel::Engine.new }
 
   capture_all
