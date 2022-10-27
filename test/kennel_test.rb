@@ -88,7 +88,7 @@ describe Kennel do
     it "plans" do
       stdout.stubs(:tty?).returns(true)
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      Kennel.plan
+      kennel.plan
       stdout.string.must_include "Plan:\n\e[32mCreate monitor temp_project:foo\e[0m\n"
     end
   end
