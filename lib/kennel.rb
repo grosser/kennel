@@ -44,10 +44,16 @@ module Kennel
   UnresolvableIdError = Class.new(RuntimeError)
   DisallowedUpdateError = Class.new(RuntimeError)
   GenerationAbortedError = Class.new(RuntimeError)
+  UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   include Kennel::Compatibility
 
-  UpdateResult = Struct.new(:plan, :update, keyword_init: true)
+  class << self
+    attr_accessor :out, :err
+  end
+
+  self.out = $stdout
+  self.err = $stderr
 
   class Engine
     def initialize

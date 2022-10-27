@@ -6,18 +6,6 @@ SingleCov.covered!
 describe Kennel::Compatibility do
   reset_instance
 
-  it "makes a default instance of kennel" do
-    engine = Kennel::Engine.new
-    Kennel::Engine.expects(:new).times(1).returns(engine)
-
-    out = StringIO.new
-    err = StringIO.new
-    engine.out = out
-    engine.err = err
-    Kennel.out.must_equal(out)
-    Kennel.err.must_equal(err)
-  end
-
   it "provides private :api compatibility" do
     enable_api do
       api = Kennel::Api.allocate
