@@ -14,6 +14,7 @@ describe Kennel do
   end
 
   let(:models_count) { 4 }
+  let(:kennel) { Kennel::Engine.new }
 
   capture_all
   in_temp_dir
@@ -57,7 +58,7 @@ describe Kennel do
         parts.map(&:tracking_id) == ["temp_project:foo"]
       end.once
 
-      with_env(STORE: nil) { Kennel.generate }
+      with_env(STORE: nil) { kennel.generate }
     end
 
     it "does not store if requested" do
@@ -65,7 +66,7 @@ describe Kennel do
       Kennel::PartsSerializer.stubs(:new).returns(writer)
       writer.stubs(:write).never
 
-      with_env(STORE: "false") { Kennel.generate }
+      with_env(STORE: "false") { kennel.generate }
     end
 
     it "complains when duplicates would be written" do
@@ -74,7 +75,7 @@ describe Kennel do
           defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
         end
       RUBY
-      e = assert_raises(RuntimeError) { Kennel.generate }
+      e = assert_raises(RuntimeError) { kennel.generate }
       e.message.must_equal <<~ERROR
         test_project2:bar is defined 2 times
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
@@ -86,7 +87,7 @@ describe Kennel do
     it "plans" do
       stdout.stubs(:tty?).returns(true)
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      Kennel.plan
+      kennel.plan
       stdout.string.must_include "Plan:\n\e[32mCreate monitor temp_project:foo\e[0m\n"
     end
   end
@@ -102,7 +103,7 @@ describe Kennel do
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(id: 123)
 
-      Kennel.update
+      kennel.update
 
       stderr.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo https://app.datadoghq.com/monitors/123"
@@ -114,7 +115,7 @@ describe Kennel do
       stdout.expects(:tty?).returns(true)
       stderr.expects(:tty?).returns(true)
 
-      Kennel.update
+      kennel.update
 
       stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end

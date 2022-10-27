@@ -5,7 +5,6 @@ require "zeitwerk"
 require "English"
 
 require "kennel/version"
-require "kennel/compatibility"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"
@@ -44,19 +43,21 @@ module Kennel
   UnresolvableIdError = Class.new(RuntimeError)
   DisallowedUpdateError = Class.new(RuntimeError)
   GenerationAbortedError = Class.new(RuntimeError)
-
-  include Kennel::Compatibility
-
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)
+
+  class << self
+    attr_accessor :out, :err
+  end
+
+  self.out = $stdout
+  self.err = $stderr
 
   class Engine
     def initialize
-      @out = $stdout
-      @err = $stderr
       @strict_imports = true
     end
 
-    attr_accessor :out, :err, :strict_imports
+    attr_accessor :strict_imports
 
     def generate
       parts = generated
@@ -88,7 +89,7 @@ module Kennel
     end
 
     def api
-      @api ||= Api.new(ENV.fetch("DATADOG_APP_KEY"), ENV.fetch("DATADOG_API_KEY"))
+      @api ||= Api.new
     end
 
     def projects_provider

@@ -105,9 +105,7 @@ describe Kennel::Syncer do
   let(:expected) { [] }
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
-
   let(:kennel) { Kennel::Engine.new }
-
   let(:syncer) do
     Kennel::Syncer.new(
       api, expected,

@@ -6,6 +6,38 @@ SingleCov.covered!
 describe Kennel::Api do
   let(:api) { Kennel::Api.new("app", "api") }
 
+  describe ".new" do
+    it "can use specified keys" do
+      with_env("DATADOG_APP_KEY" => nil, "DATADOG_API_KEY" => nil) do
+        api = Kennel::Api.new("foo", "bar")
+        api.instance_variable_get(:@app_key).must_equal "foo"
+        api.instance_variable_get(:@api_key).must_equal "bar"
+      end
+    end
+
+    it "uses the specified keys instead of the default" do
+      with_env("DATADOG_APP_KEY" => "k1", "DATADOG_API_KEY" => "k2") do
+        api = Kennel::Api.new("foo", "bar")
+        api.instance_variable_get(:@app_key).must_equal "foo"
+        api.instance_variable_get(:@api_key).must_equal "bar"
+      end
+    end
+
+    it "can use the default keys" do
+      with_env("DATADOG_APP_KEY" => "k1", "DATADOG_API_KEY" => "k2") do
+        api = Kennel::Api.new
+        api.instance_variable_get(:@app_key).must_equal "k1"
+        api.instance_variable_get(:@api_key).must_equal "k2"
+      end
+    end
+
+    it "fails if the default keys are missing" do
+      with_env("DATADOG_APP_KEY" => nil, "DATADOG_API_KEY" => nil) do
+        assert_raises(KeyError) { Kennel::Api.new }
+      end
+    end
+  end
+
   describe "#show" do
     it "fetches monitor" do
       stub_datadog_request(:get, "monitor/1234")

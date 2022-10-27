@@ -8,6 +8,10 @@ require "json"
 module Kennel
   module Tasks
     class << self
+      def kennel
+        @kennel ||= Kennel::Engine.new
+      end
+
       def abort(message = nil)
         Kennel.err.puts message if message
         raise SystemExit.new(1), message
@@ -35,10 +39,10 @@ module Kennel
         load_environment
 
         if on_default_branch? && git_push?
-          Kennel.strict_imports = false
-          Kennel.update
+          Kennel::Tasks.kennel.strict_imports = false
+          Kennel::Tasks.kennel.update
         else
-          Kennel.plan # show plan in CI logs
+          Kennel::Tasks.kennel.plan # show plan in CI logs
         end
       end
 
@@ -66,7 +70,7 @@ namespace :kennel do
   # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
   desc "Verify that all used monitor  mentions are valid"
   task validate_mentions: :environment do
-    known = Kennel.send(:api)
+    known = Kennel::Api.new
       .send(:request, :get, "/monitor/notifications")
       .fetch(:handles)
       .values
@@ -93,18 +97,18 @@ namespace :kennel do
 
   desc "generate local definitions"
   task generate: :environment do
-    Kennel.generate
+    Kennel::Tasks.kennel.generate
   end
 
   # also generate parts so users see and commit updated generated automatically
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :generate do
-    Kennel.plan
+    Kennel::Tasks.kennel.plan
   end
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
-    Kennel.update
+    Kennel::Tasks.kennel.update
   end
 
   desc "update on push to the default branch, otherwise show plan"
@@ -115,13 +119,13 @@ namespace :kennel do
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
   task alerts: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    Kennel::UnmutedAlerts.print(Kennel.send(:api), tag)
+    Kennel::UnmutedAlerts.print(Kennel::Api.new, tag)
   end
 
   desc "show monitors with no data by TAG, for example TAG=team:foo [THRESHOLD_DAYS=7] [FORMAT=json]"
   task nodata: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    monitors = Kennel.send(:api).list("monitor", monitor_tags: tag, group_states: "no data")
+    monitors = Kennel::Api.new.list("monitor", monitor_tags: tag, group_states: "no data")
     monitors.select! { |m| m[:overall_state] == "No Data" }
     monitors.reject! { |m| m[:tags].include? "nodata:ignore" }
     if monitors.any?
@@ -179,7 +183,7 @@ namespace :kennel do
       Kennel::Tasks.abort("Call with URL= or call with RESOURCE=#{possible_resources.join(" or ")} and ID=")
     end
 
-    Kennel.out.puts Kennel::Importer.new(Kennel.send(:api)).import(resource, id)
+    Kennel.out.puts Kennel::Importer.new(Kennel::Api.new).import(resource, id)
   end
 
   desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
@@ -190,7 +194,7 @@ namespace :kennel do
       else
         Kennel::Models::Record.api_resource_map.keys
       end
-    api = Kennel.send(:api)
+    api = Kennel::Api.new
     list = nil
     first = true
 
@@ -240,7 +244,7 @@ namespace :kennel do
     klass =
       Kennel::Models::Record.subclasses.detect { |s| s.api_resource == resource } ||
       raise("resource #{resource} not know")
-    object = Kennel.send(:api).show(resource, id)
+    object = Kennel::Api.new.show(resource, id)
     Kennel.out.puts klass.parse_tracking_id(object)
   end
 
