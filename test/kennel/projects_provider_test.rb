@@ -13,6 +13,8 @@ describe Kennel::ProjectsProvider do
   in_temp_dir
   capture_all
 
+  let(:kennel) { Kennel::Engine.new }
+
   after do
     Kennel::Models::Project.recursive_subclasses.each do |klass|
       Object.send(:remove_const, klass.name.to_sym) if defined?(klass.name.to_sym)
@@ -67,7 +69,7 @@ describe Kennel::ProjectsProvider do
         FooBar::BazFoo
       end
     RUBY
-    e = assert_raises(NameError) { Kennel.generate }
+    e = assert_raises(NameError) { kennel.generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant TestProject3::FooBar
       Unable to load TestProject3::FooBar from parts/test_project3/foo_bar.rb
@@ -82,7 +84,7 @@ describe Kennel::ProjectsProvider do
         Teams::BazFoo
       end
     RUBY
-    e = assert_raises(NameError) { Kennel.generate }
+    e = assert_raises(NameError) { kennel.generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant Teams::BazFoo
       Unable to load Teams::BazFoo from teams/baz_foo.rb
@@ -97,7 +99,7 @@ describe Kennel::ProjectsProvider do
         raise NameError, "wut"
       end
     RUBY
-    e = assert_raises(NameError) { Kennel.generate }
+    e = assert_raises(NameError) { kennel.generate }
     e.message.must_equal "wut"
   end
 end

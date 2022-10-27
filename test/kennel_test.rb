@@ -59,7 +59,7 @@ describe Kennel do
         parts.map(&:tracking_id) == ["temp_project:foo"]
       end.once
 
-      with_env(STORE: nil) { Kennel.generate }
+      with_env(STORE: nil) { kennel.generate }
     end
 
     it "does not store if requested" do
@@ -67,7 +67,7 @@ describe Kennel do
       Kennel::PartsSerializer.stubs(:new).returns(writer)
       writer.stubs(:write).never
 
-      with_env(STORE: "false") { Kennel.generate }
+      with_env(STORE: "false") { kennel.generate }
     end
 
     it "complains when duplicates would be written" do
@@ -76,7 +76,7 @@ describe Kennel do
           defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
         end
       RUBY
-      e = assert_raises(RuntimeError) { Kennel.generate }
+      e = assert_raises(RuntimeError) { kennel.generate }
       e.message.must_equal <<~ERROR
         test_project2:bar is defined 2 times
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
