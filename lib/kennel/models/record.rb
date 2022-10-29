@@ -156,7 +156,7 @@ module Kennel
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
         build if @validation_errors.nil?
-        raise Kennel::ValidationError, "#{safe_tracking_id} #{@validation_errors.first}" unless validation_errors.empty?
+        raise Kennel::ValidationError, "#{safe_tracking_id} #{@validation_errors.first.message}" unless validation_errors.empty?
 
         @as_json
       end
@@ -209,7 +209,7 @@ module Kennel
       end
 
       def invalid!(message)
-        validation_errors << message
+        validation_errors << ValidationMessage.new(message)
       end
 
       def raise_with_location(error, message)
