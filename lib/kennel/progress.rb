@@ -4,8 +4,8 @@ require "benchmark"
 module Kennel
   class Progress
     # print what we are doing and a spinner until it is done ... then show how long it took
-    def self.progress(name, interval: 0.2, &block)
-      return progress_no_tty(name, &block) unless Kennel.err.tty?
+    def self.progress(name, interval: 0.2, plain: false, &block)
+      return progress_no_tty(name, &block) if plain || !Kennel.err.tty?
 
       Kennel.err.print "#{name} ... "
 
