@@ -27,14 +27,14 @@ describe Kennel::OptionalValidations do
 
     def good
       part = mock
-      part.stubs(:unfiltered_validation_errors).returns([])
+      part.stubs(:filtered_validation_errors).returns([])
       part
     end
 
     def bad(id, errors)
       part = mock
       part.stubs(:safe_tracking_id).returns(id)
-      part.stubs(:unfiltered_validation_errors).returns(errors)
+      part.stubs(:filtered_validation_errors).returns(errors)
       part
     end
 

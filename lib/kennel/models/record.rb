@@ -82,7 +82,7 @@ module Kennel
         end
       end
 
-      attr_reader :project, :unfiltered_validation_errors
+      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
@@ -142,7 +142,7 @@ module Kennel
         begin
           json = build_json
           (id = json.delete(:id)) && json[:id] = id
-          validate_json(json) if validate
+          validate_json(json)
         rescue StandardError
           if unfiltered_validation_errors.empty?
             @unfiltered_validation_errors = nil
@@ -150,13 +150,20 @@ module Kennel
           end
         end
 
-        @as_json = json # Only valid if unfiltered_validation_errors.empty?
+        @filtered_validation_errors =
+          if validate
+            unfiltered_validation_errors
+          else
+            []
+          end
+
+        @as_json = json # Only valid if filtered_validation_errors.empty?
       end
 
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
         build if @unfiltered_validation_errors.nil?
-        raise Kennel::ValidationError, "#{safe_tracking_id} as_json called on invalid part" unless unfiltered_validation_errors.empty?
+        raise Kennel::ValidationError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
 
         @as_json
       end

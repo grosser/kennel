@@ -99,18 +99,19 @@ describe Kennel::Models::Record do
         invalid! "two"
       end
       record.build
-      record.unfiltered_validation_errors.map(&:message).must_equal ["one", "two"]
+      record.filtered_validation_errors.map(&:message).must_equal ["one", "two"]
       record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
     it "can skip validation entirely" do
-      some_json = { some: "json" }
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", validate: false)
-      record.stubs(:build_json).returns(some_json)
-      record.stubs(:validate_json).never
+      record.define_singleton_method(:validate_json) do |_data|
+        invalid! "bang"
+      end
       record.build
-      record.unfiltered_validation_errors.must_be_empty
-      record.instance_variable_get(:@as_json).must_equal(some_json)
+
+      record.filtered_validation_errors.must_be_empty
+      record.instance_variable_get(:@as_json).wont_be_nil # it's valid
     end
   end
 
