@@ -39,7 +39,7 @@ module Teams
 end
 
 module Kennel
-  ValidationMessage = Struct.new(:message)
+  ValidationMessage = Struct.new(:text)
   ValidationError = Class.new(RuntimeError)
   UnresolvableIdError = Class.new(RuntimeError)
   DisallowedUpdateError = Class.new(RuntimeError)

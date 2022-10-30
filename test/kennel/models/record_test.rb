@@ -77,7 +77,7 @@ describe Kennel::Models::Record do
         raise "I crashed :-("
       end
       record.build
-      record.unfiltered_validation_errors.map(&:message).must_equal ["This is all wrong"]
+      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).must_be_nil
     end
 
@@ -88,7 +88,7 @@ describe Kennel::Models::Record do
         raise "I crashed :-("
       end
       record.build
-      record.unfiltered_validation_errors.map(&:message).must_equal ["This is all wrong"]
+      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
@@ -99,7 +99,7 @@ describe Kennel::Models::Record do
         invalid! "two"
       end
       record.build
-      record.filtered_validation_errors.map(&:message).must_equal ["one", "two"]
+      record.filtered_validation_errors.map(&:text).must_equal ["one", "two"]
       record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
