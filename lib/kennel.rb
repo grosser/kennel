@@ -39,7 +39,6 @@ module Teams
 end
 
 module Kennel
-  ValidationMessage = Struct.new(:text)
   UnresolvableIdError = Class.new(StandardError)
   DisallowedUpdateError = Class.new(StandardError)
   GenerationAbortedError = Class.new(StandardError)

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 module Kennel
   module OptionalValidations
+    ValidationMessage = Struct.new(:text)
+
     def self.included(base)
       base.settings :validate
       base.defaults(validate: -> { true })
