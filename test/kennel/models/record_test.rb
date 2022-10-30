@@ -149,14 +149,14 @@ describe Kennel::Models::Record do
       it "does not call build if already built" do
         record.stubs(:build_json).once.returns({})
         record.build
-        assert_raises(Kennel::ValidationError) { record.as_json }
-        assert_raises(Kennel::ValidationError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
       end
 
       it "calls build if not already built" do
         record.stubs(:build_json).once.returns({})
-        assert_raises(Kennel::ValidationError) { record.as_json }
-        assert_raises(Kennel::ValidationError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
       end
     end
 

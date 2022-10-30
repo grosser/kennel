@@ -40,10 +40,9 @@ end
 
 module Kennel
   ValidationMessage = Struct.new(:text)
-  ValidationError = Class.new(RuntimeError)
-  UnresolvableIdError = Class.new(RuntimeError)
-  DisallowedUpdateError = Class.new(RuntimeError)
-  GenerationAbortedError = Class.new(RuntimeError)
+  UnresolvableIdError = Class.new(StandardError)
+  DisallowedUpdateError = Class.new(StandardError)
+  GenerationAbortedError = Class.new(StandardError)
   UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   class << self

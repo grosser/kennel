@@ -51,7 +51,7 @@ module Kennel
         end
 
         if mode == "fail"
-          [ValidationError.new(msg)]
+          [ValidationMessage.new(msg)]
         else
           Kennel.out.puts "#{safe_tracking_id} #{msg}" if mode == "show"
           []

@@ -8,6 +8,8 @@ module Kennel
         end
       end
 
+      UnvalidatedRecordError = Class.new(StandardError)
+
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -157,7 +159,7 @@ module Kennel
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
         build if @unfiltered_validation_errors.nil?
-        raise Kennel::ValidationError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
+        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
 
         @as_json
       end
