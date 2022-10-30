@@ -35,5 +35,42 @@ module Kennel
         "#{bad.map(&:inspect).join("\n")}"
       )
     end
+
+    def filter_validation_errors
+      if validate
+        unfiltered_validation_errors
+      elsif unfiltered_validation_errors.empty?
+        msg = "`validate` is set to false, but there are no validation errors to suppress. Remove `validate: false`"
+
+        mode = ENV.fetch("UNNECESSARY_VALIDATE_FALSE") do
+          if ENV.key?("PROJECT") || ENV.key?("TRACKING_ID")
+            "fail"
+          else
+            nil
+          end
+        end
+
+        if mode == "fail"
+          [msg]
+        else
+          Kennel.out.puts "#{safe_tracking_id} #{msg}" if mode == "show"
+          []
+        end
+      else
+        mode = ENV.fetch("SUPPRESSED_ERRORS", "ignore")
+
+        if mode == "fail"
+          unfiltered_validation_errors
+        else
+          if mode == "show"
+            unfiltered_validation_errors.each do |err|
+              Kennel.out.puts "#{safe_tracking_id} `validate: false` suppressing error: #{err.message.gsub("\n", " ")}"
+            end
+          end
+
+          []
+        end
+      end
+    end
   end
 end

@@ -150,13 +150,7 @@ module Kennel
           end
         end
 
-        @filtered_validation_errors =
-          if validate
-            unfiltered_validation_errors
-          else
-            []
-          end
-
+        @filtered_validation_errors = filter_validation_errors
         @as_json = json # Only valid if filtered_validation_errors.empty?
       end
 
