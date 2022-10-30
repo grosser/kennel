@@ -51,13 +51,10 @@ describe Kennel::OptionalValidations do
     end
 
     it "runs with a bad part" do
-      refute(
-        Kennel::OptionalValidations.valid?(
-          [
-            bad("foo", [Kennel::ValidationError.new("your data is bad"), Kennel::ValidationError.new("and you should feel bad")])
-          ]
-        )
-      )
+      parts = [
+        bad("foo", [Kennel::ValidationError.new("your data is bad"), Kennel::ValidationError.new("and you should feel bad")])
+      ]
+      refute Kennel::OptionalValidations.valid?(parts)
       stdout.string.must_equal ""
       stderr.string.must_equal <<~TEXT
 
