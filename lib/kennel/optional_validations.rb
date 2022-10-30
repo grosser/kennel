@@ -16,7 +16,7 @@ module Kennel
       Kennel.err.puts
       parts_with_errors.sort_by(&:safe_tracking_id).each do |part|
         part.filtered_validation_errors.each do |err|
-          Kennel.err.puts "#{part.safe_tracking_id} #{err}"
+          Kennel.err.puts "#{part.safe_tracking_id} #{err.message}"
         end
       end
       Kennel.err.puts
@@ -51,7 +51,7 @@ module Kennel
         end
 
         if mode == "fail"
-          [msg]
+          [ValidationError.new(msg)]
         else
           Kennel.out.puts "#{safe_tracking_id} #{msg}" if mode == "show"
           []

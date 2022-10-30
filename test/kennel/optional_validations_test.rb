@@ -54,7 +54,7 @@ describe Kennel::OptionalValidations do
       refute(
         Kennel::OptionalValidations.valid?(
           [
-            bad("foo", ["your data is bad", "and you should feel bad"])
+            bad("foo", [Kennel::ValidationError.new("your data is bad"), Kennel::ValidationError.new("and you should feel bad")])
           ]
         )
       )
