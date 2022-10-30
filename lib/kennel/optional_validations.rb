@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module OptionalValidations
-    ValidationMessage = Struct.new(:text)
+    ValidationMessage = Struct.new(:tag, :text)
 
     def self.included(base)
       base.settings :validate
@@ -32,6 +32,7 @@ module Kennel
       bad = Kennel::Utils.all_keys(data).grep_v(Symbol).sort.uniq
       return if bad.empty?
       invalid!(
+        :hash_keys_must_be_symbols,
         "Only use Symbols as hash keys to avoid permanent diffs when updating.\n" \
         "Change these keys to be symbols (usually 'foo' => 1 --> 'foo': 1)\n" \
         "#{bad.map(&:inspect).join("\n")}"

@@ -12,7 +12,7 @@ describe Kennel::OptionalValidations do
     item = Object.new
     item.extend Kennel::OptionalValidations
     copy_of_errors = errors
-    item.define_singleton_method(:invalid!) do |err|
+    item.define_singleton_method(:invalid!) do |_tag, err|
       copy_of_errors << err
     end
     item
@@ -55,8 +55,8 @@ describe Kennel::OptionalValidations do
         bad(
           "foo",
           [
-            Kennel::OptionalValidations::ValidationMessage.new("your data is bad"),
-            Kennel::OptionalValidations::ValidationMessage.new("and you should feel bad")
+            Kennel::OptionalValidations::ValidationMessage.new(:data, "your data is bad"),
+            Kennel::OptionalValidations::ValidationMessage.new(:you, "and you should feel bad")
           ]
         )
       ]
