@@ -64,9 +64,8 @@ describe Kennel::Models::Dashboard do
     end
 
     it "complains when datadog would created a diff by sorting template_variable_presets" do
-      assert_raises Kennel::ValidationError do
-        dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }).as_json
-      end
+      validation_error_from(dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }))
+        .must_equal "template_variable_presets must be sorted by name"
     end
 
     it "doesn't complain on sorted template_variable_presets" do
