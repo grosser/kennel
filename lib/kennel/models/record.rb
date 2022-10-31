@@ -212,7 +212,7 @@ module Kennel
       end
 
       def invalid!(tag, message)
-        unfiltered_validation_errors << ValidationMessage.new(tag, message)
+        unfiltered_validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
       end
 
       def raise_with_location(error, message)

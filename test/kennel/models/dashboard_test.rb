@@ -59,10 +59,6 @@ describe Kennel::Models::Dashboard do
       dashboard_with_requests.as_json.must_equal expected_json_with_requests
     end
 
-    it "can ignore validations" do
-      dashboard(widgets: -> { [{ definition: { "foo" => 1 } }] }, validate: -> { false }).as_json
-    end
-
     it "complains when datadog would created a diff by sorting template_variable_presets" do
       validation_error_from(dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }))
         .must_equal "template_variable_presets must be sorted by name"

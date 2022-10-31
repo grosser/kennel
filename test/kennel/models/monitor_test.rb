@@ -165,10 +165,6 @@ describe Kennel::Models::Monitor do
         .must_include "query alert"
     end
 
-    it "does not fail when validations are disabled" do
-      monitor(type: -> { "metric alert" }, validate: -> { false }).as_json
-    end
-
     it "sets id when not given" do
       assert_json_equal(
         monitor(id: -> { 123 }).as_json,
