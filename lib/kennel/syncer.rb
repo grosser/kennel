@@ -6,6 +6,7 @@ module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
+    Plan = Struct.new(:changes, keyword_init: true)
 
     def initialize(api, expected, kennel:, project_filter: nil, tracking_id_filter: nil)
       @api = api
@@ -29,9 +30,12 @@ module Kennel
         print_plan "Delete", @delete, :red
       end
 
-      @create.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
-        @update.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
-        @delete.map { |_id, _e, a| [:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), a.fetch(:id)] }
+      Plan.new(
+        changes:
+          @create.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
+          @update.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
+          @delete.map { |_id, _e, a| [:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), a.fetch(:id)] }
+      )
     end
 
     def confirm
@@ -41,7 +45,7 @@ module Kennel
     end
 
     def update
-      actions = []
+      changes = []
 
       each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
@@ -49,7 +53,7 @@ module Kennel
         reply = @api.create e.class.api_resource, e.as_json
         cache_metadata reply, e.class
         id = reply.fetch(:id)
-        actions << [:create, e.class.api_resource, e.tracking_id, id]
+        changes << [:create, e.class.api_resource, e.tracking_id, id]
         populate_id_map [], [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
@@ -58,7 +62,7 @@ module Kennel
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
         @api.update e.class.api_resource, id, e.as_json
-        actions << [:update, e.class.api_resource, e.tracking_id, id]
+        changes << [:update, e.class.api_resource, e.tracking_id, id]
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
@@ -67,11 +71,11 @@ module Kennel
         message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete klass.api_resource, id
-        actions << [:delete, klass.api_resource, a.fetch(:tracking_id), id]
+        changes << [:delete, klass.api_resource, a.fetch(:tracking_id), id]
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      actions
+      Plan.new(changes: changes)
     end
 
     private

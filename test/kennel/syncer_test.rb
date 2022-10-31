@@ -142,6 +142,11 @@ describe Kennel::Syncer do
       output.must_equal "Plan:\nCreate monitor a:b\n"
     end
 
+    it "returns a plan" do
+      expected << monitor("a", "b")
+      syncer.plan.changes.must_equal [[:create, "monitor", "a:b", nil]]
+    end
+
     it "ignores identical" do
       add_identical
       output.must_equal "Plan:\nNothing to do\n"
@@ -512,6 +517,12 @@ describe Kennel::Syncer do
         Creating monitor a:b
         \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
       TXT
+    end
+
+    it "returns a changelog" do
+      expected << monitor("a", "b")
+      api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      syncer.update.changes.must_equal [[:create, "monitor", "a:b", 123]]
     end
 
     it "sets values we do not compare on" do
