@@ -69,12 +69,8 @@ module Kennel
     end
 
     def update
-      the_plan = syncer.plan
-      the_update = syncer.update if syncer.confirm
-      UpdateResult.new(
-        plan: the_plan,
-        update: the_update
-      )
+      syncer.plan
+      syncer.update if syncer.confirm
     end
 
     private
