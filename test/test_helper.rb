@@ -119,7 +119,14 @@ Minitest::Test.class_eval do
     JSON.pretty_generate(a).must_equal JSON.pretty_generate(b)
   end
 
-  def validation_error_message(&block)
-    assert_raises(Kennel::ValidationError, &block).message
+  def validation_errors_from(part)
+    part.build
+    part.unfiltered_validation_errors.map(&:text)
+  end
+
+  def validation_error_from(part)
+    errors = validation_errors_from(part)
+    errors.length.must_equal(1, "Expected 1 error, got #{errors.inspect}")
+    errors.first
   end
 end

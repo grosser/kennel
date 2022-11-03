@@ -52,7 +52,7 @@ describe Kennel::Models::Record do
       record.define_singleton_method(:build_json) { some_json }
       record.define_singleton_method(:validate_json) { |data| data.must_equal(some_json) }
       record.build
-      record.validation_errors.must_equal []
+      record.unfiltered_validation_errors.must_equal []
       record.as_json.must_equal some_json
     end
 
@@ -60,14 +60,14 @@ describe Kennel::Models::Record do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:build_json) { raise "I crashed :-(" }
       assert_raises("I crashed :-(") { record.build }
-      record.validation_errors.must_be_nil
+      record.unfiltered_validation_errors.must_be_nil
     end
 
     it "throws if validate_json throws, and there were no validation errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:validate_json) { |_data| raise "I crashed :-(" }
       assert_raises("I crashed :-(") { record.build }
-      record.validation_errors.must_be_nil
+      record.unfiltered_validation_errors.must_be_nil
     end
 
     it "does not throw if build_json throws after a validation error" do
@@ -77,7 +77,7 @@ describe Kennel::Models::Record do
         raise "I crashed :-("
       end
       record.build
-      record.validation_errors.must_equal ["This is all wrong"]
+      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).must_be_nil
     end
 
@@ -88,7 +88,7 @@ describe Kennel::Models::Record do
         raise "I crashed :-("
       end
       record.build
-      record.validation_errors.must_equal ["This is all wrong"]
+      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
       record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
@@ -99,18 +99,19 @@ describe Kennel::Models::Record do
         invalid! "two"
       end
       record.build
-      record.validation_errors.must_equal ["one", "two"]
+      record.filtered_validation_errors.map(&:text).must_equal ["one", "two"]
       record.instance_variable_get(:@as_json).wont_be_nil # for debugging
     end
 
     it "can skip validation entirely" do
-      some_json = { some: "json" }
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", validate: false)
-      record.stubs(:build_json).returns(some_json)
-      record.stubs(:validate_json).never
+      record.define_singleton_method(:validate_json) do |_data|
+        invalid! "bang"
+      end
       record.build
-      record.validation_errors.must_be_empty
-      record.instance_variable_get(:@as_json).must_equal(some_json)
+
+      record.filtered_validation_errors.must_be_empty
+      record.instance_variable_get(:@as_json).wont_be_nil # it's valid
     end
   end
 
@@ -148,14 +149,14 @@ describe Kennel::Models::Record do
       it "does not call build if already built" do
         record.stubs(:build_json).once.returns({})
         record.build
-        assert_raises(Kennel::ValidationError) { record.as_json }
-        assert_raises(Kennel::ValidationError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
       end
 
       it "calls build if not already built" do
         record.stubs(:build_json).once.returns({})
-        assert_raises(Kennel::ValidationError) { record.as_json }
-        assert_raises(Kennel::ValidationError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
+        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
       end
     end
 
@@ -183,20 +184,6 @@ describe Kennel::Models::Record do
     it "includes the id if set" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", id: 123)
       record.as_json.must_equal({ id: 123 })
-    end
-  end
-
-  describe "#invalid!" do
-    it "raises a validation error with project name to help when backtrace is generic" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: -> { "x" })
-      record.define_singleton_method(:validate_json) do |_data|
-        invalid! "Bang"
-      end
-
-      e = assert_raises Kennel::ValidationError do
-        record.as_json
-      end
-      e.message.must_equal "test_project:x Bang"
     end
   end
 

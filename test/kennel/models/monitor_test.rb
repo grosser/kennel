@@ -129,17 +129,18 @@ describe Kennel::Models::Monitor do
     end
 
     it "does not allow mismatching query and critical" do
-      e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }).as_json }
-      e.message.must_equal "test_project:m1 critical and value used in query must match"
+      validation_error_from(monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }))
+        .must_equal "critical and value used in query must match"
     end
 
     it "does not allow mismatching query and critical with >=" do
-      e = assert_raises(RuntimeError) { monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }).as_json }
-      e.message.must_equal "test_project:m1 critical and value used in query must match"
+      validation_error_from(monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }))
+        .must_equal "critical and value used in query must match"
     end
 
     it "does not break on queries that are unparseable for critical" do
-      monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }).as_json
+      validation_errors_from(monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }))
+        .must_be_empty
     end
 
     it "sets no_data_timeframe to `nil` when notify_no_data is false" do
@@ -160,8 +161,8 @@ describe Kennel::Models::Monitor do
     end
 
     it "fails on deprecated metric alert type" do
-      e = assert_raises(RuntimeError) { monitor(type: -> { "metric alert" }).as_json }
-      e.message.must_include "metric alert"
+      validation_error_from(monitor(type: -> { "metric alert" }))
+        .must_include "query alert"
     end
 
     it "does not fail when validations are disabled" do
@@ -205,7 +206,8 @@ describe Kennel::Models::Monitor do
     end
 
     it "does not allow invalid priority" do
-      assert_raises(Kennel::ValidationError) { monitor(priority: -> { 2.0 }).as_json }
+      validation_error_from(monitor(priority: -> { 2.0 }))
+        .must_equal "priority needs to be an Integer"
     end
 
     it "does not include new_host_delay when new_group_delay is provided" do
@@ -213,21 +215,18 @@ describe Kennel::Models::Monitor do
     end
 
     it "blocks invalid service check query without .by early" do
-      assert_raises(Kennel::ValidationError) do
-        monitor(type: -> { "service check" }).as_json
-      end
+      validation_error_from(monitor(type: -> { "service check" }))
+        .must_equal "query must include a .by() at least .by(\"*\")"
     end
 
     it "blocks names that create perma-diff" do
-      assert_raises(Kennel::ValidationError) do
-        monitor(name: -> { " oops" }).as_json
-      end
+      validation_error_from(monitor(name: -> { " oops" }))
+        .must_equal "name cannot start with a space"
     end
 
     it "blocks invalid timeout_h" do
-      assert_raises(Kennel::ValidationError) do
-        monitor(timeout_h: -> { 200 }).as_json
-      end
+      validation_error_from(monitor(timeout_h: -> { 200 }))
+        .must_equal "timeout_h must be <= 24"
     end
 
     describe "renotify_interval" do
@@ -240,8 +239,8 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails on invalid" do
-        e = assert_raises(RuntimeError) { monitor(renotify_interval: -> { 123 }).as_json }
-        e.message.must_include "test_project:m1 renotify_interval must be one of 0, 10, 20,"
+        validation_error_from(monitor(renotify_interval: -> { 123 }))
+          .must_include "renotify_interval must be one of 0, 10, 20,"
       end
     end
 
@@ -290,26 +289,26 @@ describe Kennel::Models::Monitor do
 
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_error_from(mon)
+          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when using invalid negative is_match" do
         mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_error_from(mon)
+          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when using invalid is_exact_match" do
         mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_error_from(mon)
+          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "fails when not using .name" do
         mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
+        validation_error_from(mon)
+          .must_equal "Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
       end
 
       it "ignores when not using quotes" do
@@ -342,14 +341,14 @@ describe Kennel::Models::Monitor do
       it "does not show * from filter" do
         mon.stubs(:query).returns("avg(last_5m):avg:foo{*} by {env} > 123.0")
         mon.expects(:message).returns("{{bar.name}}")
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
+        validation_error_from(mon)
+          .must_equal "Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
       end
 
       it "fails when using invalid variable" do
         mon.expects(:message).returns("{{foo.name}}")
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
+        validation_error_from(mon)
+          .must_equal "Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
       end
 
       it "passes with [escaped] query style" do
@@ -368,8 +367,8 @@ describe Kennel::Models::Monitor do
 
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-        e = assert_raises(Kennel::ValidationError) { mon.as_json }
-        e.message.must_equal "test_project:m1 Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_error_from(mon)
+          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
       end
 
       it "passes when using valid is_match" do
@@ -386,12 +385,12 @@ describe Kennel::Models::Monitor do
   end
 
   describe "#validate_using_links" do
-    def build_invalid
+    def make_invalid
       monitor(
         critical: -> { raise },
         query: -> { "1 || 2" },
         type: -> { "composite" }
-      ).as_json
+      )
     end
 
     def with_allow_list(items)
@@ -405,15 +404,14 @@ describe Kennel::Models::Monitor do
     end
 
     it "fails when not using links" do
-      e = assert_raises Kennel::ValidationError do
-        build_invalid
-      end
-      e.message.must_include '["1", "2"]'
+      validation_error_from(make_invalid)
+        .must_include '["1", "2"]'
     end
 
     it "allows external list" do
       with_allow_list [["test_project:m1", "1"], ["test_project:m1", "2"]] do
-        build_invalid
+        validation_errors_from(make_invalid)
+          .must_be_empty
       end
     end
   end

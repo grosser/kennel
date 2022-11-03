@@ -8,6 +8,8 @@ module Kennel
         end
       end
 
+      UnvalidatedRecordError = Class.new(StandardError)
+
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -82,7 +84,7 @@ module Kennel
         end
       end
 
-      attr_reader :project, :validation_errors
+      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
@@ -136,27 +138,28 @@ module Kennel
       end
 
       def build
-        @validation_errors = []
+        @unfiltered_validation_errors = []
         json = nil
 
         begin
           json = build_json
           (id = json.delete(:id)) && json[:id] = id
-          validate_json(json) if validate
+          validate_json(json)
         rescue StandardError
-          if validation_errors.empty?
-            @validation_errors = nil
+          if unfiltered_validation_errors.empty?
+            @unfiltered_validation_errors = nil
             raise PrepareError, safe_tracking_id
           end
         end
 
-        @as_json = json # Only valid if validation_errors.empty?
+        @filtered_validation_errors = filter_validation_errors
+        @as_json = json # Only valid if filtered_validation_errors.empty?
       end
 
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
-        build if @validation_errors.nil?
-        raise Kennel::ValidationError, "#{safe_tracking_id} #{@validation_errors.first}" unless validation_errors.empty?
+        build if @unfiltered_validation_errors.nil?
+        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
 
         @as_json
       end
@@ -209,7 +212,7 @@ module Kennel
       end
 
       def invalid!(message)
-        validation_errors << message
+        unfiltered_validation_errors << ValidationMessage.new(message)
       end
 
       def raise_with_location(error, message)

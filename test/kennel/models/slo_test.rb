@@ -122,13 +122,13 @@ describe Kennel::Models::Slo do
     end
 
     it "is invalid if warning < critical" do
-      s = slo(thresholds: [{ warning: 0, critical: 99 }])
-      assert_raises(Kennel::ValidationError) { s.as_json }
+      validation_error_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
+        .must_equal "Threshold warning must be greater-than critical value"
     end
 
     it "is invalid if warning == critical" do
-      s = slo(thresholds: [{ warning: 99, critical: 99 }])
-      assert_raises(Kennel::ValidationError) { s.as_json }
+      validation_error_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
+        .must_equal "Threshold warning must be greater-than critical value"
     end
   end
 

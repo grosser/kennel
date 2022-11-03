@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 19
 
 describe Kennel::OptionalValidations do
   with_test_classes
@@ -27,14 +27,14 @@ describe Kennel::OptionalValidations do
 
     def good
       part = mock
-      part.stubs(:validation_errors).returns([])
+      part.stubs(:filtered_validation_errors).returns([])
       part
     end
 
     def bad(id, errors)
       part = mock
       part.stubs(:safe_tracking_id).returns(id)
-      part.stubs(:validation_errors).returns(errors)
+      part.stubs(:filtered_validation_errors).returns(errors)
       part
     end
 
@@ -51,13 +51,16 @@ describe Kennel::OptionalValidations do
     end
 
     it "runs with a bad part" do
-      refute(
-        Kennel::OptionalValidations.valid?(
+      parts = [
+        bad(
+          "foo",
           [
-            bad("foo", ["your data is bad", "and you should feel bad"])
+            Kennel::OptionalValidations::ValidationMessage.new("your data is bad"),
+            Kennel::OptionalValidations::ValidationMessage.new("and you should feel bad")
           ]
         )
-      )
+      ]
+      refute Kennel::OptionalValidations.valid?(parts)
       stdout.string.must_equal ""
       stderr.string.must_equal <<~TEXT
 
