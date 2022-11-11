@@ -39,7 +39,7 @@ module Kennel
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
-        notify_no_data: -> { true }, # datadog sets this to false by default, but true is the safer
+        notify_no_data: -> { true }, # datadog UI sets this to false by default, but true is safer
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
@@ -97,6 +97,12 @@ module Kennel
             # metric and query values are stored as float by datadog
             thresholds.each { |k, v| thresholds[k] = Float(v) }
           end
+        end
+
+        # setting this via the api breaks the UI with
+        # "The no_data_timeframe option is not allowed for log alert monitors"
+        if data.fetch(:type) == "log alert"
+          options.delete :no_data_timeframe
         end
 
         if windows = threshold_windows
