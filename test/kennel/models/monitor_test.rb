@@ -229,6 +229,14 @@ describe Kennel::Models::Monitor do
         .must_equal "timeout_h must be <= 24"
     end
 
+    it "does not set no_data_timeframe for log alert to not break the UI" do
+      json = monitor(
+        type: -> { "log alert" },
+        no_data_timeframe: -> { 10 }
+      ).as_json
+      refute json[:options].key?(:no_data_timeframe)
+    end
+
     describe "renotify_interval" do
       it "sets 0 when disabled" do
         monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
