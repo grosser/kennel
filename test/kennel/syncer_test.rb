@@ -97,6 +97,10 @@ describe Kennel::Syncer do
     monitors << monitor_api_response("a", "b")
   end
 
+  def change(*args)
+    Kennel::Syncer::Change.new(*args)
+  end
+
   let(:api) { stub("Api") }
   let(:monitors) { [] }
   let(:dashboards) { [] }
@@ -127,46 +131,56 @@ describe Kennel::Syncer do
   capture_all # TODO: pass an IO to syncer so we don't have to capture all output
 
   describe "#plan" do
-    let(:output) do
+    let(:plan) do
       (monitors + dashboards).each { |m| m[:id] ||= 123 } # existing components always have an id
       syncer.plan
+    end
+
+    let(:output) do
+      plan
       stdout.string.gsub(/\e\[\d+m(.*)\e\[0m/, "\\1") # remove colors
     end
 
     it "does nothing when everything is empty" do
+      plan.changes.must_be_empty
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "creates missing" do
       expected << monitor("a", "b")
+      plan.changes.must_equal [change(:create, "monitor", "a:b", nil)]
       output.must_equal "Plan:\nCreate monitor a:b\n"
     end
 
     it "returns a plan" do
       expected << monitor("a", "b")
-      syncer.plan.changes.must_equal [[:create, "monitor", "a:b", nil]]
+      syncer.plan.changes.must_equal [change(:create, "monitor", "a:b", nil)]
     end
 
     it "ignores identical" do
       add_identical
+      plan.changes.must_be_empty
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "ignores readonly attributes since we do not generate them" do
       expected << monitor("a", "b")
       monitors << monitor_api_response("a", "b", created: true)
+      plan.changes.must_be_empty
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "ignores silencing since that is managed via the UI" do
       expected << monitor("a", "b")
       monitors << monitor_api_response("a", "b", options: { silenced: { "*" => 1 } })
+      plan.changes.must_be_empty
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "updates when changed" do
       expected << monitor("a", "b", foo: "bar", bar: "foo", nested: { foo: "bar" })
-      monitors << monitor_api_response("a", "b", foo: "baz", baz: "foo", nested: { foo: "baz" })
+      monitors << monitor_api_response("a", "b", foo: "baz", baz: "foo", nested: { foo: "baz" }, id: 777)
+      plan.changes.must_equal [change(:update, "monitor", "a:b", 777)]
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
@@ -200,7 +214,8 @@ describe Kennel::Syncer do
     end
 
     it "deletes when removed from code" do
-      monitors << monitor_api_response("a", "b")
+      monitors << monitor_api_response("a", "b", id: 888)
+      plan.changes.must_equal [change(:delete, "monitor", "a:b", 888)]
       output.must_equal "Plan:\nDelete monitor a:b\n"
     end
 
@@ -501,8 +516,12 @@ describe Kennel::Syncer do
   end
 
   describe "#update" do
-    let(:output) do
+    let(:update) do
       syncer.update
+    end
+
+    let(:output) do
+      update
       stdout.string
     end
 
@@ -522,7 +541,7 @@ describe Kennel::Syncer do
     it "returns a changelog" do
       expected << monitor("a", "b")
       api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
-      syncer.update.changes.must_equal [[:create, "monitor", "a:b", 123]]
+      syncer.update.changes.must_equal [change(:create, "monitor", "a:b", 123)]
     end
 
     it "sets values we do not compare on" do
@@ -540,6 +559,7 @@ describe Kennel::Syncer do
       expected << monitor("a", "b", foo: "bar")
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      update.changes.must_equal [change(:update, "monitor", "a:b", 123)]
       output.must_equal <<~TXT
         Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
         \e[1A\033[KUpdated monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -549,6 +569,7 @@ describe Kennel::Syncer do
     it "deletes" do
       monitors << monitor_api_response("a", "b", id: 123)
       api.expects(:delete).with("monitor", 123).returns({})
+      update.changes.must_equal [change(:delete, "monitor", "a:b", 123)]
       output.must_equal <<~TXT
         Deleting monitor a:b 123
         \e[1A\033[KDeleted monitor a:b 123
