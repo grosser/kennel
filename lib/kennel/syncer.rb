@@ -33,7 +33,7 @@ module Kennel
       Plan.new(
         changes:
           @create.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
-          @update.map { |_id, e| [:create, e.class.api_resource, e.tracking_id, nil] } +
+          @update.map { |_id, e| [:update, e.class.api_resource, e.tracking_id, nil] } +
           @delete.map { |_id, _e, a| [:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), a.fetch(:id)] }
       )
     end
