@@ -57,6 +57,7 @@ describe Kennel::ProjectsProvider do
     RUBY
 
     Zeitwerk::Loader.any_instance.expects(:setup).times(1)
+    Zeitwerk::Loader.any_instance.expects(:eager_load).times(1)
 
     2.times do
       Kennel::ProjectsProvider.new.projects.map(&:name).must_equal ["Project1"]
