@@ -2,7 +2,7 @@
 module Kennel
   module Models
     class Slo < Record
-      READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:type_id, :monitor_tags]
+      READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold]
       TRACKING_FIELD = :description
       DEFAULTS = {
         description: nil,
