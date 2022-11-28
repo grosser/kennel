@@ -43,7 +43,8 @@ describe Kennel::Models::Monitor do
         evaluation_delay: nil,
         locked: false,
         renotify_interval: 0,
-        thresholds: { critical: 123.0 }
+        thresholds: { critical: 123.0 },
+        variables: nil
       }
     }
   end
@@ -94,6 +95,10 @@ describe Kennel::Models::Monitor do
 
     it "can set require_full_window" do
       monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
+    end
+
+    it "can set variables" do
+      monitor(variables: -> { { a: 1 } }).as_json[:options][:variables].must_equal a: 1
     end
 
     describe "query alert" do

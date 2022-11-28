@@ -21,7 +21,8 @@ module Kennel
         renotify_interval: 0,
         notify_audit: false,
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
-        groupby_simple_monitor: false
+        groupby_simple_monitor: false,
+        variables: nil
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -30,7 +31,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links
+        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables
       )
 
       defaults(
@@ -50,7 +51,8 @@ module Kennel
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
         threshold_windows: -> { nil },
-        priority: -> { MONITOR_DEFAULTS.fetch(:priority) }
+        priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
+        variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) }
       )
 
       def build_json
@@ -73,7 +75,8 @@ module Kennel
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
-            renotify_interval: renotify_interval || 0
+            renotify_interval: renotify_interval || 0,
+            variables: variables
           }
         )
 
