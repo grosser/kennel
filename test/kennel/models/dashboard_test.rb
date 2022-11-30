@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Dashboard do
-  with_test_classes
+  define_test_classes
 
   class TestDashboard < Kennel::Models::Dashboard
   end

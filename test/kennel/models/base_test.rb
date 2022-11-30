@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Base do
-  with_test_classes
+  define_test_classes
 
   class TestBase < Kennel::Models::Base
     settings :foo, :bar, :unset

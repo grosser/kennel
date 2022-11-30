@@ -5,7 +5,7 @@ require "tmpdir"
 SingleCov.covered!
 
 describe Kennel do
-  with_test_classes
+  define_test_classes
 
   def write(file, content)
     folder = File.dirname(file)

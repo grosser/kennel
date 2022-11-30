@@ -5,6 +5,7 @@ module Kennel
 
     class TeeIO < IO
       def initialize(ios)
+        super(0) # called with fake file descriptor 0, so we can call super and get a proper class
         @ios = ios
       end
 

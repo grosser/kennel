@@ -5,7 +5,7 @@ require "stringio"
 SingleCov.covered!
 
 describe Kennel::Syncer do
-  with_test_classes
+  define_test_classes
 
   def project(pid)
     project = TestProject.new

@@ -2,6 +2,7 @@
 AllCops:
   CacheRootDirectory: tmp
   NewCops: enable
+  SuggestExtensions: false
   Exclude:
     - vendor/**/*
     - template/vendor/**/*
@@ -101,4 +102,92 @@ Style/FormatStringToken:
   EnforcedStyle: unannotated
 
 Style/EmptyElse:
+  Enabled: false
+
+# suggests ugly "\n#{<<~MSG.gsub(/^/, "  ")}"
+Style/StringConcatenation:
+  Enabled: false
+
+# using this a bunch in tests
+Style/GlobalStdStream:
+  Enabled: false
+
+# new style looks sus and breaks old editors
+Naming/BlockForwarding:
+  Enabled: false
+
+# TODO: fix
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+
+# ignore_404 is fine
+Naming/VariableNumber:
+  Enabled: false
+
+# omitting keys breaks old editors and looks funky
+Style/HashSyntax:
+  Enabled: false
+
+# ENV["FOO"] is just fine
+Style/FetchEnvVar:
+  Enabled: false
+
+# returning nil is more explicit
+Style/NilLambda:
+  Enabled: false
+
+# makes structure more readable
+Style/SoleNestedConditional:
+  Enabled: false
+
+# should be fine
+Lint/FloatComparison:
+  Enabled: false
+
+# TODO: fix
+Lint/NoReturnInBeginEndBlocks:
+  Enabled: false
+
+# suggestion breaks the code
+Style/EvalWithLocation:
+  Enabled: false
+
+# either way works fine
+Layout/LineContinuationLeadingSpace:
+  Enabled: false
+
+# TODO: fix
+Layout/LineEndStringConcatenationIndentation:
+  Enabled: false
+
+# often more expressive to have multiple loops
+Style/CombinableLoops:
+  Enabled: false
+
+# TODO: fix
+Lint/NonAtomicFileOperation:
+  Enabled: false
+
+# on purpose
+Lint/EmptyBlock:
+  Enabled: false
+
+# TODO: fix
+Style/RedundantStringEscape:
+  Enabled: false
+
+# TODO: fix
+Lint/RedundantDirGlobSort:
+  Enabled: false
+
+# TODO: fix
+Style/SingleArgumentDig:
+  Enabled: false
+
+# TODO: fix
+Lint/AmbiguousOperatorPrecedence:
+  Enabled: false
+
+# TODO: fix
+Style/ClassEqualityComparison:
   Enabled: false
