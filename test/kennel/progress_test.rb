@@ -7,7 +7,7 @@ describe Kennel::Progress do
   capture_all
 
   describe ".progress" do
-    it "shows progress (with tty)" do
+    it "shows animated progress with tty" do
       Kennel.err.stubs(:tty?).returns(true)
       result = Kennel::Progress.progress("foo", interval: 0.01) do
         sleep 0.10 # make progress print multiple times
@@ -18,14 +18,24 @@ describe Kennel::Progress do
       stderr.string.sub(/-.*?0/, "0").gsub(/\d\.\d+/, "1.11").must_equal "foo ... 1.11s\n"
     end
 
-    it "shows progress (without tty)" do
+    it "shows plain progress without tty" do
       Kennel.err.stubs(:tty?).returns(false)
       result = Kennel::Progress.progress("foo", interval: 0.01) do
         sleep 0.10 # if there were a tty, this would make it print the spinner
         123
       end
       result.must_equal 123
-      stderr.string.sub(/-.*?0/, "0").gsub(/\d\.\d+/, "1.11").must_equal "foo ...\nfoo ... 1.11s\n"
+      stderr.string.gsub(/\d\.\d+/, "1.11").must_equal "foo ...\nfoo ... 1.11s\n"
+    end
+
+    it "shows plain progress with plain" do
+      Kennel.err.stubs(:tty?).never
+      result = Kennel::Progress.progress("foo", interval: 0.01, plain: true) do
+        sleep 0.10 # if there were a tty, this would make it print the spinner
+        123
+      end
+      result.must_equal 123
+      stderr.string.gsub(/\d\.\d+/, "1.11").must_equal "foo ...\nfoo ... 1.11s\n"
     end
 
     it "stops immediately when block finishes" do
@@ -45,7 +55,6 @@ describe Kennel::Progress do
         end
       end
       final = stderr.string
-      # p final
       sleep 0.01
       stderr.string.must_equal final, "progress was not stopped"
     end

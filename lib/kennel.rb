@@ -59,7 +59,7 @@ module Kennel
     attr_accessor :strict_imports
 
     def generate
-      parts = generated
+      parts = generated(plain: false)
       parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
       parts
     end
@@ -75,12 +75,24 @@ module Kennel
 
     private
 
+    def download_definitions
+      Progress.progress("Downloading definitions", plain: true) do
+        Utils.parallel(Models::Record.subclasses) do |klass|
+          results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+          results.each { |a| Utils.inline_resource_metadata(a, klass) }
+        end.flatten(1)
+      end
+    end
+
     def filter
       @filter ||= Filter.new
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      @syncer ||= begin
+        expected, actual = Utils.parallel([:generated, :download_definitions]) { |m| send m }
+        Syncer.new(api, expected, actual, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      end
     end
 
     def api
@@ -95,9 +107,9 @@ module Kennel
       @parts_serializer ||= PartsSerializer.new(filter: filter)
     end
 
-    def generated
+    def generated(plain: true)
       @generated ||= begin
-        parts = Progress.progress "Finding parts" do
+        parts = Progress.progress "Finding parts", plain: plain do
           projects = projects_provider.projects
           projects = filter.filter_projects projects
 

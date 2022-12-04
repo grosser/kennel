@@ -40,19 +40,19 @@ describe "Integration" do
     # result = sh "echo y | bundle exec rake kennel:update_datadog" # Uncomment this to apply know good diff
     result = sh "bundle exec rake plan 2>&1"
     result.gsub!(/\d\.\d+s/, "0.00s")
-    result.must_equal <<~TXT
-      Finding parts ...
-      Finding parts ... 0.00s
+    progress, plan = result.split("Plan:\n")
+    progress.split("\n").sort.join("\n").must_equal <<~TXT.rstrip
       Building json ...
       Building json ... 0.00s
-      Storing ...
-      Storing ... 0.00s
-      Downloading definitions ...
-      Downloading definitions ... 0.00s
       Diffing ...
       Diffing ... 0.00s
-      Plan:
-      Nothing to do
+      Downloading definitions ...
+      Downloading definitions ... 0.00s
+      Finding parts ...
+      Finding parts ... 0.00s
+      Storing ...
+      Storing ... 0.00s
     TXT
+    plan.must_equal "Nothing to do\n"
   end
 end
