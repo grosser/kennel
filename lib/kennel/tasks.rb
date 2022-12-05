@@ -102,9 +102,8 @@ namespace :kennel do
 
   # also generate parts so users see and commit updated generated automatically
   desc "show planned datadog changes (scope with PROJECT=name)"
-  task plan: :environment do
+  task plan: :generate do
     Kennel::Tasks.kennel.plan
-    Kennel::Tasks.kennel.generate
   end
 
   desc "update datadog (scope with PROJECT=name)"
