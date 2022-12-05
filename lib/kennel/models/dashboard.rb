@@ -230,7 +230,9 @@ module Kennel
 
         # Avoid diff from datadog presets sorting.
         presets = data[:template_variable_presets]
-        invalid! "template_variable_presets must be sorted by name" if presets && presets != presets.sort_by { |p| p[:name] }
+        if presets && presets != presets.sort_by { |p| p[:name] }
+          invalid! :template_variable_presets_must_be_sorted, "template_variable_presets must be sorted by name"
+        end
       end
 
       def render_definitions(definitions)

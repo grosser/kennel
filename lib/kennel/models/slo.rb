@@ -85,7 +85,7 @@ module Kennel
         super
 
         if data[:thresholds].any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
-          invalid! "Threshold warning must be greater-than critical value"
+          invalid! :warning_must_be_gt_critical, "Threshold warning must be greater-than critical value"
         end
       end
     end

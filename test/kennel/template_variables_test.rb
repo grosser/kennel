@@ -35,7 +35,7 @@ describe Kennel::TemplateVariables do
       item = Object.new
       item.extend Kennel::TemplateVariables
       copy_of_errors = errors
-      item.define_singleton_method(:invalid!) do |err|
+      item.define_singleton_method(:invalid!) do |_tag, err|
         copy_of_errors << err
       end
       item
