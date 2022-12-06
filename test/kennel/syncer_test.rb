@@ -17,7 +17,9 @@ describe Kennel::Syncer do
     {
       tags: extra.delete(:tags) || ["service:a", "team:test_team"],
       message: "@slack-foo\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
-      options: {}
+      options: {},
+      tracking_id: "#{pid}:#{cid}",
+      klass: Kennel::Models::Monitor
     }.merge(extra)
   end
 
@@ -107,12 +109,13 @@ describe Kennel::Syncer do
   let(:slos) { [] }
   let(:synthetics) { [] }
   let(:expected) { [] }
+  let(:actual) { dashboards + monitors + slos + synthetics }
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
   let(:kennel) { Kennel::Engine.new }
   let(:syncer) do
     Kennel::Syncer.new(
-      api, expected,
+      api, expected, actual,
       kennel: kennel,
       project_filter: Kennel::Utils.presence(project_filter),
       tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
@@ -121,10 +124,6 @@ describe Kennel::Syncer do
 
   before do
     Kennel::Progress.stubs(:print).yields
-    api.stubs(:list).with("dashboard", anything).returns(dashboards: dashboards)
-    api.stubs(:list).with("monitor", anything).returns(monitors)
-    api.stubs(:list).with("slo", anything).returns(data: slos)
-    api.stubs(:list).with("synthetics/tests", anything).returns(synthetics)
     api.stubs(:fill_details!)
   end
 
@@ -223,11 +222,15 @@ describe Kennel::Syncer do
       monitors << monitor_api_response("a", "a")
       dashboards << {
         id: "abc",
-        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+        tracking_id: "a:b",
+        klass: Kennel::Models::Dashboard
       }
       slos << {
         id: "1",
-        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
+        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
+        tracking_id: "a:c",
+        klass: Kennel::Models::Slo
       }
       output.must_equal "Plan:\nDelete dashboard a:b\nDelete slo a:c\nDelete monitor a:a\n"
     end
@@ -240,12 +243,12 @@ describe Kennel::Syncer do
     end
 
     it "does not break on nil tracking field (dashboards can have nil description)" do
-      monitors << monitor_api_response("a", "b", message: nil)
+      monitors << monitor_api_response("a", "b", message: nil, tracking_id: nil)
       output.must_equal "Plan:\nNothing to do\n"
     end
 
     it "leaves unmanaged alone" do
-      monitors << { id: 123, message: "foo", tags: [] }
+      monitors << { id: 123, message: "foo", tags: [], tracking_id: nil, klass: Kennel::Models::Monitor }
       output.must_equal "Plan:\nNothing to do\n"
     end
 
@@ -260,8 +263,6 @@ describe Kennel::Syncer do
       Kennel::Progress.unstub(:print)
       output.must_equal "Plan:\nNothing to do\n"
       stderr.string.gsub(/\.\.\. .*?\d\.\d+s/, "... 0.0s").must_equal <<~OUTPUT
-        Downloading definitions ...
-        Downloading definitions ... 0.0s
         Diffing ...
         Diffing ... 0.0s
       OUTPUT
@@ -311,7 +312,7 @@ describe Kennel::Syncer do
 
       it "leaves unmanaged alone" do
         add_identical
-        monitors << { id: 123, message: "foo", tags: [] }
+        monitors << { id: 123, message: "foo", tags: [], tracking_id: nil, klass: Kennel::Models::Monitor }
         output.must_equal "Plan:\nNothing to do\n"
       end
 
@@ -374,7 +375,9 @@ describe Kennel::Syncer do
           id: "abc",
           template_variables: [],
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00"
+          modified_at: "2015-12-17T23:12:26.726234+00:00",
+          tracking_id: "a:b",
+          klass: Kennel::Models::Dashboard
         }
         api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }
         output.must_equal "Plan:\nNothing to do\n"
@@ -390,7 +393,9 @@ describe Kennel::Syncer do
           type: "metric",
           thresholds: [],
           tags: ["team:test_team", "service:a"],
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          tracking_id: "a:b",
+          klass: Kennel::Models::Slo
         }
       end
 
@@ -630,7 +635,7 @@ describe Kennel::Syncer do
 
       it "refuses to update tracking on resources with ids since they would be deleted by other updates" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor -- Managed by kennel b:b")
+        monitors << monitor_api_response("b", "b", id: 123)
         e = assert_raises(RuntimeError) { output }
         # NOTE: we never reach the actual raise since updating tracking ids is not supported
         e.message.must_equal "Unable to find existing monitor with id 123\nIf the monitor was deleted, remove the `id: -> { 123 }` line."
@@ -674,7 +679,9 @@ describe Kennel::Syncer do
           id: 123,
           monitor_id: 456,
           Kennel::Models::SyntheticTest::TRACKING_FIELD => "-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          tags: ["foo"]
+          tags: ["foo"],
+          tracking_id: "a:b",
+          klass: Kennel::Models::SyntheticTest
         }
 
         synthetic = synthetic("a", "b", tags: ["foo"])
@@ -722,7 +729,9 @@ describe Kennel::Syncer do
           id: "abc",
           description: "y\n-- Managed by kennel test_project:b in test/test_helper.rb, do not modify manually",
           modified: "2015-12-17T23:12:26.726234+00:00",
-          graphs: []
+          graphs: [],
+          tracking_id: "test_project:b",
+          klass: Kennel::Models::Dashboard
         }
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
         output.must_equal <<~TXT
