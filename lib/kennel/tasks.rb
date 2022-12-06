@@ -101,9 +101,11 @@ namespace :kennel do
   end
 
   # also generate parts so users see and commit updated generated automatically
+  # (generate must run after plan to enable parallel .download+.generate inside of .plan)
   desc "show planned datadog changes (scope with PROJECT=name)"
-  task plan: :generate do
+  task plan: :environment do
     Kennel::Tasks.kennel.plan
+    Kennel::Tasks.kennel.generate
   end
 
   desc "update datadog (scope with PROJECT=name)"

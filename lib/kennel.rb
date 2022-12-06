@@ -75,12 +75,25 @@ module Kennel
 
     private
 
+    def download_definitions(**kwargs)
+      Progress.progress("Downloading definitions", **kwargs) do
+        Utils.parallel(Models::Record.subclasses) do |klass|
+          results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+          results.each { |a| Utils.inline_resource_metadata(a, klass) }
+        end.flatten(1)
+      end
+    end
+
     def filter
       @filter ||= Filter.new
     end
 
     def syncer
-      @syncer ||= Syncer.new(api, generated, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      @syncer ||= begin
+        expected = generated
+        actual = download_definitions
+        Syncer.new(api, expected, actual, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+      end
     end
 
     def api
@@ -95,9 +108,9 @@ module Kennel
       @parts_serializer ||= PartsSerializer.new(filter: filter)
     end
 
-    def generated
+    def generated(**kwargs)
       @generated ||= begin
-        parts = Progress.progress "Finding parts" do
+        parts = Progress.progress "Finding parts", **kwargs do
           projects = projects_provider.projects
           projects = filter.filter_projects projects
 
