@@ -58,6 +58,11 @@ module Kennel
 
     attr_accessor :strict_imports
 
+    # start generation and download in parallel to make planning faster
+    def preload
+      Utils.parallel([:generated, :definitions]) { |m| send m, plain: true }
+    end
+
     def generate
       parts = generated
       parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
@@ -75,24 +80,14 @@ module Kennel
 
     private
 
-    def download_definitions(**kwargs)
-      Progress.progress("Downloading definitions", **kwargs) do
-        Utils.parallel(Models::Record.subclasses) do |klass|
-          results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
-          results.each { |a| Utils.inline_resource_metadata(a, klass) }
-        end.flatten(1)
-      end
-    end
-
     def filter
       @filter ||= Filter.new
     end
 
     def syncer
       @syncer ||= begin
-        expected = generated
-        actual = download_definitions
-        Syncer.new(api, expected, actual, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+        preload
+        Syncer.new(api, generated, definitions, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
       end
     end
 
@@ -134,6 +129,15 @@ module Kennel
         OptionalValidations.valid?(parts) or raise GenerationAbortedError
 
         parts
+      end
+    end
+
+    def definitions(**kwargs)
+      @definitions ||= Progress.progress("Downloading definitions", **kwargs) do
+        Utils.parallel(Models::Record.subclasses) do |klass|
+          results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+          results.each { |a| Utils.inline_resource_metadata(a, klass) }
+        end.flatten(1)
       end
     end
   end

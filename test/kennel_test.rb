@@ -48,6 +48,14 @@ describe Kennel do
     Object.send(:remove_const, :TempProject3) if defined?(TempProject3)
   end
 
+  describe ".preload" do
+    it "prepares" do
+      Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
+      kennel.preload
+      stdout.string.must_equal ""
+    end
+  end
+
   describe ".generate" do
     it "stores if requested" do
       writer = "some writer".dup

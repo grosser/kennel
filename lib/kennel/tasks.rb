@@ -104,8 +104,9 @@ namespace :kennel do
   # (generate must run after plan to enable parallel .download+.generate inside of .plan)
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :environment do
-    Kennel::Tasks.kennel.plan
+    Kennel::Tasks.kennel.preload
     Kennel::Tasks.kennel.generate
+    Kennel::Tasks.kennel.plan
   end
 
   desc "update datadog (scope with PROJECT=name)"
