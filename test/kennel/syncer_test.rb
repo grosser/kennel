@@ -31,7 +31,7 @@ describe Kennel::Syncer do
       type: -> { "query alert" },
       critical: -> { 1.0 },
       id: -> { extra[:id] }
-    )
+    ).build!
 
     # make the diff simple
     monitor.as_json[:options] = {
@@ -57,7 +57,7 @@ describe Kennel::Syncer do
       type: -> { nil },
       name: -> { nil },
       options: -> { nil }
-    )
+    ).build!
 
     synthetic.as_json.delete_if { |k, _| ![:tags, :message].include?(k) }
     synthetic.as_json.merge!(extra)
@@ -73,7 +73,7 @@ describe Kennel::Syncer do
       layout_type: -> { "ordered" },
       kennel_id: -> { cid },
       id: -> { extra[:id]&.to_s }
-    )
+    ).build!
     dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
     dash.as_json.merge!(extra)
     dash
@@ -88,7 +88,7 @@ describe Kennel::Syncer do
       kennel_id: -> { cid },
       id: -> { extra[:id]&.to_s },
       thresholds: -> { [] }
-    )
+    ).build!
     # dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
     dash.as_json.merge!(extra)
     dash

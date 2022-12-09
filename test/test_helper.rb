@@ -120,8 +120,7 @@ Minitest::Test.class_eval do
   end
 
   def validation_errors_from(part)
-    part.build
-    part.unfiltered_validation_errors.map(&:text)
+    part.build.unfiltered_validation_errors.map(&:text)
   end
 
   def validation_error_from(part)

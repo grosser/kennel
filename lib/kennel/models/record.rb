@@ -10,6 +10,8 @@ module Kennel
 
       UnvalidatedRecordError = Class.new(StandardError)
 
+      InvalidPart = Struct.new(:filtered_validation_errors, :tracking_id, :json, :unfiltered_validation_errors, keyword_init: true)
+
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -43,6 +45,10 @@ module Kennel
       defaults(id: nil)
 
       class << self
+        def built_class
+          Built::Record
+        end
+
         def parse_any_url(url)
           subclasses.detect do |s|
             if id = s.parse_url(url)
@@ -67,11 +73,11 @@ module Kennel
             raise("did not find tracking id in #{value}")
         end
 
-        private
-
         def normalize(_expected, actual)
           self::READONLY_ATTRIBUTES.each { |k| actual.delete k }
         end
+
+        private
 
         def ignore_default(expected, actual, defaults)
           definitions = [actual, expected]
@@ -84,24 +90,12 @@ module Kennel
         end
       end
 
-      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors
+      attr_reader :project, :unfiltered_validation_errors
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
         @project = project
         super(*args)
-      end
-
-      def diff(actual)
-        expected = as_json
-        expected.delete(:id)
-
-        self.class.send(:normalize, expected, actual)
-
-        # strict: ignore Integer vs Float
-        # similarity: show diff when not 100% similar
-        # use_lcs: saner output
-        Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
       end
 
       def tracking_id
@@ -112,23 +106,6 @@ module Kennel
           end
           id
         end
-      end
-
-      def resolve_linked_tracking_ids!(*)
-      end
-
-      def add_tracking_id
-        json = as_json
-        if self.class.parse_tracking_id(json)
-          raise "#{safe_tracking_id} Remove \"-- #{MARKER_TEXT}\" line from #{self.class::TRACKING_FIELD} to copy a resource"
-        end
-        json[self.class::TRACKING_FIELD] =
-          "#{json[self.class::TRACKING_FIELD]}\n" \
-          "-- #{MARKER_TEXT} #{tracking_id} in #{project.class.file_location}, do not modify manually".lstrip
-      end
-
-      def remove_tracking_id
-        self.class.remove_tracking_id(as_json)
       end
 
       def build_json
@@ -152,24 +129,33 @@ module Kennel
           end
         end
 
-        @filtered_validation_errors = filter_validation_errors
-        @as_json = json # Only valid if filtered_validation_errors.empty?
+        errors = filter_validation_errors
+
+        if errors.empty?
+          self.class.built_class.new(
+            as_json: json,
+            project: project,
+            unbuilt_class: self.class,
+            tracking_id: tracking_id,
+            id: id,
+            unfiltered_validation_errors: unfiltered_validation_errors
+          )
+        else
+          InvalidPart.new(
+            filtered_validation_errors: errors,
+            tracking_id: tracking_id,
+            json: json,
+            unfiltered_validation_errors: unfiltered_validation_errors
+          )
+        end
       end
 
-      def as_json
-        # A courtesy to those tests that still expect as_json to perform validation and raise on error
-        build if @unfiltered_validation_errors.nil?
-        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
-
-        @as_json
-      end
-
-      # Can raise DisallowedUpdateError
-      def validate_update!(*)
-      end
-
-      def invalid_update!(field, old_value, new_value)
-        raise DisallowedUpdateError, "#{safe_tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
+      def build!
+        build.tap do |result|
+          if result.is_a?(InvalidPart)
+            raise "Invalid record: #{result.filtered_validation_errors.inspect}"
+          end
+        end
       end
 
       # For use during error handling
@@ -180,36 +166,6 @@ module Kennel
       end
 
       private
-
-      def resolve(value, type, id_map, force:)
-        return value unless tracking_id?(value)
-        resolve_link(value, type, id_map, force: force)
-      end
-
-      def tracking_id?(id)
-        id.is_a?(String) && id.include?(":")
-      end
-
-      def resolve_link(sought_tracking_id, sought_type, id_map, force:)
-        if id_map.new?(sought_type.to_s, sought_tracking_id)
-          if force
-            raise UnresolvableIdError, <<~MESSAGE
-              #{tracking_id} #{sought_type} #{sought_tracking_id} was referenced but is also created by the current run.
-              It could not be created because of a circular dependency. Try creating only some of the resources.
-            MESSAGE
-          else
-            nil # will be re-resolved after the linked object was created
-          end
-        elsif id = id_map.get(sought_type.to_s, sought_tracking_id)
-          id
-        else
-          raise UnresolvableIdError, <<~MESSAGE
-            #{tracking_id} Unable to find #{sought_type} #{sought_tracking_id}
-            This is either because it doesn't exist, and isn't being created by the current run;
-            or it does exist, but is being deleted.
-          MESSAGE
-        end
-      end
 
       def invalid!(tag, message)
         unfiltered_validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)

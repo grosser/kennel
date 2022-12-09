@@ -49,7 +49,7 @@ describe Kennel::PartsSerializer do
   describe "#write" do
     it "saves formatted json" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
       content = File.read("generated/temp_project/foo.json")
       assert content.start_with?("{\n") # pretty generated
       json = JSON.parse(content, symbolize_names: true)
@@ -58,25 +58,25 @@ describe Kennel::PartsSerializer do
 
     it "keeps same" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
       old = Time.now - 10
       FileUtils.touch "generated/temp_project/foo.json", mtime: old
 
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
       File.mtime("generated/temp_project/foo.json").must_equal old
     end
 
     it "overrides different" do
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
       old = Time.now - 10
       File.write "generated/temp_project/foo.json", "x"
       File.utime(old, old, "generated/temp_project/foo.json")
 
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
       File.mtime("generated/temp_project/foo.json").wont_equal old
     end
@@ -88,7 +88,7 @@ describe Kennel::PartsSerializer do
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
       parts = make_project("temp_project", ["foo"]).validated_parts
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
       Dir["generated/**/*"].sort.must_equal [
         "generated/temp_project",
@@ -113,7 +113,7 @@ describe Kennel::PartsSerializer do
           *make_project("included1", ["foo1"]).validated_parts,
           *make_project("included2", ["foo2"]).validated_parts
         ]
-        Kennel::PartsSerializer.new(filter: filter).write(parts)
+        Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
         Dir["generated/**/*"].sort.must_equal %w[
           generated/excluded
@@ -149,7 +149,7 @@ describe Kennel::PartsSerializer do
           *make_project("included1", ["foo1"]).validated_parts,
           *make_project("included2", ["foo2"]).validated_parts
         ]
-        Kennel::PartsSerializer.new(filter: filter).write(parts)
+        Kennel::PartsSerializer.new(filter: filter).write(parts.map(&:build!))
 
         Dir["generated/**/*"].sort.must_equal %w[
           generated/excluded

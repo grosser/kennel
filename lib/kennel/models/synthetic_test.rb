@@ -30,6 +30,10 @@ module Kennel
         )
       end
 
+      def self.built_class
+        Built::SyntheticTest
+      end
+
       def self.api_resource
         "synthetics/tests"
       end

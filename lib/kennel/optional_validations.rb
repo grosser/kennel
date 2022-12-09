@@ -20,9 +20,9 @@ module Kennel
       example_tag = nil
 
       Kennel.err.puts
-      parts_with_errors.sort_by(&:safe_tracking_id).each do |part|
+      parts_with_errors.sort_by(&:tracking_id).each do |part|
         part.filtered_validation_errors.each do |err|
-          Kennel.err.puts "#{part.safe_tracking_id} [#{err.tag.inspect}] #{err.text.gsub("\n", " ")}"
+          Kennel.err.puts "#{part.tracking_id} [#{err.tag.inspect}] #{err.text.gsub("\n", " ")}"
           example_tag = err.tag unless err.tag == :unignorable
         end
       end

@@ -47,16 +47,11 @@ describe Kennel::Models::Dashboard do
 
   describe "#as_json" do
     it "renders" do
-      dashboard.as_json.must_equal(expected_json)
-    end
-
-    it "caches" do
-      d = dashboard
-      d.as_json.object_id.must_equal(d.as_json.object_id)
+      dashboard.build!.as_json.must_equal(expected_json)
     end
 
     it "renders requests" do
-      dashboard_with_requests.as_json.must_equal expected_json_with_requests
+      dashboard_with_requests.build!.as_json.must_equal expected_json_with_requests
     end
 
     it "complains when datadog would created a diff by sorting template_variable_presets" do
@@ -65,29 +60,29 @@ describe Kennel::Models::Dashboard do
     end
 
     it "doesn't complain on sorted template_variable_presets" do
-      dashboard(template_variable_presets: -> { [{ name: "A" }, { name: "B" }] }).as_json
+      dashboard(template_variable_presets: -> { [{ name: "A" }, { name: "B" }] }).build!.as_json
     end
 
     it "adds ID when given" do
-      dashboard(id: -> { "abc" }).as_json.must_equal expected_json.merge(id: "abc")
+      dashboard(id: -> { "abc" }).build!.as_json.must_equal expected_json.merge(id: "abc")
     end
 
     it "can resolve q from metadata" do
       expected_json_with_requests[:widgets][0][:definition][:requests][0][:metadata] = [{ expression: "foo" }]
       dashboard(
         widgets: -> { [{ definition: { requests: [{ q: :metadata, display_type: "area", metadata: [{ expression: "foo" }] }], type: "timeseries", title: "bar" } }] }
-      ).as_json.must_equal(expected_json_with_requests)
+      ).build!.as_json.must_equal(expected_json_with_requests)
     end
 
     it "does not add reflow for free" do
       expected_json[:layout_type] = "free"
       expected_json.delete(:reflow_type)
-      dashboard(layout_type: -> { "free" }).as_json.must_equal(expected_json)
+      dashboard(layout_type: -> { "free" }).build!.as_json.must_equal(expected_json)
     end
 
     it "adds team tags when requested" do
       project.team.class.any_instance.expects(:tag_dashboards).returns(true)
-      dashboard.as_json[:title].must_equal "Hello (team:test_team)🔒"
+      dashboard.build!.as_json[:title].must_equal "Hello (team:test_team)🔒"
     end
 
     describe "definitions" do
@@ -102,51 +97,52 @@ describe Kennel::Models::Dashboard do
       end
 
       it "can add definitions" do
-        dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).as_json.must_equal expected_json_with_requests
+        dashboard(definitions: -> { [["bar", "timeseries", "area", "foo"]] }).build!.as_json.must_equal expected_json_with_requests
       end
 
       it "can add toplists" do
-        json = dashboard(definitions: -> { [["bar", "toplist", nil, "foo"]] }).as_json
+        json = dashboard(definitions: -> { [["bar", "toplist", nil, "foo"]] }).build!.as_json
         json[:widgets][0][:definition][:requests][0].must_equal q: "foo"
       end
 
       it "can add raw widgets to mix into definitions" do
-        json = dashboard(definitions: -> { [{ leave: "this" }] }).as_json
+        json = dashboard(definitions: -> { [{ leave: "this" }] }).build!.as_json
         json[:widgets][0].must_equal leave: "this"
       end
 
       it "fails with too little args" do
         assert_raises prepare_error_of(ArgumentError) do
-          dashboard(definitions: -> { [["bar", "timeseries", "area"]] }).as_json
+          dashboard(definitions: -> { [["bar", "timeseries", "area"]] }).build!.as_json
         end
       end
 
       it "fails with many args" do
         assert_raises prepare_error_of(ArgumentError) do
-          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", {}, 1]] }).as_json
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", {}, 1]] }).build!.as_json
         end
       end
 
       it "fails with non-hash options" do
         assert_raises prepare_error_of(ArgumentError) do
-          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", 1]] }).as_json
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", 1]] }).build!.as_json
         end
       end
 
       it "fails with unknown options" do
         assert_raises prepare_error_of(ArgumentError) do
-          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", { a: 1 }]] }).as_json
+          dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", { a: 1 }]] }).build!.as_json
         end
       end
     end
   end
 
   describe "#resolve_linked_tracking_ids" do
-    let(:definition) { dashboard_with_requests.as_json[:widgets][0][:definition] }
+    let(:built) { dashboard_with_requests.build! }
+    let(:definition) { built.as_json[:widgets][0][:definition] }
 
     def resolve(force: false)
-      dashboard_with_requests.resolve_linked_tracking_ids!(id_map, force: force)
-      dashboard_with_requests.as_json[:widgets][0][:definition]
+      built.resolve_linked_tracking_ids!(id_map, force: force)
+      built.as_json[:widgets][0][:definition]
     end
 
     it "does nothing for regular widgets" do
@@ -154,7 +150,7 @@ describe Kennel::Models::Dashboard do
     end
 
     it "ignores widgets without definition" do
-      dashboard_with_requests.as_json[:widgets][0].delete :definition
+      built.as_json[:widgets][0].delete :definition
       resolve.must_be_nil
     end
 
@@ -243,28 +239,28 @@ describe Kennel::Models::Dashboard do
 
   describe "#diff" do
     it "is empty" do
-      dashboard.diff(expected_json).must_equal []
+      dashboard.build!.diff(expected_json).must_equal []
     end
 
     it "always sets template variables, since not setting them makes them nil on datadog side" do
       expected_json.delete :template_variables
-      dashboard.diff(expected_json).must_equal [["+", "template_variables", []]]
+      dashboard.build!.diff(expected_json).must_equal [["+", "template_variables", []]]
     end
 
     it "ignores author_*" do
-      dashboard.diff(expected_json.merge(author_handle: "a", author_name: "b")).must_equal []
+      dashboard.build!.diff(expected_json.merge(author_handle: "a", author_name: "b")).must_equal []
     end
 
     it "ignores widget ids" do
       json = expected_json_with_requests
       json[:widgets][0][:id] = 123
-      dashboard_with_requests.diff(json).must_equal []
+      dashboard_with_requests.build!.diff(json).must_equal []
     end
 
     it "ignores default styles" do
       json = expected_json_with_requests
       json[:widgets][0][:definition][:requests][0][:style] = { line_width: "normal", palette: "dog_classic", line_type: "solid" }
-      dashboard_with_requests.diff(json).must_equal []
+      dashboard_with_requests.build!.diff(json).must_equal []
     end
 
     it "ignores in nested widgets" do
@@ -278,13 +274,13 @@ describe Kennel::Models::Dashboard do
       expected_json[:widgets][0][:id] = 123
       expected_json[:widgets][0][:definition][:widgets][0][:id] = 123
 
-      dashboard(widgets: -> { widgets }).diff(expected_json).must_equal []
+      dashboard(widgets: -> { widgets }).build!.diff(expected_json).must_equal []
     end
 
     it "ignores when only one side has widgets" do
       widgets = Array.new(3) { { id: 1, definition: { title: "Foo", widgets: [{ id: 2 }] } } }
       expected_json[:widgets] = widgets
-      dashboard(widgets: -> { [] }).diff(expected_json).inspect.wont_include ":id"
+      dashboard(widgets: -> { [] }).build!.diff(expected_json).inspect.wont_include ":id"
     end
 
     it "ignores conditional_formats ordering" do
@@ -294,7 +290,8 @@ describe Kennel::Models::Dashboard do
       json = expected_json_with_requests
       json[:widgets][0][:definition][:conditional_formats] = formats
 
-      dash = dashboard_with_requests
+      dash = dashboard_with_requests.build!
+
       dash.as_json[:widgets][0][:definition][:conditional_formats] = formats.reverse
 
       dash.diff(json).must_equal []
@@ -318,17 +315,17 @@ describe Kennel::Models::Dashboard do
       }
       dashboard(
         widgets: -> { [{ definition: { type: "note", content: "C" } }] }
-      ).diff(json).must_equal []
+      ).build!.diff(json).must_equal []
     end
 
     describe "reflow" do
       it "ignore reflow on ordered" do
-        dashboard(reflow_type: -> { "auto" }).diff(expected_json).must_equal []
+        dashboard(reflow_type: -> { "auto" }).build!.diff(expected_json).must_equal []
       end
 
       it "does not ignore reflow on free" do
         d = dashboard(layout_type: -> { "free" }, reflow_type: -> { "auto" })
-        d.diff(expected_json).must_equal [["~", "layout_type", "ordered", "free"]]
+        d.build!.diff(expected_json).must_equal [["~", "layout_type", "ordered", "free"]]
       end
     end
 
@@ -337,13 +334,13 @@ describe Kennel::Models::Dashboard do
       before { json[:widgets][0][:definition][:show_legend] = true }
 
       it "ignores timeseries defaults" do
-        dashboard_with_requests.diff(json).must_equal []
+        dashboard_with_requests.build!.diff(json).must_equal []
       end
 
       it "does not ignore diff for different types" do
         json[:widgets][0][:definition][:show_legend] = false
         json[:widgets][0][:definition][:type] = "note"
-        dashboard_with_requests.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
+        dashboard_with_requests.build!.diff(json).must_include ["-", "widgets[0].definition.show_legend", false]
       end
     end
   end
@@ -371,12 +368,12 @@ describe Kennel::Models::Dashboard do
 
   describe "#validate_update!" do
     it "allows update of title" do
-      dashboard.validate_update!(nil, [["~", "title", "foo", "bar"]])
+      dashboard.build!.validate_update!(nil, [["~", "title", "foo", "bar"]])
     end
 
     it "disallows update of layout_type" do
       e = assert_raises Kennel::DisallowedUpdateError do
-        dashboard.validate_update!(nil, [["~", "layout_type", "foo", "bar"]])
+        dashboard.build!.validate_update!(nil, [["~", "layout_type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*layout_type/i)
     end

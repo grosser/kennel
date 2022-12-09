@@ -30,6 +30,12 @@ require "kennel/models/monitor"
 require "kennel/models/slo"
 require "kennel/models/synthetic_test"
 
+require 'kennel/models/built/record'
+require 'kennel/models/built/dashboard'
+require 'kennel/models/built/monitor'
+require 'kennel/models/built/slo'
+require 'kennel/models/built/synthetic_test'
+
 # settings
 require "kennel/models/project"
 require "kennel/models/team"
@@ -121,7 +127,7 @@ module Kennel
           ERROR
         end
 
-        Progress.progress "Building json" do
+        parts = Progress.progress "Building json" do
           # trigger json caching here so it counts into generating
           Utils.parallel(parts, &:build)
         end

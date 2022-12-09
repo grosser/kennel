@@ -35,8 +35,8 @@ module Kennel
 
       Plan.new(
         changes:
-          @create.map { |_id, e, _a| Change.new(:create, e.class.api_resource, e.tracking_id, nil) } +
-          @update.map { |id, e, _a| Change.new(:update, e.class.api_resource, e.tracking_id, id) } +
+          @create.map { |_id, e, _a| Change.new(:create, e.unbuilt_class.api_resource, e.tracking_id, nil) } +
+          @update.map { |id, e, _a| Change.new(:update, e.unbuilt_class.api_resource, e.tracking_id, id) } +
           @delete.map { |id, _e, a| Change.new(:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), id) }
       )
     end
@@ -51,21 +51,21 @@ module Kennel
       changes = []
 
       each_resolved @create do |_, e|
-        message = "#{e.class.api_resource} #{e.tracking_id}"
+        message = "#{e.unbuilt_class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
-        reply = @api.create e.class.api_resource, e.as_json
-        Utils.inline_resource_metadata reply, e.class
+        reply = @api.create e.unbuilt_class.api_resource, e.as_json
+        Utils.inline_resource_metadata reply, e.unbuilt_class
         id = reply.fetch(:id)
-        changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
+        changes << Change.new(:create, e.unbuilt_class.api_resource, e.tracking_id, id)
         populate_id_map [], [reply] # allow resolving ids we could previously no resolve
-        Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
+        Kennel.out.puts "#{LINE_UP}Created #{message} #{e.unbuilt_class.url(id)}"
       end
 
       each_resolved @update do |id, e|
-        message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
+        message = "#{e.unbuilt_class.api_resource} #{e.tracking_id} #{e.unbuilt_class.url(id)}"
         Kennel.out.puts "Updating #{message}"
-        @api.update e.class.api_resource, id, e.as_json
-        changes << Change.new(:update, e.class.api_resource, e.tracking_id, id)
+        @api.update e.unbuilt_class.api_resource, id, e.as_json
+        changes << Change.new(:update, e.unbuilt_class.api_resource, e.tracking_id, id)
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
@@ -144,7 +144,7 @@ module Kennel
         end
 
         # fill details of things we need to compare
-        details = items.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
+        details = items.map { |e, a| a if e && e.unbuilt_class.api_resource == "dashboard" }.compact
         @api.fill_details! "dashboard", details
 
         # pick out things to update or delete
@@ -163,14 +163,14 @@ module Kennel
         ensure_all_ids_found
         @create = @expected.map { |e| [nil, e] }
         @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
-        @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
+        @update.sort_by! { |_, e, _| DELETE_ORDER.index e.unbuilt_class.api_resource } # slo needs to come before slo alert
       end
     end
 
     def ensure_all_ids_found
       @expected.each do |e|
         next unless id = e.id
-        resource = e.class.api_resource
+        resource = e.unbuilt_class.api_resource
         if kennel.strict_imports
           raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."
         else
@@ -183,7 +183,7 @@ module Kennel
     def matching_expected_lookup_map
       @expected.each_with_object({}) do |e, all|
         keys = [e.tracking_id]
-        keys << "#{e.class.api_resource}:#{e.id}" if e.id
+        keys << "#{e.unbuilt_class.api_resource}:#{e.id}" if e.id
         keys.compact.each do |key|
           raise "Lookup #{key} is duplicated" if all[key]
           all[key] = e
@@ -199,7 +199,7 @@ module Kennel
     def print_plan(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
-        klass = (e ? e.class : a.fetch(:klass))
+        klass = (e ? e.unbuilt_class : a.fetch(:klass))
         Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
         print_diff(diff) if diff # only for update
       end
@@ -286,8 +286,8 @@ module Kennel
         diff.select! do |field_diff|
           (_, field, actual) = field_diff
           # TODO: refactor this so TRACKING_FIELD stays record-private
-          next true if e.class::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
-          next true if e.class.parse_tracking_id(field.to_sym => actual) # already has tracking id
+          next true if e.unbuilt_class::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
+          next true if e.unbuilt_class.parse_tracking_id(field.to_sym => actual) # already has tracking id
 
           field_diff[3] = e.remove_tracking_id # make `rake plan` output match what we are sending
           actual != field_diff[3] # discard diff if now nothing changes
@@ -300,8 +300,8 @@ module Kennel
     def populate_id_map(expected, actual)
       # mark everything as new
       expected.each do |e|
-        @id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
-        if e.class.api_resource == "synthetics/tests"
+        @id_map.set(e.unbuilt_class.api_resource, e.tracking_id, IdMap::NEW)
+        if e.unbuilt_class.api_resource == "synthetics/tests"
           @id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
         end
       end

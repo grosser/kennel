@@ -46,7 +46,7 @@ describe Kennel::Models::Slo do
   describe "#as_json" do
     it "creates a basic json" do
       assert_json_equal(
-        slo.as_json,
+        slo.build!.as_json,
         expected_basic_json
       )
     end
@@ -54,7 +54,7 @@ describe Kennel::Models::Slo do
     it "sets query for metrics" do
       expected_basic_json[:query] = "foo"
       assert_json_equal(
-        slo(query: -> { "foo" }).as_json,
+        slo(query: -> { "foo" }).build!.as_json,
         expected_basic_json
       )
     end
@@ -62,7 +62,7 @@ describe Kennel::Models::Slo do
     it "sets id when updating by id" do
       expected_basic_json[:id] = 123
       assert_json_equal(
-        slo(id: -> { 123 }).as_json,
+        slo(id: -> { 123 }).build!.as_json,
         expected_basic_json
       )
     end
@@ -70,7 +70,7 @@ describe Kennel::Models::Slo do
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
-        slo(groups: -> { ["foo"] }).as_json,
+        slo(groups: -> { ["foo"] }).build!.as_json,
         expected_basic_json
       )
     end
@@ -78,33 +78,33 @@ describe Kennel::Models::Slo do
 
   describe "#resolve_linked_tracking_ids!" do
     it "ignores empty caused by ignore_default" do
-      slo = slo(monitor_ids: -> { nil })
+      slo = slo(monitor_ids: -> { nil }).build!
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       refute slo.as_json[:monitor_ids]
     end
 
     it "does nothing for hardcoded ids" do
-      slo = slo(monitor_ids: -> { [123] })
+      slo = slo(monitor_ids: -> { [123] }).build!
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "resolves relative ids" do
-      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] }).build!
       id_map.set("monitor", "#{project.kennel_id}:mon", 123)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
-      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] }).build!
       id_map.set("monitor", "#{project.kennel_id}:mon", Kennel::IdMap::NEW)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
     end
 
     it "fails with typos" do
-      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] }).build!
       assert_raises Kennel::UnresolvableIdError do
         slo.resolve_linked_tracking_ids!(id_map, force: false)
       end
@@ -113,12 +113,12 @@ describe Kennel::Models::Slo do
 
   describe "#validate_json" do
     it "is valid with no thresholds" do
-      slo.as_json
+      slo.build!
     end
 
     it "is valid when warning not set" do
       s = slo(thresholds: [{ critical: 99 }])
-      s.as_json
+      s.build!
     end
 
     it "is invalid if warning < critical" do

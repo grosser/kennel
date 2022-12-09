@@ -51,23 +51,21 @@ describe Kennel::Models::Record do
       some_json = { some: "json" }
       record.define_singleton_method(:build_json) { some_json }
       record.define_singleton_method(:validate_json) { |data| data.must_equal(some_json) }
-      record.build
-      record.unfiltered_validation_errors.must_equal []
-      record.as_json.must_equal some_json
+      built = record.build
+      built.unfiltered_validation_errors.must_equal []
+      built.as_json.must_equal some_json
     end
 
     it "throws if build_json throws, and there were no validation errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:build_json) { raise "I crashed :-(" }
       assert_raises("I crashed :-(") { record.build }
-      record.unfiltered_validation_errors.must_be_nil
     end
 
     it "throws if validate_json throws, and there were no validation errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:validate_json) { |_data| raise "I crashed :-(" }
       assert_raises("I crashed :-(") { record.build }
-      record.unfiltered_validation_errors.must_be_nil
     end
 
     it "does not throw if build_json throws after a validation error" do
@@ -77,8 +75,6 @@ describe Kennel::Models::Record do
         raise "I crashed :-("
       end
       record.build
-      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
-      record.instance_variable_get(:@as_json).must_be_nil
     end
 
     it "does not throw if validate_json throws after a validation error" do
@@ -87,9 +83,9 @@ describe Kennel::Models::Record do
         invalid! :wrong, "This is all wrong"
         raise "I crashed :-("
       end
-      record.build
-      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
-      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
+      built = record.build
+      built.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
+      built.json.wont_be_nil # for debugging
     end
 
     it "is capable of collecting multiple errors" do
@@ -98,9 +94,9 @@ describe Kennel::Models::Record do
         invalid! :one, "one"
         invalid! :two, "two"
       end
-      record.build
-      record.filtered_validation_errors.map(&:text).must_equal ["one", "two"]
-      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
+      built = record.build
+      built.filtered_validation_errors.map(&:text).must_equal ["one", "two"]
+      built.json.wont_be_nil # for debugging
     end
 
     it "can skip validation entirely" do
@@ -108,107 +104,51 @@ describe Kennel::Models::Record do
       record.define_singleton_method(:validate_json) do |_data|
         invalid! :bang, "bang"
       end
-      record.build
+      built = record.build
 
-      record.filtered_validation_errors.must_be_empty
-      record.instance_variable_get(:@as_json).wont_be_nil # it's valid
+      built.filtered_validation_errors.must_be_empty
+      built.as_json.wont_be_nil # it's valid
     end
   end
 
   describe "#as_json" do
-    context "#build crashes" do
-      it "calls build, and crashes each time" do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-        r.stubs(:build_json).returns({})
-        r.stubs(:validate_json).raises("Bang")
-
-        e = assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-        e.message.must_equal("Error while preparing test_project:x")
-        e.cause.message.must_equal("Bang")
-
-        assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-      end
-
-      it "can deal with tracking_id itself crashing" do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "not a valid id")
-        r.stubs(:validate_json).raises("Bang")
-
-        e = assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-        e.message.must_equal("Error while preparing <unknown; #tracking_id crashed>")
-        e.cause.message.must_equal("Bang")
-      end
-    end
-
-    context "#build finds validation errors" do
-      let(:record) do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-        r.define_singleton_method(:validate_json) { |_json| invalid! :oh_no, "oh no" }
-        r
-      end
-
-      it "does not call build if already built" do
-        record.stubs(:build_json).once.returns({})
-        record.build
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-      end
-
-      it "calls build if not already built" do
-        record.stubs(:build_json).once.returns({})
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-      end
-    end
-
-    context "build succeeds" do
-      let(:record) do
-        Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      end
-
-      it "does not call build if already built" do
-        some_data = { some: "data" }
-        record.stubs(:build_json).once.returns(some_data)
-        record.build
-        record.as_json.must_equal(some_data)
-        record.as_json.must_equal(some_data)
-      end
-
-      it "calls build if not already built" do
-        some_data = { some: "data" }
-        record.stubs(:build_json).once.returns(some_data)
-        record.as_json.must_equal(some_data)
-        record.as_json.must_equal(some_data)
-      end
-    end
-
     it "includes the id if set" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", id: 123)
-      record.as_json.must_equal({ id: 123 })
+      record.build!.as_json.must_equal({ id: 123 })
     end
   end
 
   describe "#resolve" do
-    let(:base) { Kennel::Models::Monitor.new(TestProject.new, kennel_id: -> { "test" }) }
+    let(:base) {
+      Kennel::Models::Built::Monitor.new(
+        as_json: {},
+        project: TestProject.new,
+        unbuilt_class: Kennel::Models::Monitor,
+        tracking_id: "test_project:test",
+        id: nil,
+        unfiltered_validation_errors: []
+      )
+    }
 
     it "lets non-tracking-ids through unchanged" do
-      base.send(:resolve, "foobar", :slo, id_map, force: false).must_equal "foobar"
+      base.resolve("foobar", :slo, id_map, force: false).must_equal "foobar"
     end
 
     it "resolves existing" do
       id_map.set("monitor", "foo:bar", 2)
       id_map.set("monitor", "foo:bar", 2)
-      base.send(:resolve, "foo:bar", :monitor, id_map, force: false).must_equal 2
+      base.resolve("foo:bar", :monitor, id_map, force: false).must_equal 2
     end
 
     it "warns when trying to resolve" do
       id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
-      base.send(:resolve, "foo:bar", :monitor, id_map, force: false).must_be_nil
+      base.resolve("foo:bar", :monitor, id_map, force: false).must_be_nil
     end
 
     it "fails when forcing resolve because of a circular dependency" do
       id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
       e = assert_raises Kennel::UnresolvableIdError do
-        base.send(:resolve, "foo:bar", :monitor, id_map, force: true)
+        base.resolve("foo:bar", :monitor, id_map, force: true)
       end
       e.message.must_include "circular dependency"
     end
@@ -216,13 +156,24 @@ describe Kennel::Models::Record do
     it "fails when trying to resolve but it is unresolvable" do
       id_map.set("monitor", "foo:bar", 1)
       e = assert_raises Kennel::UnresolvableIdError do
-        base.send(:resolve, "foo:xyz", :monitor, id_map, force: false)
+        base.resolve("foo:xyz", :monitor, id_map, force: false)
       end
       e.message.must_include "test_project:test Unable to find monitor foo:xyz"
     end
   end
 
   describe "#add_tracking_id" do
+    let(:monitor) {
+      Kennel::Models::Built::Monitor.new(
+        as_json: { message: "Some text" },
+        project: TestProject.new,
+        unbuilt_class: Kennel::Models::Monitor,
+        tracking_id: "test:test",
+        id: nil,
+        unfiltered_validation_errors: []
+      )
+    }
+
     it "adds" do
       monitor.as_json[:message].wont_include "kennel"
       monitor.add_tracking_id
@@ -237,6 +188,7 @@ describe Kennel::Models::Record do
 
   describe "#remove_tracking_id" do
     it "removes" do
+      monitor = self.monitor.build!
       old = monitor.as_json[:message].dup
       monitor.add_tracking_id
       monitor.remove_tracking_id
@@ -246,8 +198,9 @@ describe Kennel::Models::Record do
 
   describe "#invalid_update!" do
     it "raises the right error" do
-      error = assert_raises(Kennel::DisallowedUpdateError) { monitor.invalid_update!(:foo, "bar", "baz") }
-      error.message.must_equal("#{monitor.tracking_id} Datadog does not allow update of foo (\"bar\" -> \"baz\")")
+      built = monitor.build!
+      error = assert_raises(Kennel::DisallowedUpdateError) { built.invalid_update!(:foo, "bar", "baz") }
+      error.message.must_equal("#{built.tracking_id} Datadog does not allow update of foo (\"bar\" -> \"baz\")")
     end
   end
 
@@ -255,8 +208,14 @@ describe Kennel::Models::Record do
     # minitest defines diff, do not override it
     def diff_resource(e, a)
       default = { tags: [] }
-      b = Kennel::Models::Record.new TestProject.new
-      b.define_singleton_method(:as_json) { default.merge(e) }
+      b = Kennel::Models::Built::Record.new(
+        as_json: default.merge(e),
+        project: TestProject.new,
+        unbuilt_class: Kennel::Models::Record,
+        tracking_id: "a:b",
+        id: nil,
+        unfiltered_validation_errors: [],
+      )
       b.diff(default.merge(a))
     end
 

@@ -44,6 +44,10 @@ module Kennel
         data
       end
 
+      def self.built_class
+        Built::Slo
+      end
+
       def self.api_resource
         "slo"
       end
@@ -54,13 +58,6 @@ module Kennel
 
       def self.parse_url(url)
         url[/\/slo(\?.*slo_id=|\/edit\/)([a-z\d]{10,})(&|$)/, 2]
-      end
-
-      def resolve_linked_tracking_ids!(id_map, **args)
-        return unless ids = as_json[:monitor_ids] # ignore_default can remove it
-        as_json[:monitor_ids] = ids.map do |id|
-          resolve(id, :monitor, id_map, **args) || id
-        end
       end
 
       def self.normalize(expected, actual)

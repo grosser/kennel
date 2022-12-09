@@ -27,7 +27,7 @@ describe "Readme.md" do
 
     code_blocks.each { |block, line| eval(block, nil, readme, line) } # rubocop:disable Security/Eval
 
-    Kennel::Models::Project.recursive_subclasses.each { |p| p.new.parts.each(&:as_json) }
+    Kennel::Models::Project.recursive_subclasses.each { |p| p.new.parts.map(&:build!) }
   end
 
   it "has language selected for all code blocks so 'working' test above is reliable" do
