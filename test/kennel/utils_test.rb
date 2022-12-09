@@ -266,16 +266,6 @@ describe Kennel::Utils do
     end
   end
 
-  describe ".pretty_inspect" do
-    it "shows hashes that rubocop likes" do
-      Kennel::Utils.pretty_inspect(foo: "bar", bar: 1).must_equal "{ foo: \"bar\", bar: 1 }"
-    end
-
-    it "supports nesting" do
-      Kennel::Utils.pretty_inspect([{ foo: { bar: "bar" } }]).must_equal "[{ foo: { bar: \"bar\" } }]"
-    end
-  end
-
   describe ".inline_resource_metadata" do
     it "adds klass and tracking_id" do
       resource = { message: "-- Managed by kennel a:b" }

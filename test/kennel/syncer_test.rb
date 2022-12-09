@@ -276,26 +276,6 @@ describe Kennel::Syncer do
       )
     end
 
-    describe "diff limit" do
-      it "limits the size of diffs" do
-        expected << monitor("a", "b", foo: "")
-        monitors << monitor_api_response("a", "b", foo: 100.times.map(&:to_s).join("\n"))
-        output.must_include "- 48\n"
-        output.wont_include "- 49\n"
-        output.must_include "(Diff for this item truncated after 50 lines. Rerun with MAX_DIFF_LINES=100 to see more)"
-      end
-
-      it "can configure the diff size limit" do
-        with_env MAX_DIFF_LINES: "20" do
-          expected << monitor("a", "b", foo: "")
-          monitors << monitor_api_response("a", "b", foo: 100.times.map(&:to_s).join("\n"))
-          output.must_include "- 18\n"
-          output.wont_include "- 19\n"
-          output.must_include "(Diff for this item truncated after 20 lines. Rerun with MAX_DIFF_LINES=40 to see more)"
-        end
-      end
-    end
-
     describe "with project filter" do
       let(:project_filter) { ["a"] }
 
@@ -748,36 +728,6 @@ describe Kennel::Syncer do
           \e[1A\033[KCreated dashboard a:b https://app.datadoghq.com/dashboard/abc
         TXT
       end
-    end
-  end
-
-  describe "#diff" do
-    before do
-      Kennel.out.stubs(:tty?).returns(false)
-    end
-
-    def call(a, b)
-      syncer.send(:diff, a, b)
-    end
-
-    it "can replace" do
-      call("a", "b").must_equal ["- a", "+ b"]
-    end
-
-    it "can add" do
-      call("", "b").must_equal ["+ b"]
-    end
-
-    it "can remove" do
-      call("a", "").must_equal ["- a"]
-    end
-
-    it "can keep" do
-      call("a", "a").must_equal ["  a"]
-    end
-
-    it "shows newlines" do
-      call("\na", "a\n\n").must_equal ["- ", "  a", "+ ", "+ "]
     end
   end
 end
