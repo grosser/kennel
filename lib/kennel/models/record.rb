@@ -125,7 +125,7 @@ module Kennel
         rescue StandardError
           if unfiltered_validation_errors.empty?
             @unfiltered_validation_errors = nil
-            raise PrepareError, safe_tracking_id
+            raise PrepareError, safe_tracking_id + " because of " + $!.to_s + " at " + $!.backtrace.inspect
           end
         end
 
@@ -150,6 +150,7 @@ module Kennel
         end
       end
 
+      # Useful for the test suite
       def build!
         build.tap do |result|
           if result.is_a?(InvalidPart)

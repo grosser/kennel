@@ -4,6 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Record do
+  with_preserved_subclass_tracking
   with_test_classes
 
   class TestRecord < Kennel::Models::Record
@@ -118,138 +119,6 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe "#resolve" do
-    let(:base) {
-      Kennel::Models::Built::Monitor.new(
-        as_json: {},
-        project: TestProject.new,
-        unbuilt_class: Kennel::Models::Monitor,
-        tracking_id: "test_project:test",
-        id: nil,
-        unfiltered_validation_errors: []
-      )
-    }
-
-    it "lets non-tracking-ids through unchanged" do
-      base.resolve("foobar", :slo, id_map, force: false).must_equal "foobar"
-    end
-
-    it "resolves existing" do
-      id_map.set("monitor", "foo:bar", 2)
-      id_map.set("monitor", "foo:bar", 2)
-      base.resolve("foo:bar", :monitor, id_map, force: false).must_equal 2
-    end
-
-    it "warns when trying to resolve" do
-      id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
-      base.resolve("foo:bar", :monitor, id_map, force: false).must_be_nil
-    end
-
-    it "fails when forcing resolve because of a circular dependency" do
-      id_map.set("monitor", "foo:bar", Kennel::IdMap::NEW)
-      e = assert_raises Kennel::UnresolvableIdError do
-        base.resolve("foo:bar", :monitor, id_map, force: true)
-      end
-      e.message.must_include "circular dependency"
-    end
-
-    it "fails when trying to resolve but it is unresolvable" do
-      id_map.set("monitor", "foo:bar", 1)
-      e = assert_raises Kennel::UnresolvableIdError do
-        base.resolve("foo:xyz", :monitor, id_map, force: false)
-      end
-      e.message.must_include "test_project:test Unable to find monitor foo:xyz"
-    end
-  end
-
-  describe "#add_tracking_id" do
-    let(:monitor) {
-      Kennel::Models::Built::Monitor.new(
-        as_json: { message: "Some text" },
-        project: TestProject.new,
-        unbuilt_class: Kennel::Models::Monitor,
-        tracking_id: "test:test",
-        id: nil,
-        unfiltered_validation_errors: []
-      )
-    }
-
-    it "adds" do
-      monitor.as_json[:message].wont_include "kennel"
-      monitor.add_tracking_id
-      monitor.as_json[:message].must_include "kennel"
-    end
-
-    it "fails when it would have been added twice (user already added it by mistake)" do
-      monitor.add_tracking_id
-      assert_raises(RuntimeError) { monitor.add_tracking_id }.message.must_include("to copy a resource")
-    end
-  end
-
-  describe "#remove_tracking_id" do
-    it "removes" do
-      monitor = self.monitor.build!
-      old = monitor.as_json[:message].dup
-      monitor.add_tracking_id
-      monitor.remove_tracking_id
-      monitor.as_json[:message].must_equal old
-    end
-  end
-
-  describe "#invalid_update!" do
-    it "raises the right error" do
-      built = monitor.build!
-      error = assert_raises(Kennel::DisallowedUpdateError) { built.invalid_update!(:foo, "bar", "baz") }
-      error.message.must_equal("#{built.tracking_id} Datadog does not allow update of foo (\"bar\" -> \"baz\")")
-    end
-  end
-
-  describe "#diff" do
-    # minitest defines diff, do not override it
-    def diff_resource(e, a)
-      default = { tags: [] }
-      b = Kennel::Models::Built::Record.new(
-        as_json: default.merge(e),
-        project: TestProject.new,
-        unbuilt_class: Kennel::Models::Record,
-        tracking_id: "a:b",
-        id: nil,
-        unfiltered_validation_errors: [],
-      )
-      b.diff(default.merge(a))
-    end
-
-    it "is empty when empty" do
-      diff_resource({}, {}).must_equal []
-    end
-
-    it "ignores readonly attributes" do
-      diff_resource({}, deleted: true).must_equal []
-    end
-
-    it "ignores ids" do
-      diff_resource({ id: 123 }, id: 234).must_equal []
-    end
-
-    it "ignores klass attribute that syncer adds" do
-      diff_resource({}, klass: TestRecord).must_equal []
-    end
-
-    it "makes tag diffs look neat" do
-      diff_resource({ tags: ["a", "b"] }, tags: ["b", "c"]).must_equal([["~", "tags[0]", "b", "a"], ["~", "tags[1]", "c", "b"]])
-    end
-
-    it "makes graph diffs look neat" do
-      diff_resource({ graphs: [{ requests: [{ foo: "bar" }] }] }, graphs: [{ requests: [{ foo: "baz" }] }]).must_equal(
-        [["~", "graphs[0].requests[0].foo", "baz", "bar"]]
-      )
-    end
-
-    it "ignores numeric class difference since the api is semi random on these" do
-      diff_resource({ a: 1 }, a: 1.0).must_equal []
-    end
-  end
-
   describe "#tracking_id" do
     it "combines project and id into a human-readable string" do
       base = TestRecord.new TestProject.new
@@ -327,6 +196,97 @@ describe Kennel::Models::Record do
         "slo" => Kennel::Models::Slo,
         "synthetics/tests" => Kennel::Models::SyntheticTest
       )
+    end
+  end
+
+  describe ".parse_tracking_id" do
+    let(:klass) do
+      Class.new(Kennel::Models::Record).tap do |k|
+        k.const_set(:TRACKING_FIELD, :details)
+      end
+    end
+
+    it "returns the tracking_id if present" do
+      text = <<~TEXT
+        Hello
+        -- Managed by kennel foo:bar in some/file.rb, do not modify manually
+      TEXT
+      klass.parse_tracking_id(details: text).must_equal "foo:bar"
+    end
+
+    it "returns nil otherwise" do
+      klass.parse_tracking_id(details: "Hello").must_be_nil
+    end
+  end
+
+  describe ".remove_tracking_id" do
+    let(:klass) do
+      Class.new(Kennel::Models::Record).tap do |k|
+        k.const_set(:TRACKING_FIELD, :details)
+      end
+    end
+
+    it "returns the tracking_id if present" do
+      text = <<~TEXT
+        Hello
+        -- Managed by kennel foo:bar in some/file.rb, do not modify manually
+        there
+      TEXT
+      klass.remove_tracking_id(details: text).must_equal "Hello\nthere\n"
+    end
+
+    it "raises otherwise" do
+      assert_raises do
+        klass.remove_tracking_id(details: "Hello")
+      end.message.must_include "did not find tracking id"
+    end
+  end
+
+  describe ".normalize" do
+    let(:klass) do
+      Class.new(Kennel::Models::Record).tap do |k|
+        k.const_set(:READONLY_ATTRIBUTES, [:foo])
+      end
+    end
+
+    let(:actual) { {foo: 1, bar:  2} }
+    let(:expected) { {foo: 3, bar:  4} }
+
+    it "deletes read-only attributes from actual" do
+      klass.normalize(expected, actual)
+      actual.must_equal(bar: 2)
+    end
+
+    it "does not delete read-only attributes from expected" do
+      klass.normalize(expected, actual)
+      expected.must_equal(foo: 3, bar: 4)
+    end
+  end
+
+  describe "#build!" do
+    it "returns a built part if there were no errors" do
+      monitor.build!.must_be_kind_of(Kennel::Models::Built::Record)
+    end
+
+    it "raises if there were errors" do
+      monitor.define_singleton_method(:validate_json) do |_|
+        invalid! :foo, "Foo"
+      end
+
+      assert_raises do
+        monitor.build!
+      end.message.must_include("Invalid record")
+    end
+  end
+
+  describe "#safe_tracking_id" do
+    it "returns tracking id if possible" do
+      monitor.safe_tracking_id.must_equal monitor.tracking_id
+    end
+
+    it "returns some error text if tracking_id crashes" do
+      monitor.define_singleton_method(:tracking_id) { raise "Bang!" }
+      monitor.safe_tracking_id.must_equal "<unknown; #tracking_id crashed>"
     end
   end
 end

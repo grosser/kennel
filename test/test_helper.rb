@@ -43,6 +43,24 @@ Minitest::Test.class_eval do
     RUBY
   end
 
+  def self.with_preserved_subclass_tracking
+    around { |t| with_preserved_subclass_tracking(&t) }
+  end
+
+  def with_preserved_subclass_tracking
+    preserve = Kennel::SubclassTracking::TRACKED_CLASSES.each_with_object({}) do |klass, h|
+      h[klass] = klass.instance_variable_get(:@subclasses).dup
+    end
+
+    begin
+      yield
+    ensure
+      preserve.each do |m, subclasses|
+        m.instance_variable_set(:@subclasses, subclasses)
+      end
+    end
+  end
+
   def self.reset_instance
     after do
       Kennel.instance_variable_set(:@instance, nil)
