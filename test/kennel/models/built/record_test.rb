@@ -6,7 +6,7 @@ SingleCov.covered!
 describe Kennel::Models::Built::Record do
   with_test_classes
 
-  let(:built) {
+  let(:built) do
     Kennel::Models::Built::Monitor.new(
       as_json: { message: "Some text" },
       project: TestProject.new,
@@ -15,7 +15,7 @@ describe Kennel::Models::Built::Record do
       id: nil,
       unfiltered_validation_errors: []
     )
-  }
+  end
 
   let(:id_map) { Kennel::IdMap.new }
 
@@ -95,7 +95,7 @@ describe Kennel::Models::Built::Record do
         unbuilt_class: Kennel::Models::Record,
         tracking_id: "a:b",
         id: nil,
-        unfiltered_validation_errors: [],
+        unfiltered_validation_errors: []
       )
       b.diff(default.merge(a))
     end

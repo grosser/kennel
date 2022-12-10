@@ -33,7 +33,7 @@ describe Kennel::OptionalValidations do
         unbuilt_class: Kennel::Models::Record,
         tracking_id: nil,
         id: nil,
-        unfiltered_validation_errors: [],
+        unfiltered_validation_errors: []
       )
     end
 

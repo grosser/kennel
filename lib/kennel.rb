@@ -30,11 +30,11 @@ require "kennel/models/monitor"
 require "kennel/models/slo"
 require "kennel/models/synthetic_test"
 
-require 'kennel/models/built/record'
-require 'kennel/models/built/dashboard'
-require 'kennel/models/built/monitor'
-require 'kennel/models/built/slo'
-require 'kennel/models/built/synthetic_test'
+require "kennel/models/built/record"
+require "kennel/models/built/dashboard"
+require "kennel/models/built/monitor"
+require "kennel/models/built/slo"
+require "kennel/models/built/synthetic_test"
 
 # settings
 require "kennel/models/project"

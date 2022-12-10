@@ -78,8 +78,8 @@ module Kennel
           if id_map.new?(sought_type.to_s, sought_tracking_id)
             if force
               raise UnresolvableIdError, <<~MESSAGE
-              #{tracking_id} #{sought_type} #{sought_tracking_id} was referenced but is also created by the current run.
-              It could not be created because of a circular dependency. Try creating only some of the resources.
+                #{tracking_id} #{sought_type} #{sought_tracking_id} was referenced but is also created by the current run.
+                It could not be created because of a circular dependency. Try creating only some of the resources.
               MESSAGE
             else
               nil # will be re-resolved after the linked object was created
@@ -88,9 +88,9 @@ module Kennel
             id
           else
             raise UnresolvableIdError, <<~MESSAGE
-            #{tracking_id} Unable to find #{sought_type} #{sought_tracking_id}
-            This is either because it doesn't exist, and isn't being created by the current run;
-            or it does exist, but is being deleted.
+              #{tracking_id} Unable to find #{sought_type} #{sought_tracking_id}
+              This is either because it doesn't exist, and isn't being created by the current run;
+              or it does exist, but is being deleted.
             MESSAGE
           end
         end

@@ -249,8 +249,8 @@ describe Kennel::Models::Record do
       end
     end
 
-    let(:actual) { {foo: 1, bar:  2} }
-    let(:expected) { {foo: 3, bar:  4} }
+    let(:actual) { { foo: 1, bar: 2 } }
+    let(:expected) { { foo: 3, bar:  4 } }
 
     it "deletes read-only attributes from actual" do
       klass.normalize(expected, actual)

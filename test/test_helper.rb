@@ -48,7 +48,7 @@ Minitest::Test.class_eval do
   end
 
   def with_preserved_subclass_tracking
-    preserve = Kennel::SubclassTracking::TRACKED_CLASSES.each_with_object({}) do |klass, h|
+    preserve = Kennel::SubclassTracking.class_variable_get(:@@tracked_classes).each_with_object({}) do |klass, h|
       h[klass] = klass.instance_variable_get(:@subclasses).dup
     end
 

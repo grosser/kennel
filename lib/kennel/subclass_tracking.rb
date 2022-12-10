@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module SubclassTracking
-    TRACKED_CLASSES = []
+    @@tracked_classes = []
 
     def recursive_subclasses
       subclasses + subclasses.flat_map(&:recursive_subclasses)
@@ -15,7 +15,7 @@ module Kennel
 
     def inherited(child)
       super
-      TRACKED_CLASSES << child
+      @@tracked_classes << child
       subclasses << child
     end
   end

@@ -10,7 +10,7 @@ describe Kennel::Models::Built::Dashboard do
   let(:id_map) { Kennel::IdMap.new }
 
   def dashboard(extra = {})
-    Kennel::Models::Dashboard.new(project, { kennel_id: 'd', title: -> { "Hello" }, layout_type: -> { "ordered" } }.merge(extra))
+    Kennel::Models::Dashboard.new(project, { kennel_id: "d", title: -> { "Hello" }, layout_type: -> { "ordered" } }.merge(extra))
   end
 
   let(:dashboard_with_requests) do
