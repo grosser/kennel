@@ -122,53 +122,62 @@ module Kennel
 
     def calculate_changes
       @warnings = []
-      @update = []
-      @delete = []
       @id_map = IdMap.new
 
       Progress.progress "Diffing" do
         populate_id_map @expected, @actual
         filter_actual! @actual
         resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
+        @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
 
-        @expected.each(&:add_tracking_id) # avoid diff with actual
+        # see which expected match the actual
+        matching, unmatched_expected, unmatched_actual = partition_matched_expected
+        validate_expected_id_not_missing unmatched_expected
+        fill_details! matching # need details to diff later
 
-        lookup_map = matching_expected_lookup_map
-        items = @actual.map do |a|
-          e = matching_expected(a, lookup_map)
-          if e && @expected.delete?(e)
-            [e, a]
-          else
-            [nil, a]
-          end
-        end
-
-        # fill details of things we need to compare
-        details = items.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
-        @api.fill_details! "dashboard", details
-
-        # pick out things to update or delete
-        items.each do |e, a|
+        # update matching if needed
+        @update = matching.map do |e, a|
           id = a.fetch(:id)
-          if e
-            diff = e.diff(a) # slow ...
-            if diff.any?
-              @update << [id, e, a, diff]
-            end
-          elsif a.fetch(:tracking_id) # was previously managed
-            @delete << [id, nil, a]
-          end
-        end
+          diff = e.diff(a)
+          [id, e, a, diff] if diff.any?
+        end.compact
 
-        ensure_all_ids_found
-        @create = @expected.map { |e| [nil, e] }
+        # delete previously managed
+        @delete = unmatched_actual.map { |a| [a.fetch(:id), nil, a] if a.fetch(:tracking_id) }.compact
+
+        # unmatched expected need to be created
+        @create = unmatched_expected.map { |e| [nil, e] }
+
+        # order to avoid deadlocks
         @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
         @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
     end
 
-    def ensure_all_ids_found
-      @expected.each do |e|
+    def partition_matched_expected
+      lookup_map = matching_expected_lookup_map
+      unmatched_expected = @expected.dup
+      unmatched_actual = []
+      matched = []
+      @actual.each do |a|
+        e = matching_expected(a, lookup_map)
+        if e && unmatched_expected.delete?(e)
+          matched << [e, a]
+        else
+          unmatched_actual << a
+        end
+      end.compact
+      [matched, unmatched_expected, unmatched_actual]
+    end
+
+    # fill details of things we need to compare
+    def fill_details!(details_needed)
+      details_needed = details_needed.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
+      @api.fill_details! "dashboard", details_needed
+    end
+
+    def validate_expected_id_not_missing(expected)
+      expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
         if kennel.strict_imports
