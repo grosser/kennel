@@ -150,17 +150,6 @@ module Kennel
         end
       end
 
-      # TODO: use awesome-print or similar, but it has too many monkey-patches
-      # https://github.com/amazing-print/amazing_print/issues/36
-      def pretty_inspect(object)
-        string = object.inspect.dup
-        string.gsub!(/:([a-z_]+)=>/, "\\1: ")
-        10.times do
-          string.gsub!(/{(\S.*?\S)}/, "{ \\1 }") || break
-        end
-        string
-      end
-
       def inline_resource_metadata(resource, klass)
         resource[:klass] = klass
         resource[:tracking_id] = klass.parse_tracking_id(resource)

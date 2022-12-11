@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "diff/lcs"
-
 module Kennel
   class Syncer
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
@@ -17,8 +15,10 @@ module Kennel
       @tracking_id_filter = tracking_id_filter
       @expected = Set.new expected # need set to speed up deletion
       @actual = actual
-      calculate_diff
-      validate_plan
+      @attribute_differ = AttributeDiffer.new
+
+      calculate_changes
+      validate_changes
       prevent_irreversible_partial_updates
     end
 
@@ -120,7 +120,7 @@ module Kennel
       @create.empty? && @update.empty? && @delete.empty?
     end
 
-    def calculate_diff
+    def calculate_changes
       @warnings = []
       @update = []
       @delete = []
@@ -201,74 +201,13 @@ module Kennel
       list.each do |_, e, a, diff|
         klass = (e ? e.class : a.fetch(:klass))
         Kennel.out.puts Utils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
-        print_diff(diff) if diff # only for update
+        diff&.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
       end
-    end
-
-    def print_diff(diff)
-      diff.each do |type, field, old, new|
-        use_diff = false
-        if type == "+"
-          temp = Utils.pretty_inspect(new)
-          new = Utils.pretty_inspect(old)
-          old = temp
-        elsif old.is_a?(String) && new.is_a?(String) && (old.include?("\n") || new.include?("\n"))
-          use_diff = true
-        else # ~ and -
-          old = Utils.pretty_inspect(old)
-          new = Utils.pretty_inspect(new)
-        end
-
-        message =
-          if use_diff
-            "  #{type}#{field}\n" +
-              diff(old, new).map { |l| "    #{l}" }.join("\n")
-          elsif (old + new).size > 100
-            "  #{type}#{field}\n" \
-              "    #{old} ->\n" \
-              "    #{new}"
-          else
-            "  #{type}#{field} #{old} -> #{new}"
-          end
-
-        Kennel.out.puts truncate_diff(message)
-      end
-    end
-
-    # display diff for multi-line strings
-    # must stay readable when color is off too
-    def diff(old, new)
-      Diff::LCS.sdiff(old.split("\n", -1), new.split("\n", -1)).flat_map do |diff|
-        case diff.action
-        when "-"
-          Utils.color(:red, "- #{diff.old_element}")
-        when "+"
-          Utils.color(:green, "+ #{diff.new_element}")
-        when "!"
-          [
-            Utils.color(:red, "- #{diff.old_element}"),
-            Utils.color(:green, "+ #{diff.new_element}")
-          ]
-        else
-          "  #{diff.old_element}"
-        end
-      end
-    end
-
-    def truncate_diff(message)
-      # min '2' because: -1 makes no sense, 0 does not work with * 2 math, 1 says '1 lines'
-      @max_diff_lines ||= [Integer(ENV.fetch("MAX_DIFF_LINES", "50")), 2].max
-      warning = Utils.color(
-        :magenta,
-        "  (Diff for this item truncated after #{@max_diff_lines} lines. " \
-          "Rerun with MAX_DIFF_LINES=#{@max_diff_lines * 2} to see more)"
-      )
-      Utils.truncate_lines(message, to: @max_diff_lines, warning: warning)
     end
 
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
-    def validate_plan
+    def validate_changes
       @update.each do |_, expected, actuals, diffs|
         expected.validate_update!(actuals, diffs)
       end
@@ -276,11 +215,10 @@ module Kennel
 
     # - do not add tracking-id when working with existing ids on a branch,
     #   so resource do not get deleted when running an update on master (for example merge->CI)
-    # - make sure the diff is clean, by kicking out the now noop-update
     # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
     def prevent_irreversible_partial_updates
-      return unless @project_filter
-      @update.select! do |_, e, _, diff|
+      return unless @project_filter # full update, so we are not on a branch
+      @update.select! do |_, e, _, diff| # ensure clean diff, by removing noop-update
         next true unless e.id # safe to add tracking when not having id
 
         diff.select! do |field_diff|
@@ -293,7 +231,7 @@ module Kennel
           actual != field_diff[3] # discard diff if now nothing changes
         end
 
-        !diff.empty?
+        diff.any?
       end
     end
 
