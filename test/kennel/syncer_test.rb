@@ -444,8 +444,8 @@ describe Kennel::Syncer do
         it "warns without strict_imports" do
           strict_imports.replace [false]
           output.must_equal <<~TXT
-            Plan:
             Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
+            Plan:
             Create monitor a:b
           TXT
         end
