@@ -43,7 +43,6 @@ module Kennel
   UnresolvableIdError = Class.new(StandardError)
   DisallowedUpdateError = Class.new(StandardError)
   GenerationAbortedError = Class.new(StandardError)
-  UpdateResult = Struct.new(:plan, :update, keyword_init: true)
 
   class << self
     attr_accessor :out, :err
@@ -71,11 +70,12 @@ module Kennel
     end
 
     def plan
+      syncer.print_plan
       syncer.plan
     end
 
     def update
-      syncer.plan
+      syncer.print_plan
       syncer.update if syncer.confirm
     end
 

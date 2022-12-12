@@ -26,21 +26,23 @@ module Kennel
     end
 
     def plan
+      Plan.new(
+        changes:
+          @create.map { |_id, e, _a| Change.new(:create, e.class.api_resource, e.tracking_id, nil) } +
+            @update.map { |id, e, _a| Change.new(:update, e.class.api_resource, e.tracking_id, id) } +
+            @delete.map { |id, _e, a| Change.new(:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), id) }
+      )
+    end
+
+    def print_plan
       Kennel.out.puts "Plan:"
       if noop?
         Kennel.out.puts Utils.color(:green, "Nothing to do")
       else
-        print_plan "Create", @create, :green
-        print_plan "Update", @update, :yellow
-        print_plan "Delete", @delete, :red
+        print_changes "Create", @create, :green
+        print_changes "Update", @update, :yellow
+        print_changes "Delete", @delete, :red
       end
-
-      Plan.new(
-        changes:
-          @create.map { |_id, e, _a| Change.new(:create, e.class.api_resource, e.tracking_id, nil) } +
-          @update.map { |id, e, _a| Change.new(:update, e.class.api_resource, e.tracking_id, id) } +
-          @delete.map { |id, _e, a| Change.new(:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), id) }
-      )
     end
 
     def confirm
@@ -205,7 +207,7 @@ module Kennel
       map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
     end
 
-    def print_plan(step, list, color)
+    def print_changes(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
         klass = (e ? e.class : a.fetch(:klass))
