@@ -8,13 +8,14 @@ module Kennel
     Plan = Struct.new(:changes, keyword_init: true)
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
-    def initialize(api, expected, actual, kennel:, project_filter: nil, tracking_id_filter: nil)
+    def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
       @api = api
-      @kennel = kennel
+      @expected = Set.new expected # need Set to speed up deletion
+      @actual = actual
+      @strict_imports = strict_imports
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
-      @expected = Set.new expected # need set to speed up deletion
-      @actual = actual
+
       @attribute_differ = AttributeDiffer.new
 
       calculate_changes
@@ -82,8 +83,6 @@ module Kennel
     end
 
     private
-
-    attr_reader :kennel
 
     # loop over items until everything is resolved or crash when we get stuck
     # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
@@ -180,7 +179,7 @@ module Kennel
       expected.each do |e|
         next unless id = e.id
         resource = e.class.api_resource
-        if kennel.strict_imports
+        if @strict_imports
           raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."
         else
           @warnings << "#{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."

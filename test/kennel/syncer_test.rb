@@ -110,13 +110,13 @@ describe Kennel::Syncer do
   let(:synthetics) { [] }
   let(:expected) { [] }
   let(:actual) { dashboards + monitors + slos + synthetics }
+  let(:strict_imports) { [true] } # array to allow modification
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
-  let(:kennel) { Kennel::Engine.new }
   let(:syncer) do
     Kennel::Syncer.new(
       api, expected, actual,
-      kennel: kennel,
+      strict_imports: strict_imports[0],
       project_filter: Kennel::Utils.presence(project_filter),
       tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
     )
@@ -438,22 +438,22 @@ describe Kennel::Syncer do
         TEXT
       end
 
-      it "complains when id was not found (with strict imports)" do
-        kennel.strict_imports = true
-        monitors.pop
-        e = assert_raises(RuntimeError) { syncer.plan }
-        e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
-      end
+      describe "when expected id was not found" do
+        before { monitors.pop }
 
-      it "complains when id was not found (without strict imports)" do
-        kennel.strict_imports = false
-        monitors.pop
+        it "warns without strict_imports" do
+          strict_imports.replace [false]
+          output.must_equal <<~TXT
+            Plan:
+            Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
+            Create monitor a:b
+          TXT
+        end
 
-        output.must_equal <<~TXT
-          Plan:
-          Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
-          Create monitor a:b
-        TXT
+        it "raises with strict_imports" do
+          e = assert_raises(RuntimeError) { output }
+          e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
+        end
       end
     end
   end
