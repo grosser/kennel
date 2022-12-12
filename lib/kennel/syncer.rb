@@ -21,6 +21,8 @@ module Kennel
       calculate_changes
       validate_changes
       prevent_irreversible_partial_updates
+
+      @warnings.each { |message| Kennel.out.puts Utils.color(:yellow, "Warning: #{message}") }
     end
 
     def plan
@@ -28,7 +30,6 @@ module Kennel
       if noop?
         Kennel.out.puts Utils.color(:green, "Nothing to do")
       else
-        @warnings.each { |message| Kennel.out.puts Utils.color(:yellow, "Warning: #{message}") }
         print_plan "Create", @create, :green
         print_plan "Update", @update, :yellow
         print_plan "Delete", @delete, :red
