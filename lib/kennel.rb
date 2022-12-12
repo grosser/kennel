@@ -88,7 +88,12 @@ module Kennel
     def syncer
       @syncer ||= begin
         preload
-        Syncer.new(api, generated, definitions, kennel: self, project_filter: filter.project_filter, tracking_id_filter: filter.tracking_id_filter)
+        Syncer.new(
+          api, generated, definitions,
+          strict_imports: strict_imports,
+          project_filter: filter.project_filter,
+          tracking_id_filter: filter.tracking_id_filter
+        )
       end
     end
 
