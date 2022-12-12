@@ -98,6 +98,8 @@ module Kennel
 
         self.class.send(:normalize, expected, actual)
 
+        return [] if actual == expected # Hashdiff is slow, this is fast
+
         # strict: ignore Integer vs Float
         # similarity: show diff when not 100% similar
         # use_lcs: saner output
