@@ -8,13 +8,9 @@ module Kennel
 
     def write(parts)
       Progress.progress "Storing" do
-        if filter.tracking_id_filter
-          write_changed(parts)
-        else
-          old = old_paths
-          used = write_changed(parts)
-          (old - used).uniq.each { |p| FileUtils.rm_rf(p) }
-        end
+        existing = existing_paths
+        used = write_changed(parts)
+        FileUtils.rm_rf((existing - used).uniq)
       end
     end
 
@@ -26,31 +22,36 @@ module Kennel
       used = []
 
       Utils.parallel(parts, max: 2) do |part|
-        path = "generated/#{part.tracking_id.tr("/", ":").sub(":", "/")}.json"
+        path = path_for_tracking_id(part.tracking_id)
 
-        used << File.dirname(path) # only 1 level of sub folders, so this is enough
+        used << File.dirname(path) # we have 1 level of sub folders, so this is enough
         used << path
 
-        payload = part.as_json.merge(api_resource: part.class.api_resource)
-        write_file_if_necessary(path, JSON.pretty_generate(payload) << "\n")
+        content = part.as_json.merge(api_resource: part.class.api_resource)
+        write_file_if_necessary(path, content)
       end
 
       used
     end
 
-    def directories_to_clean_up
-      if filter.project_filter
-        filter.project_filter.map { |project| "generated/#{project}" }
+    def existing_paths
+      if filter.tracking_id_filter
+        filter.tracking_id_filter.map { |tracking_id| path_for_tracking_id(tracking_id) }
+      elsif filter.project_filter
+        filter.project_filter.flat_map { |project| Dir["generated/#{project}/*"] }
       else
-        ["generated"]
+        Dir["generated/**/*"]
       end
     end
 
-    def old_paths
-      Dir["{#{directories_to_clean_up.join(",")}}/**/*"]
+    def path_for_tracking_id(tracking_id)
+      "generated/#{tracking_id.tr("/", ":").sub(":", "/")}.json"
     end
 
     def write_file_if_necessary(path, content)
+      # note: always generating is faster than JSON.load-ing and comparing
+      content = JSON.pretty_generate(content) << "\n"
+
       # 99% case
       begin
         return if File.read(path) == content

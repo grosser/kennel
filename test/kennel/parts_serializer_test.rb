@@ -34,7 +34,6 @@ describe Kennel::PartsSerializer do
 
   let(:project_filter) { nil }
   let(:tracking_id_filter) { nil }
-
   let(:filter) do
     stub(
       "Filter",
