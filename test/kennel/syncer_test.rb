@@ -129,12 +129,12 @@ describe Kennel::Syncer do
 
   capture_all # TODO: pass an IO to syncer so we don't have to capture all output
 
-  describe "#plan" do
+  describe "planning" do # plan + print_plan
     let(:plan) do
       (monitors + dashboards).each { |m| m[:id] ||= 123 } # existing components always have an id
+      syncer.print_plan
       syncer.plan
     end
-
     let(:output) do
       plan
       stdout.string.gsub(/\e\[\d+m(.*)\e\[0m/, "\\1") # remove colors
@@ -153,7 +153,7 @@ describe Kennel::Syncer do
 
     it "returns a plan" do
       expected << monitor("a", "b")
-      syncer.plan.changes.must_equal [change(:create, "monitor", "a:b", nil)]
+      plan.changes.must_equal [change(:create, "monitor", "a:b", nil)]
     end
 
     it "ignores identical" do
