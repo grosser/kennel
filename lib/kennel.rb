@@ -52,11 +52,11 @@ module Kennel
   self.err = $stderr
 
   class Engine
+    attr_accessor :strict_imports
+
     def initialize
       @strict_imports = true
     end
-
-    attr_accessor :strict_imports
 
     # start generation and download in parallel to make planning faster
     def preload
@@ -65,7 +65,7 @@ module Kennel
 
     def generate
       parts = generated
-      parts_serializer.write(parts) if ENV["STORE"] != "false" # quicker when debugging
+      PartsSerializer.new(filter: filter).write(parts) if ENV["STORE"] != "false" # quicker when debugging
       parts
     end
 
@@ -101,18 +101,10 @@ module Kennel
       @api ||= Api.new
     end
 
-    def projects_provider
-      @projects_provider ||= ProjectsProvider.new
-    end
-
-    def parts_serializer
-      @parts_serializer ||= PartsSerializer.new(filter: filter)
-    end
-
     def generated(**kwargs)
       @generated ||= begin
         parts = Progress.progress "Finding parts", **kwargs do
-          projects = projects_provider.projects
+          projects = ProjectsProvider.new.projects
           projects = filter.filter_projects projects
 
           parts = Utils.parallel(projects, &:validated_parts).flatten(1)
