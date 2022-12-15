@@ -8,9 +8,9 @@ module Kennel
 
     def write(parts)
       Progress.progress "Storing" do
-        existing = existing_paths
+        existing = existing_files_and_folders
         used = write_changed(parts)
-        FileUtils.rm_rf((existing - used).uniq)
+        FileUtils.rm_rf(existing - used)
       end
     end
 
@@ -34,13 +34,13 @@ module Kennel
       used
     end
 
-    def existing_paths
+    def existing_files_and_folders
       if filter.tracking_id_filter
         filter.tracking_id_filter.map { |tracking_id| path_for_tracking_id(tracking_id) }
       elsif filter.project_filter
         filter.project_filter.flat_map { |project| Dir["generated/#{project}/*"] }
       else
-        Dir["generated/**/*"]
+        Dir["generated/**/*"] # also includes folders so we clean up empty directories
       end
     end
 
