@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Record do
-  with_test_classes
+  define_test_classes
 
   class TestRecord < Kennel::Models::Record
     settings :foo, :bar, :override, :unset

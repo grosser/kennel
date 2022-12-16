@@ -49,7 +49,7 @@ module Kennel
     end
 
     def write_file_if_necessary(path, content)
-      # note: always generating is faster than JSON.load-ing and comparing
+      # NOTE: always generating is faster than JSON.load-ing and comparing
       content = JSON.pretty_generate(content) << "\n"
 
       # 99% case

@@ -5,7 +5,7 @@ require "kennel/importer"
 SingleCov.covered!
 
 describe Kennel::Importer do
-  with_test_classes
+  define_test_classes
 
   def import_requests(requests)
     response = {
@@ -416,7 +416,7 @@ describe Kennel::Importer do
           kennel_id: -> { "hello" },
           description: -> {
             <<~TEXT
-        
+
               \#{super()}
             TEXT
           }

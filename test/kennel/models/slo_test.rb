@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Slo do
-  with_test_classes
+  define_test_classes
 
   class TestSlo < Kennel::Models::Slo
   end

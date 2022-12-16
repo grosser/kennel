@@ -4,7 +4,7 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::SubclassTracking do
-  with_test_classes
+  define_test_classes
 
   describe ".recursive_subclasses" do
     it "registers all created projects and subclasses" do

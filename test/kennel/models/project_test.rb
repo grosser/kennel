@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 SingleCov.covered!
 
 describe Kennel::Models::Project do
-  with_test_classes
+  define_test_classes
 
   describe ".file_location" do
     let(:plain_project_class) do

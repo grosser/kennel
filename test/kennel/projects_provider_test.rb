@@ -73,6 +73,9 @@ describe Kennel::ProjectsProvider do
     e = assert_raises(NameError) { kennel.generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant TestProject3::FooBar
+
+        FooBar::BazFoo
+        ^^^^^^
       Unable to load TestProject3::FooBar from parts/test_project3/foo_bar.rb
       - Option 1: rename the constant or the file it lives in, to make them match
       - Option 2: Use `require` or `require_relative` to load the constant
@@ -88,6 +91,9 @@ describe Kennel::ProjectsProvider do
     e = assert_raises(NameError) { kennel.generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant Teams::BazFoo
+
+        Teams::BazFoo
+             ^^^^^^^^
       Unable to load Teams::BazFoo from teams/baz_foo.rb
       - Option 1: rename the constant or the file it lives in, to make them match
       - Option 2: Use `require` or `require_relative` to load the constant
@@ -101,6 +107,11 @@ describe Kennel::ProjectsProvider do
       end
     RUBY
     e = assert_raises(NameError) { kennel.generate }
-    e.message.must_equal "wut"
+    e.message.must_equal <<~MSG.rstrip
+      wut
+
+        raise NameError, "wut"
+        ^^^^^
+    MSG
   end
 end

@@ -35,8 +35,8 @@ module Kennel
         :klass, :tracking_id # added by syncer.rb
       ].freeze
       ALLOWED_KENNEL_ID_CHARS = "a-zA-Z_\\d.-"
-      ALLOWED_KENNEL_ID_FULL = "[#{ALLOWED_KENNEL_ID_CHARS}]+:[#{ALLOWED_KENNEL_ID_CHARS}]+"
-      ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/.freeze
+      ALLOWED_KENNEL_ID_FULL = "[#{ALLOWED_KENNEL_ID_CHARS}]+:[#{ALLOWED_KENNEL_ID_CHARS}]+".freeze
+      ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/
 
       settings :id, :kennel_id
 
@@ -52,7 +52,7 @@ module Kennel
         end
 
         def api_resource_map
-          subclasses.map { |s| [s.api_resource, s] }.to_h
+          subclasses.to_h { |s| [s.api_resource, s] }
         end
 
         def parse_tracking_id(a)

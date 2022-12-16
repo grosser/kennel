@@ -189,7 +189,7 @@ module Kennel
 
     # important to the front and rest deterministic
     def sort_hash(hash)
-      Hash[hash.sort_by { |k, _| [SORT_ORDER.index(k) || 999, k] }]
+      hash.sort_by { |k, _| [SORT_ORDER.index(k) || 999, k] }.to_h
     end
   end
 end
