@@ -24,7 +24,7 @@ module Kennel
     end
 
     def report(&block)
-      output = Utils.tee_output(&block).strip
+      output = ConsoleUtils.tee_output(&block).strip
     rescue StandardError
       output = "Error:\n#{$ERROR_INFO.message}"
       raise

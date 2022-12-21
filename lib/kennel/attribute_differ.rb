@@ -46,13 +46,13 @@ module Kennel
       Diff::LCS.sdiff(old.split("\n", -1), new.split("\n", -1)).flat_map do |diff|
         case diff.action
         when "-"
-          Utils.color(:red, "- #{diff.old_element}")
+          ConsoleUtils.color(:red, "- #{diff.old_element}")
         when "+"
-          Utils.color(:green, "+ #{diff.new_element}")
+          ConsoleUtils.color(:green, "+ #{diff.new_element}")
         when "!"
           [
-            Utils.color(:red, "- #{diff.old_element}"),
-            Utils.color(:green, "+ #{diff.new_element}")
+            ConsoleUtils.color(:red, "- #{diff.old_element}"),
+            ConsoleUtils.color(:green, "+ #{diff.new_element}")
           ]
         else
           "  #{diff.old_element}"
@@ -61,7 +61,7 @@ module Kennel
     end
 
     def truncate(message)
-      warning = Utils.color(
+      warning = ConsoleUtils.color(
         :magenta,
         "  (Diff for this item truncated after #{@max_diff_lines} lines. " \
         "Rerun with MAX_DIFF_LINES=#{@max_diff_lines * 2} to see more)"
