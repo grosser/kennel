@@ -66,7 +66,7 @@ module Kennel
         "  (Diff for this item truncated after #{@max_diff_lines} lines. " \
         "Rerun with MAX_DIFF_LINES=#{@max_diff_lines * 2} to see more)"
       )
-      Utils.truncate_lines(message, to: @max_diff_lines, warning: warning)
+      StringUtils.truncate_lines(message, to: @max_diff_lines, warning: warning)
     end
 
     # TODO: use awesome-print or similar, but it has too many monkey-patches
