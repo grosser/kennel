@@ -6,6 +6,10 @@ SingleCov.covered!
 describe Kennel::Api do
   let(:api) { Kennel::Api.new("app", "api") }
 
+  def tracking(id)
+    "Whatever\n-- Managed by kennel #{id} in some/file.rb"
+  end
+
   describe ".new" do
     it "can use specified keys" do
       with_env("DATADOG_APP_KEY" => nil, "DATADOG_API_KEY" => nil) do
@@ -78,9 +82,14 @@ describe Kennel::Api do
     it "fetches monitors" do
       stub_datadog_request(:get, "monitor", "&foo=bar")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
-        .to_return(body: [{ bar: "foo" }].to_json)
+        .to_return(body: [{ message: "no tracking" }, { message: tracking("xxx:yyy") }].to_json)
       answer = api.list("monitor", foo: "bar")
-      answer.must_equal [{ bar: "foo", klass: Kennel::Models::Monitor, tracking_id: nil }]
+      answer.must_equal(
+        [
+          { message: "no tracking", klass: Kennel::Models::Monitor, tracking_id: nil },
+          { message: tracking("xxx:yyy"), klass: Kennel::Models::Monitor, tracking_id: "xxx:yyy" }
+        ]
+      )
     end
 
     it "fetches dashboards" do
