@@ -22,7 +22,7 @@ module Kennel
       validate_changes
       prevent_irreversible_partial_updates
 
-      @warnings.each { |message| Kennel.out.puts ConsoleUtils.color(:yellow, "Warning: #{message}") }
+      @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
     end
 
     def plan
@@ -37,7 +37,7 @@ module Kennel
     def print_plan
       Kennel.out.puts "Plan:"
       if noop?
-        Kennel.out.puts ConsoleUtils.color(:green, "Nothing to do")
+        Kennel.out.puts Console.color(:green, "Nothing to do")
       else
         print_changes "Create", @create, :green
         print_changes "Update", @update, :yellow
@@ -48,7 +48,7 @@ module Kennel
     def confirm
       return false if noop?
       return true if ENV["CI"] || !STDIN.tty? || !Kennel.err.tty?
-      ConsoleUtils.ask("Execute Plan ?")
+      Console.ask("Execute Plan ?")
     end
 
     def update
@@ -211,7 +211,7 @@ module Kennel
       return if list.empty?
       list.each do |_, e, a, diff|
         klass = (e ? e.class : a.fetch(:klass))
-        Kennel.out.puts ConsoleUtils.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
+        Kennel.out.puts Console.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
         diff&.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
       end
     end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 module Kennel
-  module ConsoleUtils
+  module Console
     COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, magenta: 35, default: 0 }.freeze
 
     class TeeIO < IO

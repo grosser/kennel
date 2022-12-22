@@ -36,7 +36,7 @@ describe Kennel::UnmutedAlerts do
 
   it "can display all colors" do
     Kennel::UnmutedAlerts::COLORS.each do |_, color|
-      Kennel::ConsoleUtils::COLORS.fetch(color)
+      Kennel::Console::COLORS.fetch(color)
     end
   end
 
@@ -44,7 +44,7 @@ describe Kennel::UnmutedAlerts do
     it "prints alerts" do
       Kennel::UnmutedAlerts.send(:sort_groups!, monitor)
       Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([monitor])
-      out = Kennel::ConsoleUtils.capture_stdout do
+      out = Kennel::Console.capture_stdout do
         Kennel.out.stubs(:tty?).returns(true)
         Kennel::UnmutedAlerts.send(:print, nil, tag)
       end
@@ -60,7 +60,7 @@ describe Kennel::UnmutedAlerts do
 
     it "does not print alerts when there are no monitors" do
       Kennel::UnmutedAlerts.expects(:filtered_monitors).returns([])
-      out = Kennel::ConsoleUtils.capture_stdout do
+      out = Kennel::Console.capture_stdout do
         Kennel::UnmutedAlerts.send(:print, nil, tag)
       end
       out.must_equal "No unmuted alerts found\n"

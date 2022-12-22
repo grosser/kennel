@@ -37,7 +37,7 @@ describe Kennel::GithubReporter do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with(body: { body: "```\nHELLOOOO\n```" }.to_json)
         .to_return(status: 201)
-      Kennel::ConsoleUtils.capture_stdout { reporter.report { Kennel.out.puts "HELLOOOO" } }.must_equal "HELLOOOO\n"
+      Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts "HELLOOOO" } }.must_equal "HELLOOOO\n"
       assert_requested request
     end
 
@@ -47,7 +47,7 @@ describe Kennel::GithubReporter do
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments")
         .with { |r| body = JSON.parse(r.body).fetch("body") }
         .to_return(status: 201)
-      Kennel::ConsoleUtils.capture_stdout { reporter.report { Kennel.out.puts msg } }
+      Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts msg } }
       assert_requested request
       body.bytesize.must_equal Kennel::GithubReporter::MAX_COMMENT_SIZE
       body.must_match(/\A```.*#{Regexp.escape(Kennel::GithubReporter::TRUNCATED_MSG)}\z/m)
@@ -61,14 +61,14 @@ describe Kennel::GithubReporter do
     it "can create PR comments" do
       show_response << "\n  foo (#123)"
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/issues/123/comments").to_return(status: 201)
-      Kennel::ConsoleUtils.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
+      Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
       assert_requested request
     end
 
     it "can create merge comments" do
       show_response.replace "commit: nope\nMerge: foo abcd"
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/commits/abcd/comments").to_return(status: 201)
-      Kennel::ConsoleUtils.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
+      Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
       assert_requested request
     end
 
