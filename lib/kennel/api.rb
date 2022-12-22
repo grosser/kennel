@@ -16,7 +16,7 @@ module Kennel
       response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
       response = response.fetch(:data) if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      response
+      tag(api_resource, response)
     end
 
     def list(api_resource, params = {})
@@ -32,7 +32,7 @@ module Kennel
         # ignore monitor synthetics create and that inherit the kennel_id, we do not directly manage them
         response.reject! { |m| m[:type] == "synthetics alert" } if api_resource == "monitor"
 
-        response
+        response.map { |r| tag(api_resource, r) }
       end
     end
 
@@ -40,13 +40,13 @@ module Kennel
       response = request :post, "/api/v1/#{api_resource}", body: attributes
       response = response.fetch(:data).first if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      response
+      tag(api_resource, response)
     end
 
     def update(api_resource, id, attributes)
       response = request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      response
+      tag(api_resource, response)
     end
 
     # - force=true to not dead-lock on dependent monitors+slos
@@ -143,6 +143,24 @@ module Kennel
         result = yield
         File.write(file, Marshal.dump(result))
         result
+      end
+    end
+
+    def tag(api_resource, reply)
+      ResourceTaggedHash.new(api_resource, reply)
+    end
+
+    class ResourceTaggedHash < Hash
+      def initialize(api_resource, hash)
+        super()
+        @klass = Models::Record.api_resource_map[api_resource]
+        merge!(hash)
+      end
+
+      attr_reader :klass
+
+      def tracking_id
+        klass.parse_tracking_id(self)
       end
     end
   end

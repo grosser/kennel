@@ -43,17 +43,26 @@ describe Kennel::Api do
       stub_datadog_request(:get, "monitor/1234")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
         .to_return(body: { bar: "foo" }.to_json)
-      api.show("monitor", 1234).must_equal bar: "foo"
+      answer = api.show("monitor", 1234)
+      answer.must_equal bar: "foo"
+      answer.klass.must_equal Kennel::Models::Monitor
+      answer.tracking_id.must_be_nil
     end
 
     it "fetches slo" do
       stub_datadog_request(:get, "slo/1234").to_return(body: { data: { bar: "foo" } }.to_json)
-      api.show("slo", "1234").must_equal bar: "foo"
+      answer = api.show("slo", "1234")
+      answer.must_equal bar: "foo"
+      answer.klass.must_equal Kennel::Models::Slo
+      answer.tracking_id.must_be_nil
     end
 
     it "fetches synthetics test" do
       stub_datadog_request(:get, "synthetics/tests/1234").to_return(body: { public_id: "1234" }.to_json)
-      api.show("synthetics/tests", "1234").must_equal id: "1234"
+      answer = api.show("synthetics/tests", "1234")
+      answer.must_equal id: "1234"
+      answer.klass.must_equal Kennel::Models::SyntheticTest
+      answer.tracking_id.must_be_nil
     end
 
     it "can pass params so external users can filter" do
@@ -76,13 +85,17 @@ describe Kennel::Api do
       stub_datadog_request(:get, "monitor", "&foo=bar")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
         .to_return(body: [{ bar: "foo" }].to_json)
-      api.list("monitor", foo: "bar").must_equal [{ bar: "foo" }]
+      answer = api.list("monitor", foo: "bar")
+      answer.must_equal [{ bar: "foo" }]
+      answer.map(&:klass).must_equal [Kennel::Models::Monitor]
     end
 
     it "fetches dashboards" do
       stub_datadog_request(:get, "dashboard")
         .to_return(body: { dashboards: [{ bar: "foo" }] }.to_json)
-      api.list("dashboard").must_equal [{ bar: "foo" }]
+      answer = api.list("dashboard")
+      answer.must_equal [{ bar: "foo" }]
+      answer.map(&:klass).must_equal [Kennel::Models::Dashboard]
     end
 
     it "shows a descriptive failure when request fails" do
@@ -94,14 +107,18 @@ describe Kennel::Api do
 
     it "fetches syntetic tests" do
       stub_datadog_request(:get, "synthetics/tests").to_return(body: { tests: [{ public_id: "123" }] }.to_json)
-      api.list("synthetics/tests").must_equal [{ id: "123" }]
+      answer = api.list("synthetics/tests")
+      answer.must_equal [{ id: "123" }]
+      answer.map(&:klass).must_equal [Kennel::Models::SyntheticTest]
     end
 
     describe "slo" do
       it "paginates" do
         stub_datadog_request(:get, "slo", "&limit=1000&offset=0").to_return(body: { data: Array.new(1000) { { bar: "foo" } } }.to_json)
         stub_datadog_request(:get, "slo", "&limit=1000&offset=1000").to_return(body: { data: [{ bar: "foo"  }] }.to_json)
-        api.list("slo").size.must_equal 1001
+        answer = api.list("slo")
+        answer.size.must_equal 1001
+        answer.map(&:klass).must_equal([Kennel::Models::Slo] * 1001)
       end
 
       it "fails when pagination would not work" do
@@ -115,7 +132,9 @@ describe Kennel::Api do
     it "creates a monitor" do
       stub_datadog_request(:post, "monitor")
         .with(body: "{\"foo\":\"bar\"}").to_return(body: { bar: "foo" }.to_json)
-      api.create("monitor", foo: "bar").must_equal bar: "foo"
+      answer = api.create("monitor", foo: "bar")
+      answer.must_equal bar: "foo"
+      answer.klass.must_equal Kennel::Models::Monitor
     end
 
     it "shows a descriptive failure when request fails" do
@@ -148,7 +167,9 @@ describe Kennel::Api do
     it "updates a monitor" do
       stub_datadog_request(:put, "monitor/123")
         .with(body: "{\"foo\":\"bar\"}").to_return(body: { bar: "foo" }.to_json)
-      api.update("monitor", 123, foo: "bar").must_equal bar: "foo"
+      answer = api.update("monitor", 123, foo: "bar")
+      answer.must_equal bar: "foo"
+      answer.klass.must_equal Kennel::Models::Monitor
     end
 
     it "updates a synthetics test" do

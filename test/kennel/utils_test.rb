@@ -136,13 +136,4 @@ describe Kennel::Utils do
       Kennel::Utils.all_keys([{ foo: 1 }, [[[{ bar: 2 }]]]]).must_equal [:foo, :bar]
     end
   end
-
-  describe ".inline_resource_metadata" do
-    it "adds klass and tracking_id" do
-      resource = { message: "-- Managed by kennel a:b" }
-      Kennel::Utils.inline_resource_metadata(resource, Kennel::Models::Monitor)
-      resource[:tracking_id].must_equal "a:b"
-      resource[:klass].must_equal Kennel::Models::Monitor
-    end
-  end
 end

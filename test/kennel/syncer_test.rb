@@ -13,14 +13,16 @@ describe Kennel::Syncer do
     project
   end
 
+  def tagged(api_resource, hash)
+    Kennel::Api::ResourceTaggedHash.new(api_resource, hash)
+  end
+
   def monitor_api_response(pid, cid, extra = {})
-    {
+    tagged("monitor", {
       tags: extra.delete(:tags) || ["service:a", "team:test_team"],
       message: "@slack-foo\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
-      options: {},
-      tracking_id: "#{pid}:#{cid}",
-      klass: Kennel::Models::Monitor
-    }.merge(extra)
+      options: {}
+    }.merge(extra))
   end
 
   def monitor(pid, cid, extra = {})
@@ -220,18 +222,14 @@ describe Kennel::Syncer do
 
     it "deletes in logical order" do
       monitors << monitor_api_response("a", "a")
-      dashboards << {
+      dashboards << tagged("dashboard", {
         id: "abc",
-        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-        tracking_id: "a:b",
-        klass: Kennel::Models::Dashboard
-      }
-      slos << {
+        description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+      })
+      slos << tagged("slo", {
         id: "1",
-        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually",
-        tracking_id: "a:c",
-        klass: Kennel::Models::Slo
-      }
+        description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
+      })
       output.must_equal "Plan:\nDelete dashboard a:b\nDelete slo a:c\nDelete monitor a:a\n"
     end
 
@@ -248,7 +246,7 @@ describe Kennel::Syncer do
     end
 
     it "leaves unmanaged alone" do
-      monitors << { id: 123, message: "foo", tags: [], tracking_id: nil, klass: Kennel::Models::Monitor }
+      monitors << monitor_api_response("ignore", "ignore", { id: 123, message: "foo", tags: [] })
       output.must_equal "Plan:\nNothing to do\n"
     end
 
@@ -292,7 +290,7 @@ describe Kennel::Syncer do
 
       it "leaves unmanaged alone" do
         add_identical
-        monitors << { id: 123, message: "foo", tags: [], tracking_id: nil, klass: Kennel::Models::Monitor }
+        monitors << monitor_api_response("ignore", "ignore", { id: 123, message: "foo", tags: [] })
         output.must_equal "Plan:\nNothing to do\n"
       end
 
@@ -351,14 +349,12 @@ describe Kennel::Syncer do
     describe "dashboards" do
       it "can plan for dashboards" do
         expected << dashboard("a", "b", id: "abc")
-        dashboards << {
+        dashboards << tagged("dashboard", {
           id: "abc",
           template_variables: [],
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          modified_at: "2015-12-17T23:12:26.726234+00:00",
-          tracking_id: "a:b",
-          klass: Kennel::Models::Dashboard
-        }
+          modified_at: "2015-12-17T23:12:26.726234+00:00"
+        })
         api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }
         output.must_equal "Plan:\nNothing to do\n"
       end
@@ -367,16 +363,14 @@ describe Kennel::Syncer do
     describe "slos" do
       before do
         expected << slo("a", "b", id: "abc")
-        slos << {
+        slos << tagged("slo", {
           id: "abc",
           name: "x\u{1F512}",
           type: "metric",
           thresholds: [],
           tags: ["team:test_team", "service:a"],
-          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          tracking_id: "a:b",
-          klass: Kennel::Models::Slo
-        }
+          description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
+        })
       end
 
       it "can plan for slos" do
@@ -516,7 +510,7 @@ describe Kennel::Syncer do
 
     it "creates" do
       expected << monitor("a", "b")
-      api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      api.expects(:create).with("monitor", expected.first.as_json).returns(tagged("monitor", expected.first.as_json.merge(id: 123)))
       output.must_equal <<~TXT
         Creating monitor a:b
         \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -525,7 +519,7 @@ describe Kennel::Syncer do
 
     it "returns a changelog" do
       expected << monitor("a", "b")
-      api.expects(:create).with("monitor", expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      api.expects(:create).with("monitor", expected.first.as_json).returns(tagged("monitor", expected.first.as_json.merge(id: 123)))
       syncer.update.changes.must_equal [change(:create, "monitor", "a:b", 123)]
     end
 
@@ -533,7 +527,7 @@ describe Kennel::Syncer do
       expected << monitor("a", "b", type: "event alert", options: { thresholds: { critical: 2 } })
       sent = deep_dup(expected.first.as_json)
       sent[:message] = "@slack-foo\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually".lstrip
-      api.expects(:create).with("monitor", sent).returns(sent.merge(id: 123))
+      api.expects(:create).with("monitor", sent).returns(tagged("monitor", sent.merge(id: 123)))
       output.must_equal <<~TXT
         Creating monitor a:b
         \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -543,7 +537,7 @@ describe Kennel::Syncer do
     it "updates" do
       expected << monitor("a", "b", foo: "bar")
       monitors << monitor_api_response("a", "b", id: 123)
-      api.expects(:update).with("monitor", 123, expected.first.as_json).returns(expected.first.as_json.merge(id: 123))
+      api.expects(:update).with("monitor", 123, expected.first.as_json).returns(tagged("monitor", expected.first.as_json.merge(id: 123)))
       update.changes.must_equal [change(:update, "monitor", "a:b", 123)]
       output.must_equal <<~TXT
         Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
@@ -572,7 +566,7 @@ describe Kennel::Syncer do
       # the syncer.
       api.expects(:create)
         .with("monitor", monitor.as_json)
-        .returns(monitor.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b"))
+        .returns(tagged("monitor", monitor.as_json.merge(id: 1, message: "\n-- Managed by kennel a:b")))
 
       api.expects(:create)
         .with(
@@ -581,7 +575,7 @@ describe Kennel::Syncer do
             monitor_ids: [1],
             description: "x\n-- Managed by kennel a:c in test/test_helper.rb, do not modify manually"
           )
-        ).returns(id: 2)
+        ).returns(tagged("monitor", id: 2))
       output.must_equal <<~TXT
         Creating monitor a:b
         \e[1A\033[KCreated monitor a:b https://app.datadoghq.com/monitors/1/edit
@@ -655,14 +649,12 @@ describe Kennel::Syncer do
 
     describe "synthetics" do
       it "can resolve a monitor id from an existing synthetic" do
-        synthetics << {
+        synthetics << tagged("synthetics/tests", {
           id: 123,
           monitor_id: 456,
           Kennel::Models::SyntheticTest::TRACKING_FIELD => "-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
-          tags: ["foo"],
-          tracking_id: "a:b",
-          klass: Kennel::Models::SyntheticTest
-        }
+          tags: ["foo"]
+        })
 
         synthetic = synthetic("a", "b", tags: ["foo"])
         slo = slo("a", "c", monitor_ids: ["a:b"])
@@ -672,7 +664,7 @@ describe Kennel::Syncer do
 
         api.expects(:create)
           .with("slo", slo.as_json)
-          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+          .returns(tagged("slo", slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c")))
 
         output.must_equal "Creating slo a:c\n\e[1A\e[KCreated slo a:c https://app.datadoghq.com/slo?slo_id=1000\n"
         slo.as_json[:monitor_ids].must_equal [456]
@@ -687,10 +679,10 @@ describe Kennel::Syncer do
 
         api.expects(:create)
           .with("synthetics/tests", synthetic.as_json)
-          .returns(synthetic.as_json.merge(id: 1001, monitor_id: 456, message: "\n-- Managed by kennel a:b"))
+          .returns(tagged("synthetics/tests", synthetic.as_json.merge(id: 1001, monitor_id: 456, message: "\n-- Managed by kennel a:b")))
         api.expects(:create)
           .with("slo", slo.as_json)
-          .returns(slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c"))
+          .returns(tagged("slo", slo.as_json.merge(id: 1000, message: "\n-- Managed by kennel a:c")))
 
         output.must_equal <<~OUTPUT
           Creating synthetics/tests a:b
@@ -705,14 +697,12 @@ describe Kennel::Syncer do
     describe "dashboards" do
       it "can update dashboards" do
         expected << dashboard("a", "b", id: "abc")
-        dashboards << {
+        dashboards << tagged("dashboard", {
           id: "abc",
           description: "y\n-- Managed by kennel test_project:b in test/test_helper.rb, do not modify manually",
           modified: "2015-12-17T23:12:26.726234+00:00",
-          graphs: [],
-          tracking_id: "test_project:b",
-          klass: Kennel::Models::Dashboard
-        }
+          graphs: []
+        })
         api.expects(:update).with("dashboard", "abc", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc"))
         output.must_equal <<~TXT
           Updating dashboard a:b https://app.datadoghq.com/dashboard/abc
@@ -722,7 +712,7 @@ describe Kennel::Syncer do
 
       it "can create dashboards" do
         expected << dashboard("a", "b")
-        api.expects(:create).with("dashboard", anything).returns(id: "abc")
+        api.expects(:create).with("dashboard", anything).returns(tagged("dashboard", id: "abc"))
         output.must_equal <<~TXT
           Creating dashboard a:b
           \e[1A\033[KCreated dashboard a:b https://app.datadoghq.com/dashboard/abc
