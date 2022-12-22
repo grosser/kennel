@@ -40,6 +40,10 @@ module Kennel
         done.each { |d| raise d if d.is_a?(Exception) }
       end
 
+      def natural_order(name)
+        name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
+      end
+
       def retry(*errors, times:)
         yield
       rescue *errors => e
@@ -47,10 +51,6 @@ module Kennel
         raise if times < 0
         Kennel.err.puts "Error #{e}, #{times} retries left"
         retry
-      end
-
-      def natural_order(name)
-        name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
       end
 
       # https://stackoverflow.com/questions/20235206/ruby-get-all-keys-in-a-hash-including-sub-keys/53876255#53876255
