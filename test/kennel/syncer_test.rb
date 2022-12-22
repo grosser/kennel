@@ -14,7 +14,7 @@ describe Kennel::Syncer do
   end
 
   def tagged(api_resource, hash)
-    Kennel::Api::ResourceTaggedHash.new(api_resource, hash)
+    Kennel::Api.tag(api_resource, hash)
   end
 
   def monitor_api_response(pid, cid, extra = {})

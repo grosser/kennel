@@ -30,7 +30,7 @@ module Kennel
         changes:
           @create.map { |_id, e, _a| Change.new(:create, e.class.api_resource, e.tracking_id, nil) } +
             @update.map { |id, e, _a| Change.new(:update, e.class.api_resource, e.tracking_id, id) } +
-            @delete.map { |id, _e, a| Change.new(:delete, a.klass.api_resource, a.tracking_id, id) }
+            @delete.map { |id, _e, a| Change.new(:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), id) }
       )
     end
 
@@ -73,11 +73,11 @@ module Kennel
       end
 
       @delete.each do |id, _, a|
-        klass = a.klass
-        message = "#{klass.api_resource} #{a.tracking_id} #{id}"
+        klass = a.fetch(:klass)
+        message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete klass.api_resource, id
-        changes << Change.new(:delete, klass.api_resource, a.tracking_id, id)
+        changes << Change.new(:delete, klass.api_resource, a.fetch(:tracking_id), id)
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
@@ -144,13 +144,13 @@ module Kennel
         end.compact
 
         # delete previously managed
-        @delete = unmatched_actual.map { |a| [a.fetch(:id), nil, a] if a.tracking_id }.compact
+        @delete = unmatched_actual.map { |a| [a.fetch(:id), nil, a] if a.fetch(:tracking_id) }.compact
 
         # unmatched expected need to be created
         @create = unmatched_expected.map { |e| [nil, e] }
 
         # order to avoid deadlocks
-        @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.klass.api_resource }
+        @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
         @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
       end
     end
@@ -202,15 +202,15 @@ module Kennel
     end
 
     def matching_expected(a, map)
-      klass = a.klass
-      map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.tracking_id]
+      klass = a.fetch(:klass)
+      map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
     end
 
     def print_changes(step, list, color)
       return if list.empty?
       list.each do |_, e, a, diff|
-        klass = (e ? e.class : a.klass)
-        Kennel.out.puts Console.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.tracking_id}")
+        klass = (e ? e.class : a.fetch(:klass))
+        Kennel.out.puts Console.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
         diff&.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
       end
     end
@@ -258,18 +258,18 @@ module Kennel
       project_prefixes = @project_filter&.map { |p| "#{p}:" }
       actual.each do |a|
         # ignore when not managed by kennel
-        next unless tracking_id = a.tracking_id
+        next unless tracking_id = a.fetch(:tracking_id)
 
         # ignore when deleted from the codebase
         # (when running with filters we cannot see the other resources in the codebase)
-        api_resource = a.klass.api_resource
+        api_resource = a.fetch(:klass).api_resource
         next if
           !@id_map.get(api_resource, tracking_id) &&
           (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
           (!@tracking_id_filter || @tracking_id_filter.include?(tracking_id))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
-        if a.klass.api_resource == "synthetics/tests"
+        if a.fetch(:klass).api_resource == "synthetics/tests"
           @id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))
         end
       end
@@ -282,13 +282,13 @@ module Kennel
     def filter_actual!(actual)
       if @tracking_id_filter
         actual.select! do |a|
-          tracking_id = a.tracking_id
+          tracking_id = a.fetch(:tracking_id)
           !tracking_id || @tracking_id_filter.include?(tracking_id)
         end
       elsif @project_filter
         project_prefixes = @project_filter.map { |p| "#{p}:" }
         actual.select! do |a|
-          tracking_id = a.tracking_id
+          tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
         end
       end
