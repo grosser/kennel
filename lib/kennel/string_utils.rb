@@ -30,10 +30,6 @@ module Kennel
         lines[-1] = warning if lines.size > to
         lines.join("\n")
       end
-
-      def natural_order(name)
-        name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
-      end
     end
   end
 end

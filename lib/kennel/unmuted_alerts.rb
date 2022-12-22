@@ -34,7 +34,7 @@ module Kennel
       # sort pod3 before pod11
       def sort_groups!(monitor)
         groups = monitor[:state][:groups].values
-        groups.sort_by! { |g| g[:name].to_s.split(",").map { |w| StringUtils.natural_order(w) } }
+        groups.sort_by! { |g| g[:name].to_s.split(",").map { |w| Utils.natural_order(w) } }
         monitor[:state][:groups] = groups
       end
 

@@ -49,6 +49,10 @@ module Kennel
         retry
       end
 
+      def natural_order(name)
+        name.split(/(\d+)/).each_with_index.map { |x, i| i.odd? ? x.to_i : x }
+      end
+
       # https://stackoverflow.com/questions/20235206/ruby-get-all-keys-in-a-hash-including-sub-keys/53876255#53876255
       def all_keys(items)
         case items

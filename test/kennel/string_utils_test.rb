@@ -55,22 +55,4 @@ describe Kennel::StringUtils do
       call("a\n\nb\nc").must_equal "a\n\nSNIP!"
     end
   end
-
-  describe ".natural_order" do
-    def sort(list)
-      list.sort_by { |x| Kennel::StringUtils.natural_order(x) }
-    end
-
-    it "sorts naturally" do
-      sort(["a11", "a1", "a22", "b1", "a12", "a9"]).must_equal ["a1", "a9", "a11", "a12", "a22", "b1"]
-    end
-
-    it "sorts pure numbers" do
-      sort(["11", "1", "22", "12", "9"]).must_equal ["1", "9", "11", "12", "22"]
-    end
-
-    it "sorts pure words" do
-      sort(["bb", "ab", "aa", "a", "b"]).must_equal ["a", "aa", "ab", "b", "bb"]
-    end
-  end
 end
