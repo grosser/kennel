@@ -15,7 +15,7 @@ module Kennel
     end
 
     class << self
-      def ask(question)
+      def ask?(question)
         Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ", force: true)
         begin
           STDIN.gets.chomp == "y"

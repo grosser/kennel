@@ -48,7 +48,7 @@ module Kennel
     def confirm
       return false if noop?
       return true if ENV["CI"] || !STDIN.tty? || !Kennel.err.tty?
-      Console.ask("Execute Plan ?")
+      Console.ask?("Execute Plan ?")
     end
 
     def update
