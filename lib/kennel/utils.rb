@@ -1,98 +1,9 @@
 # frozen_string_literal: true
 module Kennel
   module Utils
-    COLORS = { red: 31, green: 32, yellow: 33, cyan: 36, magenta: 35, default: 0 }.freeze
-
-    class TeeIO < IO
-      def initialize(ios)
-        super(0) # called with fake file descriptor 0, so we can call super and get a proper class
-        @ios = ios
-      end
-
-      def write(string)
-        @ios.each { |io| io.write string }
-      end
-    end
-
     class << self
-      def snake_case(string)
-        string
-          .gsub(/::/, "_") # Foo::Bar -> foo_bar
-          .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2') # FOOBar -> foo_bar
-          .gsub(/([a-z\d])([A-Z])/, '\1_\2') # fooBar -> foo_bar
-          .tr("-", "_") # foo-bar -> foo_bar
-          .downcase
-      end
-
-      # for child projects, not used internally
-      def title_case(string)
-        string.split(/[\s_]/).map(&:capitalize) * " "
-      end
-
-      # simplified version of https://apidock.com/rails/ActiveSupport/Inflector/parameterize
-      def parameterize(string)
-        string
-          .downcase
-          .gsub(/[^a-z0-9\-_]+/, "-") # remove unsupported
-          .gsub(/-{2,}/, "-") # remove duplicates
-          .gsub(/^-|-$/, "") # remove leading/trailing
-      end
-
       def presence(value)
         value.nil? || value.empty? ? nil : value
-      end
-
-      def ask(question)
-        Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ", force: true)
-        begin
-          STDIN.gets.chomp == "y"
-        rescue Interrupt # do not show a backtrace if user decides to Ctrl+C here
-          Kennel.err.print "\n"
-          exit 1
-        end
-      end
-
-      def color(color, text, force: false)
-        return text unless force || Kennel.out.tty?
-
-        "\e[#{COLORS.fetch(color)}m#{text}\e[0m"
-      end
-
-      def truncate_lines(text, to:, warning:)
-        lines = text.split(/\n/, to + 1)
-        lines[-1] = warning if lines.size > to
-        lines.join("\n")
-      end
-
-      def capture_stdout
-        old = Kennel.out
-        Kennel.out = StringIO.new
-        yield
-        Kennel.out.string
-      ensure
-        Kennel.out = old
-      end
-
-      def capture_stderr
-        old = Kennel.err
-        Kennel.err = StringIO.new
-        yield
-        Kennel.err.string
-      ensure
-        Kennel.err = old
-      end
-
-      def tee_output
-        old_stdout = Kennel.out
-        old_stderr = Kennel.err
-        capture = StringIO.new
-        Kennel.out = TeeIO.new([capture, Kennel.out])
-        Kennel.err = TeeIO.new([capture, Kennel.err])
-        yield
-        capture.string
-      ensure
-        Kennel.out = old_stdout
-        Kennel.err = old_stderr
       end
 
       def capture_sh(command)

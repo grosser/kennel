@@ -5,6 +5,8 @@ require "zeitwerk"
 require "English"
 
 require "kennel/version"
+require "kennel/console"
+require "kennel/string_utils"
 require "kennel/utils"
 require "kennel/progress"
 require "kennel/filter"

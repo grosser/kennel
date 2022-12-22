@@ -33,7 +33,7 @@ module Kennel
           model.remove_tracking_id(data)
           tracking_id.split(":").last
         else
-          Kennel::Utils.parameterize(title)
+          Kennel::StringUtils.parameterize(title)
         end
 
       case resource

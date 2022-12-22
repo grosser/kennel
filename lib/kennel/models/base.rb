@@ -10,7 +10,7 @@ module Kennel
       SETTING_OVERRIDABLE_METHODS = [:name, :kennel_id].freeze
 
       def kennel_id
-        @kennel_id ||= Utils.snake_case kennel_id_base
+        @kennel_id ||= StringUtils.snake_case kennel_id_base
       end
 
       def name

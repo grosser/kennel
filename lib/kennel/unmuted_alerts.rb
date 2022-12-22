@@ -22,7 +22,7 @@ module Kennel
             m[:state][:groups].each do |g|
               color = COLORS[g[:status]] || :default
               since = "\t#{time_since(g[:last_triggered_ts])}"
-              Kennel.out.puts "#{Kennel::Utils.color(color, g[:status])}\t#{g[:name]}#{since}"
+              Kennel.out.puts "#{Kennel::Console.color(color, g[:status])}\t#{g[:name]}#{since}"
             end
             Kennel.out.puts
           end
