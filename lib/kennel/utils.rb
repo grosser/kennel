@@ -61,11 +61,6 @@ module Kennel
         else []
         end
       end
-
-      def inline_resource_metadata(resource, klass)
-        resource[:klass] = klass
-        resource[:tracking_id] = klass.parse_tracking_id(resource)
-      end
     end
   end
 end

@@ -58,7 +58,6 @@ module Kennel
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
-        Utils.inline_resource_metadata reply, e.class
         id = reply.fetch(:id)
         changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
         populate_id_map [], [reply] # allow resolving ids we could previously no resolve
@@ -270,7 +269,7 @@ module Kennel
           (!@tracking_id_filter || @tracking_id_filter.include?(tracking_id))
 
         @id_map.set(api_resource, tracking_id, a.fetch(:id))
-        if a[:klass].api_resource == "synthetics/tests"
+        if a.fetch(:klass).api_resource == "synthetics/tests"
           @id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))
         end
       end

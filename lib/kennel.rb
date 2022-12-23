@@ -135,8 +135,7 @@ module Kennel
     def definitions(**kwargs)
       @definitions ||= Progress.progress("Downloading definitions", **kwargs) do
         Utils.parallel(Models::Record.subclasses) do |klass|
-          results = api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
-          results.each { |a| Utils.inline_resource_metadata(a, klass) }
+          api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
         end.flatten(1)
       end
     end

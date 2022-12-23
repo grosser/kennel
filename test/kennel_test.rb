@@ -109,7 +109,7 @@ describe Kennel do
     it "update" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
-      Kennel::Api.any_instance.expects(:create).returns(id: 123)
+      Kennel::Api.any_instance.expects(:create).returns(Kennel::Api.tag("monitor", id: 123))
 
       kennel.update
 
