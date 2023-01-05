@@ -7,10 +7,12 @@ module Kennel
 
     def self.tag(api_resource, reply)
       klass = Models::Record.api_resource_map[api_resource]
-      klass ? reply.merge(
+      return reply unless klass # do not blow up on unknown models
+
+      reply.merge(
         klass: klass,
         tracking_id: klass.parse_tracking_id(reply)
-      ) : reply
+      )
     end
 
     def initialize(app_key = nil, api_key = nil)
