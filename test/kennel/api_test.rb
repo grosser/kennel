@@ -112,6 +112,12 @@ describe Kennel::Api do
       answer.must_equal [{ id: "123", klass: Kennel::Models::SyntheticTest, tracking_id: nil }]
     end
 
+    it "fetches unknown types" do
+      stub_datadog_request(:get, "monitor/123/search_events").to_return(body: [{ id: "12345" }].to_json)
+      answer = api.list("monitor/123/search_events")
+      answer.must_equal [{ id: "12345" }]
+    end
+
     describe "slo" do
       it "paginates" do
         stub_datadog_request(:get, "slo", "&limit=1000&offset=0").to_return(body: { data: Array.new(1000) { { bar: "foo" } } }.to_json)
