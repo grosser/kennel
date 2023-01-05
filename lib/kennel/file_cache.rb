@@ -57,7 +57,9 @@ module Kennel
     # - delete expired keys
     # - delete what would be deleted anyway when updating
     def expire_old_data
-      @data.reject! { |_, (_, (_, cv), expires)| expires < @now || cv != @cache_version }
+      @data.reject! do |(_api_resource, _id), (_value, (_key_version, cache_version), expires)|
+        expires < @now || cache_version != @cache_version
+      end
     end
   end
 end
