@@ -54,6 +54,15 @@ module Kennel
     def update
       changes = []
 
+      @delete.each do |id, _, a|
+        klass = a.fetch(:klass)
+        message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
+        Kennel.out.puts "Deleting #{message}"
+        @api.delete klass.api_resource, id
+        changes << Change.new(:delete, klass.api_resource, a.fetch(:tracking_id), id)
+        Kennel.out.puts "#{LINE_UP}Deleted #{message}"
+      end
+
       each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
@@ -70,15 +79,6 @@ module Kennel
         @api.update e.class.api_resource, id, e.as_json
         changes << Change.new(:update, e.class.api_resource, e.tracking_id, id)
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
-      end
-
-      @delete.each do |id, _, a|
-        klass = a.fetch(:klass)
-        message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
-        Kennel.out.puts "Deleting #{message}"
-        @api.delete klass.api_resource, id
-        changes << Change.new(:delete, klass.api_resource, a.fetch(:tracking_id), id)
-        Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
       Plan.new(changes: changes)

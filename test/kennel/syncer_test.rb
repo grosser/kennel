@@ -604,6 +604,59 @@ describe Kennel::Syncer do
       assert_raises(Kennel::UnresolvableIdError) { output }.message.must_include "Unable to find"
     end
 
+    describe "pre-existing duplicate tracking IDs" do
+      it "handles duplicate dashboards" do
+        expected << dashboard("a", "b")
+        dashboards << tagged("dashboard", {
+          id: "abc1",
+          description: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified: "2015-12-17T23:12:26.726234+00:00",
+          graphs: []
+        })
+        dashboards << tagged("dashboard", {
+          id: "abc2",
+          description: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          modified: "2015-12-17T23:12:26.726234+00:00",
+          graphs: []
+        })
+        # Either order is OK
+        api.expects(:update).with("dashboard", "abc1", expected.first.as_json).returns(expected.first.as_json.merge(id: "abc1"))
+        api.expects(:delete).with("dashboard", "abc2")
+        output.must_include "Updating dashboard a:b https://app.datadoghq.com/dashboard/abc1"
+        output.must_include "Deleting dashboard a:b abc2"
+        output
+      end
+
+      it "handles duplicate monitors" do
+        expected << monitor("a", "b")
+        monitors << tagged("monitor", {
+          id: 1111,
+          message: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          options: {}
+        })
+        monitors << tagged("monitor", {
+          id: 2222,
+          message: "y\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually",
+          options: {}
+        })
+
+        api.expects(:delete).with("monitor", 2222)
+        api.expects(:update).with("monitor", 1111, expected.first.as_json).returns(expected.first.as_json.merge(id: "abc1"))
+
+        # We must delete before we update. Rationale:
+        # Datadog (for some reason) enforces monitor uniqueness on title+query+message.
+        # Monitor updates can therefore fail because of this constraint.
+        # Deletions will never hit this constraint. So we delete first,
+        # to guarantee that the following updates will not hit the constraint.
+        output.must_equal <<~OUTPUT
+          Deleting monitor a:b 2222
+          \e[1A\e[KDeleted monitor a:b 2222
+          Updating monitor a:b https://app.datadoghq.com/monitors/1111/edit
+          \e[1A\e[KUpdated monitor a:b https://app.datadoghq.com/monitors/1111/edit
+        OUTPUT
+      end
+    end
+
     describe "with project_filter" do
       let(:project_filter) { ["a"] }
 
