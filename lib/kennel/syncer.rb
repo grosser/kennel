@@ -16,8 +16,6 @@ module Kennel
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
 
-      @attribute_differ = AttributeDiffer.new
-
       @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
       calculate_changes
@@ -34,14 +32,7 @@ module Kennel
     end
 
     def print_plan
-      Kennel.out.puts "Plan:"
-      if noop?
-        Kennel.out.puts Console.color(:green, "Nothing to do")
-      else
-        print_changes "Create", @create, :green
-        print_changes "Update", @update, :yellow
-        print_changes "Delete", @delete, :red
-      end
+      PlanDisplayer.new.display(@create, @update, @delete)
     end
 
     def confirm
@@ -142,16 +133,6 @@ module Kennel
       end
     end
 
-    def print_changes(step, list, color)
-      return if list.empty?
-      list.each do |item|
-        Kennel.out.puts Console.color(color, "#{step} #{item.api_resource} #{item.tracking_id}")
-        if item.respond_to?(:diff)
-          item.diff.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
-        end
-      end
-    end
-
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
     def validate_changes
@@ -194,6 +175,35 @@ module Kennel
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
+        end
+      end
+    end
+
+    class PlanDisplayer
+      def initialize
+        @attribute_differ = AttributeDiffer.new
+      end
+
+      def display(create, update, delete)
+        Kennel.out.puts "Plan:"
+        if create.empty? && update.empty? && delete.empty?
+          Kennel.out.puts Console.color(:green, "Nothing to do")
+        else
+          print_changes "Create", create, :green
+          print_changes "Update", update, :yellow
+          print_changes "Delete", delete, :red
+        end
+      end
+
+      private
+
+      def print_changes(step, list, color)
+        return if list.empty?
+        list.each do |item|
+          Kennel.out.puts Console.color(color, "#{step} #{item.api_resource} #{item.tracking_id}")
+          if item.respond_to?(:diff)
+            item.diff.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
+          end
         end
       end
     end
