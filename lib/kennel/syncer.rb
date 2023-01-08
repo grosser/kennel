@@ -63,17 +63,17 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      each_resolved @create do |_, e|
+      @resolver.each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
         changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
-        populate_id_map [], [reply] # allow resolving ids we could previously no resolve
+        @resolver.populate_id_map [], [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
-      each_resolved @update do |id, e|
+      @resolver.each_resolved @update do |id, e|
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
         @api.update e.class.api_resource, id, e.as_json
@@ -86,49 +86,18 @@ module Kennel
 
     private
 
-    # loop over items until everything is resolved or crash when we get stuck
-    # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
-    def each_resolved(list)
-      list = list.dup
-      loop do
-        return if list.empty?
-        list.reject! do |id, e|
-          if resolved?(e)
-            yield id, e
-            true
-          else
-            false
-          end
-        end ||
-          assert_resolved(list[0][1]) # resolve something or show a circular dependency error
-      end
-    end
-
-    # TODO: optimize by storing an instance variable if already resolved
-    def resolved?(e)
-      assert_resolved e
-      true
-    rescue UnresolvableIdError
-      false
-    end
-
-    # raises UnresolvableIdError when not resolved
-    def assert_resolved(e)
-      resolve_linked_tracking_ids! [e], force: true
-    end
-
     def noop?
       @create.empty? && @update.empty? && @delete.empty?
     end
 
     def calculate_changes
       @warnings = []
-      @id_map = IdMap.new
+      @resolver = Resolver.new(project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
       Progress.progress "Diffing" do
-        populate_id_map @expected, @actual
+        @resolver.populate_id_map @expected, @actual
         filter_actual! @actual
-        resolve_linked_tracking_ids! @expected # resolve dependencies to avoid diff
+        @resolver.resolve_linked_tracking_ids! @expected # resolve as many dependencies as possible to reduce the diff
         @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
 
         # see which expected match the actual
@@ -212,40 +181,6 @@ module Kennel
       end
     end
 
-    def populate_id_map(expected, actual)
-      # mark everything as new
-      expected.each do |e|
-        @id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
-        if e.class.api_resource == "synthetics/tests"
-          @id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
-        end
-      end
-
-      # override resources that exist with their id
-      project_prefixes = @project_filter&.map { |p| "#{p}:" }
-      actual.each do |a|
-        # ignore when not managed by kennel
-        next unless tracking_id = a.fetch(:tracking_id)
-
-        # ignore when deleted from the codebase
-        # (when running with filters we cannot see the other resources in the codebase)
-        api_resource = a.fetch(:klass).api_resource
-        next if
-          !@id_map.get(api_resource, tracking_id) &&
-          (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
-          (!@tracking_id_filter || @tracking_id_filter.include?(tracking_id))
-
-        @id_map.set(api_resource, tracking_id, a.fetch(:id))
-        if a.fetch(:klass).api_resource == "synthetics/tests"
-          @id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))
-        end
-      end
-    end
-
-    def resolve_linked_tracking_ids!(list, force: false)
-      list.each { |e| e.resolve_linked_tracking_ids!(@id_map, force: force) }
-    end
-
     def filter_actual!(actual)
       if @tracking_id_filter
         actual.select! do |a|
@@ -258,6 +193,84 @@ module Kennel
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
         end
+      end
+    end
+
+    class Resolver
+      def initialize(project_filter:, tracking_id_filter:)
+        @id_map = IdMap.new
+        @project_filter = project_filter
+        @tracking_id_filter = tracking_id_filter
+      end
+
+      def populate_id_map(expected, actual)
+        # mark everything as new
+        expected.each do |e|
+          id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
+          if e.class.api_resource == "synthetics/tests"
+            id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
+          end
+        end
+
+        # override resources that exist with their id
+        project_prefixes = project_filter&.map { |p| "#{p}:" }
+
+        actual.each do |a|
+          # ignore when not managed by kennel
+          next unless tracking_id = a.fetch(:tracking_id)
+
+          # ignore when deleted from the codebase
+          # (when running with filters we cannot see the other resources in the codebase)
+          api_resource = a.fetch(:klass).api_resource
+          next if
+            !id_map.get(api_resource, tracking_id) &&
+            (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
+            (!tracking_id_filter || tracking_id_filter.include?(tracking_id))
+
+          id_map.set(api_resource, tracking_id, a.fetch(:id))
+          if a.fetch(:klass).api_resource == "synthetics/tests"
+            id_map.set(Kennel::Models::Monitor.api_resource, tracking_id, a.fetch(:monitor_id))
+          end
+        end
+      end
+
+      # loop over items until everything is resolved or crash when we get stuck
+      # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
+      def each_resolved(list)
+        list = list.dup
+        loop do
+          return if list.empty?
+          list.reject! do |id, e|
+            if resolved?(e)
+              yield id, e
+              true
+            else
+              false
+            end
+          end ||
+            assert_resolved(list[0][1]) # resolve something or show a circular dependency error
+        end
+      end
+
+      def resolve_linked_tracking_ids!(list, force: false)
+        list.each { |e| e.resolve_linked_tracking_ids!(id_map, force: force) }
+      end
+
+      private
+
+      attr_reader :id_map, :project_filter, :tracking_id_filter
+
+      # TODO: optimize by storing an instance variable if already resolved
+      def resolved?(e)
+        assert_resolved e
+        true
+      rescue UnresolvableIdError
+        false
+      end
+
+      # raises UnresolvableIdError when not resolved
+      def assert_resolved(e)
+        resolve_linked_tracking_ids! [e], force: true
       end
     end
 
