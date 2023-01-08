@@ -29,10 +29,7 @@ module Kennel
 
     def plan
       Plan.new(
-        changes:
-          @create.map { |_id, e, _a| Change.new(:create, e.class.api_resource, e.tracking_id, nil) } +
-            @update.map { |id, e, _a| Change.new(:update, e.class.api_resource, e.tracking_id, id) } +
-            @delete.map { |id, _e, a| Change.new(:delete, a.fetch(:klass).api_resource, a.fetch(:tracking_id), id) }
+        changes: (@create + @update + @delete).map(&:change)
       )
     end
 
@@ -56,30 +53,29 @@ module Kennel
     def update
       changes = []
 
-      @delete.each do |id, _, a|
-        klass = a.fetch(:klass)
-        message = "#{klass.api_resource} #{a.fetch(:tracking_id)} #{id}"
+      @delete.each do |item|
+        message = "#{item.api_resource} #{item.tracking_id} #{item.id}"
         Kennel.out.puts "Deleting #{message}"
-        @api.delete klass.api_resource, id
-        changes << Change.new(:delete, klass.api_resource, a.fetch(:tracking_id), id)
+        @api.delete item.api_resource, item.id
+        changes << item.change
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      resolver.each_resolved @create do |_, e|
-        message = "#{e.class.api_resource} #{e.tracking_id}"
+      resolver.each_resolved @create do |item|
+        message = "#{item.api_resource} #{item.tracking_id}"
         Kennel.out.puts "Creating #{message}"
-        reply = @api.create e.class.api_resource, e.as_json
+        reply = @api.create item.api_resource, item.expected.as_json
         id = reply.fetch(:id)
-        changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
-        resolver.add_actual [reply] # allow resolving ids we could previously no resolve
-        Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
+        changes << item.change(id)
+        resolver.add_actual [reply] # allow resolving ids we could previously not resolve
+        Kennel.out.puts "#{LINE_UP}Created #{message} #{item.url(id)}"
       end
 
-      resolver.each_resolved @update do |id, e|
-        message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
+      resolver.each_resolved @update do |item|
+        message = "#{item.api_resource} #{item.tracking_id} #{item.url}"
         Kennel.out.puts "Updating #{message}"
-        @api.update e.class.api_resource, id, e.as_json
-        changes << Change.new(:update, e.class.api_resource, e.tracking_id, id)
+        @api.update item.api_resource, item.id, item.expected.as_json
+        changes << item.change
         Kennel.out.puts "#{LINE_UP}Updated #{message}"
       end
 
@@ -112,18 +108,19 @@ module Kennel
         @update = matching.map do |e, a|
           id = a.fetch(:id)
           diff = e.diff(a)
-          [id, e, a, diff] if diff.any?
+          a[:id] = id
+          Types::PlannedUpdate.new(e, a, diff) if diff.any?
         end.compact
 
         # delete previously managed
-        @delete = unmatched_actual.map { |a| [a.fetch(:id), nil, a] if a.fetch(:tracking_id) }.compact
+        @delete = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
 
         # unmatched expected need to be created
-        @create = unmatched_expected.map { |e| [nil, e] }
+        @create = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
 
         # order to avoid deadlocks
-        @delete.sort_by! { |_, _, a| DELETE_ORDER.index a.fetch(:klass).api_resource }
-        @update.sort_by! { |_, e, _| DELETE_ORDER.index e.class.api_resource } # slo needs to come before slo alert
+        @delete.sort_by! { |item| DELETE_ORDER.index item.api_resource }
+        @update.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
       end
     end
 
@@ -147,18 +144,19 @@ module Kennel
 
     def print_changes(step, list, color)
       return if list.empty?
-      list.each do |_, e, a, diff|
-        klass = (e ? e.class : a.fetch(:klass))
-        Kennel.out.puts Console.color(color, "#{step} #{klass.api_resource} #{e&.tracking_id || a.fetch(:tracking_id)}")
-        diff&.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
+      list.each do |item|
+        Kennel.out.puts Console.color(color, "#{step} #{item.api_resource} #{item.tracking_id}")
+        if item.respond_to?(:diff)
+          item.diff.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
+        end
       end
     end
 
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
     def validate_changes
-      @update.each do |_, expected, actuals, diffs|
-        item.expected.validate_update!(diffs)
+      @update.each do |item|
+        item.expected.validate_update!(item.diff)
       end
     end
 
@@ -167,20 +165,21 @@ module Kennel
     # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
     def prevent_irreversible_partial_updates
       return unless @project_filter # full update, so we are not on a branch
-      @update.select! do |_, e, _, diff| # ensure clean diff, by removing noop-update
-        next true unless e.id # safe to add tracking when not having id
 
-        diff.select! do |field_diff|
-          (_, field, actual) = field_diff
+      @update.select! do |item| # ensure clean diff, by removing noop-update
+        klass = item.expected.class
+
+        item.diff.select! do |field_diff|
+          (_, field, old_value) = field_diff
           # TODO: refactor this so TRACKING_FIELD stays record-private
-          next true if e.class::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
-          next true if e.class.parse_tracking_id(field.to_sym => actual) # already has tracking id
+          next true if klass::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
+          next true if klass.parse_tracking_id(field.to_sym => old_value) # already has tracking id
 
-          field_diff[3] = e.remove_tracking_id # make `rake plan` output match what we are sending
-          actual != field_diff[3] # discard diff if now nothing changes
+          field_diff[3] = item.expected.remove_tracking_id # make `rake plan` output match what we are sending
+          old_value != field_diff[3] # discard diff if now nothing changes
         end
 
-        diff.any?
+        item.diff.any?
       end
     end
 
@@ -249,15 +248,15 @@ module Kennel
         list = list.dup
         loop do
           return if list.empty?
-          list.reject! do |id, e|
-            if resolved?(e)
-              yield id, e
+          list.reject! do |item|
+            if resolved?(item.expected)
+              yield item
               true
             else
               false
             end
           end ||
-            assert_resolved(list[0][1]) # resolve something or show a circular dependency error
+            assert_resolved(list[0].expected) # resolve something or show a circular dependency error
         end
       end
 
@@ -315,6 +314,74 @@ module Kennel
           klass = a.fetch(:klass)
           map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
         end
+      end
+    end
+
+    module Types
+      class PlannedChange
+        def initialize(klass, tracking_id)
+          @klass = klass
+          @tracking_id = tracking_id
+        end
+
+        def api_resource
+          klass.api_resource
+        end
+
+        def url(id = nil)
+          klass.url(id || self.id)
+        end
+
+        def change(id = nil)
+          Change.new(self.class::TYPE, api_resource, tracking_id, id)
+        end
+
+        attr_reader :klass, :tracking_id
+      end
+
+      class PlannedCreate < PlannedChange
+        TYPE = :create
+
+        def initialize(expected)
+          super(expected.class, expected.tracking_id)
+          @expected = expected
+        end
+
+        attr_reader :expected
+      end
+
+      class PlannedUpdate < PlannedChange
+        TYPE = :update
+
+        def initialize(expected, actual, diff)
+          super(expected.class, expected.tracking_id)
+          @expected = expected
+          @actual = actual
+          @diff = diff
+          @id = actual.fetch(:id)
+        end
+
+        def change
+          super(id)
+        end
+
+        attr_reader :expected, :actual, :diff, :id
+      end
+
+      class PlannedDelete < PlannedChange
+        TYPE = :delete
+
+        def initialize(actual)
+          super(actual.fetch(:klass), actual.fetch(:tracking_id))
+          @actual = actual
+          @id = actual.fetch(:id)
+        end
+
+        def change
+          super(id)
+        end
+
+        attr_reader :actual, :id
       end
     end
   end
