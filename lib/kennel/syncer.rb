@@ -18,6 +18,8 @@ module Kennel
 
       @attribute_differ = AttributeDiffer.new
 
+      @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
+
       calculate_changes
       validate_changes
       prevent_irreversible_partial_updates
@@ -63,17 +65,17 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      @resolver.each_resolved @create do |_, e|
+      resolver.each_resolved @create do |_, e|
         message = "#{e.class.api_resource} #{e.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
         changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
-        @resolver.add_actual [reply] # allow resolving ids we could previously no resolve
+        resolver.add_actual [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
-      @resolver.each_resolved @update do |id, e|
+      resolver.each_resolved @update do |id, e|
         message = "#{e.class.api_resource} #{e.tracking_id} #{e.class.url(id)}"
         Kennel.out.puts "Updating #{message}"
         @api.update e.class.api_resource, id, e.as_json
@@ -86,18 +88,19 @@ module Kennel
 
     private
 
+    attr_reader :resolver
+
     def noop?
       @create.empty? && @update.empty? && @delete.empty?
     end
 
     def calculate_changes
       @warnings = []
-      @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
       Progress.progress "Diffing" do
-        @resolver.add_actual @actual
+        resolver.add_actual @actual
         filter_actual! @actual
-        @resolver.resolve_linked_tracking_ids! @expected # resolve as many dependencies as possible to reduce the diff
+        resolver.resolve_as_much_as_possible(@expected) # resolve as many dependencies as possible to reduce the diff
         @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
 
         # see which expected match the actual
@@ -234,6 +237,12 @@ module Kennel
         end
       end
 
+      def resolve_as_much_as_possible(expected)
+        expected.each do |e|
+          e.resolve_linked_tracking_ids!(id_map, force: false)
+        end
+      end
+
       # loop over items until everything is resolved or crash when we get stuck
       # this solves cases like composite monitors depending on each other or monitor->monitor slo->slo monitor chains
       def each_resolved(list)
@@ -252,10 +261,6 @@ module Kennel
         end
       end
 
-      def resolve_linked_tracking_ids!(list, force: false)
-        list.each { |e| e.resolve_linked_tracking_ids!(id_map, force: force) }
-      end
-
       private
 
       attr_reader :id_map, :project_filter, :tracking_id_filter
@@ -270,7 +275,7 @@ module Kennel
 
       # raises UnresolvableIdError when not resolved
       def assert_resolved(e)
-        resolve_linked_tracking_ids! [e], force: true
+        e.resolve_linked_tracking_ids!(id_map, force: true)
       end
     end
 
