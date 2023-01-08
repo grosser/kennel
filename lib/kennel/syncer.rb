@@ -69,7 +69,7 @@ module Kennel
         reply = @api.create e.class.api_resource, e.as_json
         id = reply.fetch(:id)
         changes << Change.new(:create, e.class.api_resource, e.tracking_id, id)
-        @resolver.populate_id_map [], [reply] # allow resolving ids we could previously no resolve
+        @resolver.add_actual [reply] # allow resolving ids we could previously no resolve
         Kennel.out.puts "#{LINE_UP}Created #{message} #{e.class.url(id)}"
       end
 
@@ -92,10 +92,10 @@ module Kennel
 
     def calculate_changes
       @warnings = []
-      @resolver = Resolver.new(project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
+      @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
       Progress.progress "Diffing" do
-        @resolver.populate_id_map @expected, @actual
+        @resolver.add_actual @actual
         filter_actual! @actual
         @resolver.resolve_linked_tracking_ids! @expected # resolve as many dependencies as possible to reduce the diff
         @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
@@ -197,13 +197,11 @@ module Kennel
     end
 
     class Resolver
-      def initialize(project_filter:, tracking_id_filter:)
+      def initialize(expected:, project_filter:, tracking_id_filter:)
         @id_map = IdMap.new
         @project_filter = project_filter
         @tracking_id_filter = tracking_id_filter
-      end
 
-      def populate_id_map(expected, actual)
         # mark everything as new
         expected.each do |e|
           id_map.set(e.class.api_resource, e.tracking_id, IdMap::NEW)
@@ -211,7 +209,9 @@ module Kennel
             id_map.set(Kennel::Models::Monitor.api_resource, e.tracking_id, IdMap::NEW)
           end
         end
+      end
 
+      def add_actual(actual)
         # override resources that exist with their id
         project_prefixes = project_filter&.map { |p| "#{p}:" }
 
