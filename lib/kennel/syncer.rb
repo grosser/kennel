@@ -132,7 +132,7 @@ module Kennel
         @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
 
         # see which expected match the actual
-        matching, unmatched_expected, unmatched_actual = partition_matched_expected
+        matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(@expected, @actual)
         validate_expected_id_not_missing unmatched_expected
         fill_details! matching # need details to diff later
 
@@ -155,22 +155,6 @@ module Kennel
       end
     end
 
-    def partition_matched_expected
-      lookup_map = matching_expected_lookup_map
-      unmatched_expected = @expected.dup
-      unmatched_actual = []
-      matched = []
-      @actual.each do |a|
-        e = matching_expected(a, lookup_map)
-        if e && unmatched_expected.delete?(e)
-          matched << [e, a]
-        else
-          unmatched_actual << a
-        end
-      end.compact
-      [matched, unmatched_expected, unmatched_actual]
-    end
-
     # fill details of things we need to compare
     def fill_details!(details_needed)
       details_needed = details_needed.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
@@ -187,23 +171,6 @@ module Kennel
           @warnings << "#{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."
         end
       end
-    end
-
-    # index list by all the thing we look up by: tracking id and actual id
-    def matching_expected_lookup_map
-      @expected.each_with_object({}) do |e, all|
-        keys = [e.tracking_id]
-        keys << "#{e.class.api_resource}:#{e.id}" if e.id
-        keys.compact.each do |key|
-          raise "Lookup #{key} is duplicated" if all[key]
-          all[key] = e
-        end
-      end
-    end
-
-    def matching_expected(a, map)
-      klass = a.fetch(:klass)
-      map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
     end
 
     def print_changes(step, list, color)
@@ -290,6 +257,45 @@ module Kennel
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)
+        end
+      end
+    end
+
+    module MatchedExpected
+      class << self
+        def partition(expected, actual)
+          lookup_map = matching_expected_lookup_map(expected)
+          unmatched_expected = expected.dup
+          unmatched_actual = []
+          matched = []
+          actual.each do |a|
+            e = matching_expected(a, lookup_map)
+            if e && unmatched_expected.delete?(e)
+              matched << [e, a]
+            else
+              unmatched_actual << a
+            end
+          end.compact
+          [matched, unmatched_expected, unmatched_actual]
+        end
+
+        private
+
+        # index list by all the thing we look up by: tracking id and actual id
+        def matching_expected_lookup_map(expected)
+          expected.each_with_object({}) do |e, all|
+            keys = [e.tracking_id]
+            keys << "#{e.class.api_resource}:#{e.id}" if e.id
+            keys.compact.each do |key|
+              raise "Lookup #{key} is duplicated" if all[key]
+              all[key] = e
+            end
+          end
+        end
+
+        def matching_expected(a, map)
+          klass = a.fetch(:klass)
+          map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
         end
       end
     end
