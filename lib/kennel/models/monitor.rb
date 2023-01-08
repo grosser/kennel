@@ -137,7 +137,7 @@ module Kennel
         end
       end
 
-      def validate_update!(_actuals, diffs)
+      def validate_update!(diffs)
         # ensure type does not change, but not if it's metric->query which is supported and used by importer.rb
         _, path, from, to = diffs.detect { |_, path, _, _| path == "type" }
         if path && !(from == "metric alert" && to == "query alert")

@@ -371,12 +371,12 @@ describe Kennel::Models::Dashboard do
 
   describe "#validate_update!" do
     it "allows update of title" do
-      dashboard.validate_update!(nil, [["~", "title", "foo", "bar"]])
+      dashboard.validate_update!([["~", "title", "foo", "bar"]])
     end
 
     it "disallows update of layout_type" do
       e = assert_raises Kennel::DisallowedUpdateError do
-        dashboard.validate_update!(nil, [["~", "layout_type", "foo", "bar"]])
+        dashboard.validate_update!([["~", "layout_type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*layout_type/i)
     end

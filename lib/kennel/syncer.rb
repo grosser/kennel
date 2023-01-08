@@ -158,7 +158,7 @@ module Kennel
     # Now that we have made the plan, we can perform some more validation.
     def validate_changes
       @update.each do |_, expected, actuals, diffs|
-        expected.validate_update!(actuals, diffs)
+        item.expected.validate_update!(diffs)
       end
     end
 

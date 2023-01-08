@@ -167,7 +167,7 @@ module Kennel
       end
 
       # Can raise DisallowedUpdateError
-      def validate_update!(*)
+      def validate_update!(_diffs)
       end
 
       def invalid_update!(field, old_value, new_value)
