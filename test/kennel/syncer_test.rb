@@ -670,7 +670,7 @@ describe Kennel::Syncer do
 
       it "removes tracking from partial updates with ids if they would be deleted by other branches" do
         expected << monitor("a", "b", foo: "bar", id: 123)
-        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor")
+        monitors << monitor_api_response("a", "b", id: 123).merge(message: "An innocent monitor", tracking_id: nil)
         api.expects(:update).with { |_, _, data| data[:message].must_equal "@slack-foo" }
         output.must_equal <<~TXT
           Updating monitor a:b https://app.datadoghq.com/monitors/123/edit
