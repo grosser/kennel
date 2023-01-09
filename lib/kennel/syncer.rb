@@ -6,6 +6,7 @@ module Kennel
     LINE_UP = "\e[1A\033[K" # go up and clear
 
     Plan = Struct.new(:changes, keyword_init: true)
+    InternalPlan = Struct.new(:creates, :updates, :deletes)
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
     def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
@@ -16,20 +17,22 @@ module Kennel
 
       @resolver = Resolver.new(expected: expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
-      calculate_changes(expected: expected, actual: actual)
-      validate_changes
+      internal_plan = calculate_changes(expected: expected, actual: actual)
+      validate_changes(internal_plan)
+      @internal_plan = internal_plan
 
       @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
     end
 
     def plan
+      ip = @internal_plan
       Plan.new(
-        changes: (@create + @update + @delete).map(&:change)
+        changes: (ip.creates + ip.updates + ip.deletes).map(&:change)
       )
     end
 
     def print_plan
-      PlanDisplayer.new.display(@create, @update, @delete)
+      PlanDisplayer.new.display(internal_plan)
     end
 
     def confirm
@@ -41,7 +44,7 @@ module Kennel
     def update
       changes = []
 
-      @delete.each do |item|
+      internal_plan.deletes.each do |item|
         message = "#{item.api_resource} #{item.tracking_id} #{item.id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete item.api_resource, item.id
@@ -49,7 +52,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      resolver.each_resolved @create do |item|
+      resolver.each_resolved internal_plan.creates do |item|
         message = "#{item.api_resource} #{item.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create item.api_resource, item.expected.as_json
@@ -59,7 +62,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Created #{message} #{item.url(id)}"
       end
 
-      resolver.each_resolved @update do |item|
+      resolver.each_resolved internal_plan.updates do |item|
         message = "#{item.api_resource} #{item.tracking_id} #{item.url}"
         Kennel.out.puts "Updating #{message}"
         @api.update item.api_resource, item.id, item.expected.as_json
@@ -72,10 +75,10 @@ module Kennel
 
     private
 
-    attr_reader :resolver
+    attr_reader :resolver, :internal_plan
 
     def noop?
-      @create.empty? && @update.empty? && @delete.empty?
+      internal_plan.values.all?(&:empty?)
     end
 
     def calculate_changes(expected:, actual:)
@@ -92,7 +95,7 @@ module Kennel
         fill_details! matching # need details to diff later
 
         # update matching if needed
-        @update = matching.map do |e, a|
+        updates = matching.map do |e, a|
           # Refuse to "adopt" existing items into kennel while running with a filter (i.e. on a branch).
           # Without this, we'd adopt an item, then the next CI run would delete it
           # (instead of "unadopting" it).
@@ -104,15 +107,17 @@ module Kennel
         end.compact
 
         # delete previously managed
-        @delete = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
+        deletes = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
 
         # unmatched expected need to be created
         unmatched_expected.each(&:add_tracking_id)
-        @create = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
+        creates = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
 
         # order to avoid deadlocks
-        @delete.sort_by! { |item| DELETE_ORDER.index item.api_resource }
-        @update.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
+        deletes.sort_by! { |item| DELETE_ORDER.index item.api_resource }
+        updates.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
+
+        InternalPlan.new(creates, updates, deletes)
       end
     end
 
@@ -136,8 +141,8 @@ module Kennel
 
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
-    def validate_changes
-      @update.each do |item|
+    def validate_changes(internal_plan)
+      internal_plan.updates.each do |item|
         item.expected.validate_update!(item.diff)
       end
     end
@@ -162,14 +167,14 @@ module Kennel
         @attribute_differ = AttributeDiffer.new
       end
 
-      def display(create, update, delete)
+      def display(internal_plan)
         Kennel.out.puts "Plan:"
-        if create.empty? && update.empty? && delete.empty?
+        if internal_plan.values.all?(&:empty?)
           Kennel.out.puts Console.color(:green, "Nothing to do")
         else
-          print_changes "Create", create, :green
-          print_changes "Update", update, :yellow
-          print_changes "Delete", delete, :red
+          print_changes "Create", internal_plan.creates, :green
+          print_changes "Update", internal_plan.updates, :yellow
+          print_changes "Delete", internal_plan.deletes, :red
         end
       end
 
