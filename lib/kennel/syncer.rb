@@ -10,15 +10,13 @@ module Kennel
 
     def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
       @api = api
-      @expected = Set.new expected # need Set to speed up deletion
-      @actual = actual
       @strict_imports = strict_imports
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
 
-      @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
+      @resolver = Resolver.new(expected: expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
-      calculate_changes
+      calculate_changes(expected: expected, actual: actual)
       validate_changes
 
       @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
@@ -80,16 +78,16 @@ module Kennel
       @create.empty? && @update.empty? && @delete.empty?
     end
 
-    def calculate_changes
+    def calculate_changes(expected:, actual:)
       @warnings = []
 
       Progress.progress "Diffing" do
-        resolver.add_actual @actual
-        filter_actual! @actual
-        resolver.resolve_as_much_as_possible(@expected) # resolve as many dependencies as possible to reduce the diff
+        resolver.add_actual actual
+        filter_actual! actual
+        resolver.resolve_as_much_as_possible(expected) # resolve as many dependencies as possible to reduce the diff
 
         # see which expected match the actual
-        matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(@expected, @actual)
+        matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(expected, actual)
         validate_expected_id_not_missing unmatched_expected
         fill_details! matching # need details to diff later
 
@@ -272,7 +270,7 @@ module Kennel
       class << self
         def partition(expected, actual)
           lookup_map = matching_expected_lookup_map(expected)
-          unmatched_expected = expected.dup
+          unmatched_expected = Set.new(expected) # for efficient deletion
           unmatched_actual = []
           matched = []
           actual.each do |a|
@@ -283,7 +281,7 @@ module Kennel
               unmatched_actual << a
             end
           end.compact
-          [matched, unmatched_expected, unmatched_actual]
+          [matched, unmatched_expected.to_a, unmatched_actual]
         end
 
         private
