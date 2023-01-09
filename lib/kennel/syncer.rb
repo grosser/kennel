@@ -20,7 +20,6 @@ module Kennel
 
       calculate_changes
       validate_changes
-      prevent_irreversible_partial_updates
 
       @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
     end
@@ -88,7 +87,6 @@ module Kennel
         resolver.add_actual @actual
         filter_actual! @actual
         resolver.resolve_as_much_as_possible(@expected) # resolve as many dependencies as possible to reduce the diff
-        @expected.each(&:add_tracking_id) # avoid diff with actual, which has tracking_id
 
         # see which expected match the actual
         matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(@expected, @actual)
@@ -97,6 +95,10 @@ module Kennel
 
         # update matching if needed
         @update = matching.map do |e, a|
+          # Refuse to "adopt" existing items into kennel while running with a filter (i.e. on a branch).
+          # Without this, we'd adopt an item, then the next CI run would delete it
+          # (instead of "unadopting" it).
+          e.add_tracking_id unless @project_filter && a.fetch(:tracking_id).nil?
           id = a.fetch(:id)
           diff = e.diff(a)
           a[:id] = id
@@ -107,6 +109,7 @@ module Kennel
         @delete = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
 
         # unmatched expected need to be created
+        unmatched_expected.each(&:add_tracking_id)
         @create = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
 
         # order to avoid deadlocks
@@ -138,29 +141,6 @@ module Kennel
     def validate_changes
       @update.each do |item|
         item.expected.validate_update!(item.diff)
-      end
-    end
-
-    # - do not add tracking-id when working with existing ids on a branch,
-    #   so resource do not get deleted when running an update on master (for example merge->CI)
-    # - ideally we'd never add tracking in the first place, but when adding tracking we do not know the diff yet
-    def prevent_irreversible_partial_updates
-      return unless @project_filter # full update, so we are not on a branch
-
-      @update.select! do |item| # ensure clean diff, by removing noop-update
-        klass = item.expected.class
-
-        item.diff.select! do |field_diff|
-          (_, field, old_value) = field_diff
-          # TODO: refactor this so TRACKING_FIELD stays record-private
-          next true if klass::TRACKING_FIELD != field.to_sym # need to sym here because Hashdiff produces strings
-          next true if klass.parse_tracking_id(field.to_sym => old_value) # already has tracking id
-
-          field_diff[3] = item.expected.remove_tracking_id # make `rake plan` output match what we are sending
-          old_value != field_diff[3] # discard diff if now nothing changes
-        end
-
-        item.diff.any?
       end
     end
 
