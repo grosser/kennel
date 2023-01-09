@@ -201,7 +201,7 @@ module Kennel
         return if list.empty?
         list.each do |item|
           Kennel.out.puts Console.color(color, "#{step} #{item.api_resource} #{item.tracking_id}")
-          if item.respond_to?(:diff)
+          if item.class::TYPE == :update
             item.diff.each { |args| Kennel.out.puts @attribute_differ.format(*args) } # only for update
           end
         end
