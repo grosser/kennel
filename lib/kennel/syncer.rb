@@ -6,7 +6,13 @@ module Kennel
     LINE_UP = "\e[1A\033[K" # go up and clear
 
     Plan = Struct.new(:changes, keyword_init: true)
-    InternalPlan = Struct.new(:creates, :updates, :deletes)
+
+    InternalPlan = Struct.new(:creates, :updates, :deletes) do
+      def empty?
+        creates.empty? && updates.empty? && deletes.empty?
+      end
+    end
+
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
     def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
@@ -36,7 +42,7 @@ module Kennel
     end
 
     def confirm
-      return false if noop?
+      return false if internal_plan.empty?
       return true if ENV["CI"] || !STDIN.tty? || !Kennel.err.tty?
       Console.ask?("Execute Plan ?")
     end
@@ -76,10 +82,6 @@ module Kennel
     private
 
     attr_reader :resolver, :internal_plan
-
-    def noop?
-      internal_plan.values.all?(&:empty?)
-    end
 
     def calculate_changes(expected:, actual:)
       @warnings = []
@@ -169,7 +171,7 @@ module Kennel
 
       def display(internal_plan)
         Kennel.out.puts "Plan:"
-        if internal_plan.values.all?(&:empty?)
+        if internal_plan.empty?
           Kennel.out.puts Console.color(:green, "Nothing to do")
         else
           print_changes "Create", internal_plan.creates, :green
