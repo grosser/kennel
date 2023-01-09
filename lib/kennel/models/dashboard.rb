@@ -202,7 +202,7 @@ module Kennel
         end
       end
 
-      def validate_update!(_actuals, diffs)
+      def validate_update!(diffs)
         _, path, from, to = diffs.find { |diff| diff[1] == "layout_type" }
         invalid_update!(path, from, to) if path
       end

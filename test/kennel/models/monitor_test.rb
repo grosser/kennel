@@ -562,18 +562,18 @@ describe Kennel::Models::Monitor do
 
   describe "#validate_update!" do
     it "allows update of name" do
-      monitor.validate_update!(nil, [["~", "name", "foo", "bar"]])
+      monitor.validate_update!([["~", "name", "foo", "bar"]])
     end
 
     it "disallows update of type" do
       e = assert_raises Kennel::DisallowedUpdateError do
-        monitor.validate_update!(nil, [["~", "type", "foo", "bar"]])
+        monitor.validate_update!([["~", "type", "foo", "bar"]])
       end
       e.message.must_match(/datadog.*allow.*type/i)
     end
 
     it "allows update of metric to query which is used by the importer" do
-      monitor.validate_update!(nil, [["~", "type", "metric alert", "query alert"]])
+      monitor.validate_update!([["~", "type", "metric alert", "query alert"]])
     end
   end
 
