@@ -116,6 +116,11 @@ describe Kennel::Syncer do
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
   let(:syncer) do
+    actual.each do |a|
+      klass = a.fetch(:klass)
+      raise "Bad test data: #{a.inspect}" unless a.fetch(:tracking_id) == klass.parse_tracking_id(a)
+    end
+
     Kennel::Syncer.new(
       api, expected, actual,
       strict_imports: strict_imports[0],
@@ -393,6 +398,7 @@ describe Kennel::Syncer do
 
       it "updates via replace" do
         monitors.last[:message] = "nope" # actual is not marked yet
+        monitors.last[:tracking_id] = nil # actual is not marked yet
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
@@ -406,6 +412,7 @@ describe Kennel::Syncer do
 
       it "can update renamed components" do
         monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
+        monitors.last[:tracking_id] = "foo:bar"
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
@@ -421,6 +428,7 @@ describe Kennel::Syncer do
       it "can update renamed components without other diff" do
         expected.last.as_json.delete(:foo)
         monitors.last[:message] = "foo\n-- Managed by kennel foo:bar in foo.rb"
+        monitors.last[:tracking_id] = "foo:bar"
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
