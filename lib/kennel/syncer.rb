@@ -6,36 +6,43 @@ module Kennel
     LINE_UP = "\e[1A\033[K" # go up and clear
 
     Plan = Struct.new(:changes, keyword_init: true)
+
+    InternalPlan = Struct.new(:creates, :updates, :deletes) do
+      def empty?
+        creates.empty? && updates.empty? && deletes.empty?
+      end
+    end
+
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
     def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
       @api = api
-      @expected = Set.new expected # need Set to speed up deletion
-      @actual = actual
       @strict_imports = strict_imports
       @project_filter = project_filter
       @tracking_id_filter = tracking_id_filter
 
-      @resolver = Resolver.new(expected: @expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
+      @resolver = Resolver.new(expected: expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
 
-      calculate_changes
-      validate_changes
+      internal_plan = calculate_changes(expected: expected, actual: actual)
+      validate_changes(internal_plan)
+      @internal_plan = internal_plan
 
       @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
     end
 
     def plan
+      ip = @internal_plan
       Plan.new(
-        changes: (@create + @update + @delete).map(&:change)
+        changes: (ip.creates + ip.updates + ip.deletes).map(&:change)
       )
     end
 
     def print_plan
-      PlanDisplayer.new.display(@create, @update, @delete)
+      PlanDisplayer.new.display(internal_plan)
     end
 
     def confirm
-      return false if noop?
+      return false if internal_plan.empty?
       return true if ENV["CI"] || !STDIN.tty? || !Kennel.err.tty?
       Console.ask?("Execute Plan ?")
     end
@@ -43,7 +50,7 @@ module Kennel
     def update
       changes = []
 
-      @delete.each do |item|
+      internal_plan.deletes.each do |item|
         message = "#{item.api_resource} #{item.tracking_id} #{item.id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete item.api_resource, item.id
@@ -51,7 +58,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      resolver.each_resolved @create do |item|
+      resolver.each_resolved internal_plan.creates do |item|
         message = "#{item.api_resource} #{item.tracking_id}"
         Kennel.out.puts "Creating #{message}"
         reply = @api.create item.api_resource, item.expected.as_json
@@ -61,7 +68,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Created #{message} #{item.url(id)}"
       end
 
-      resolver.each_resolved @update do |item|
+      resolver.each_resolved internal_plan.updates do |item|
         message = "#{item.api_resource} #{item.tracking_id} #{item.url}"
         Kennel.out.puts "Updating #{message}"
         @api.update item.api_resource, item.id, item.expected.as_json
@@ -74,27 +81,23 @@ module Kennel
 
     private
 
-    attr_reader :resolver
+    attr_reader :resolver, :internal_plan
 
-    def noop?
-      @create.empty? && @update.empty? && @delete.empty?
-    end
-
-    def calculate_changes
+    def calculate_changes(expected:, actual:)
       @warnings = []
 
       Progress.progress "Diffing" do
-        resolver.add_actual @actual
-        filter_actual! @actual
-        resolver.resolve_as_much_as_possible(@expected) # resolve as many dependencies as possible to reduce the diff
+        resolver.add_actual actual
+        filter_actual! actual
+        resolver.resolve_as_much_as_possible(expected) # resolve as many dependencies as possible to reduce the diff
 
         # see which expected match the actual
-        matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(@expected, @actual)
+        matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(expected, actual)
         validate_expected_id_not_missing unmatched_expected
         fill_details! matching # need details to diff later
 
         # update matching if needed
-        @update = matching.map do |e, a|
+        updates = matching.map do |e, a|
           # Refuse to "adopt" existing items into kennel while running with a filter (i.e. on a branch).
           # Without this, we'd adopt an item, then the next CI run would delete it
           # (instead of "unadopting" it).
@@ -106,15 +109,17 @@ module Kennel
         end.compact
 
         # delete previously managed
-        @delete = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
+        deletes = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
 
         # unmatched expected need to be created
         unmatched_expected.each(&:add_tracking_id)
-        @create = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
+        creates = unmatched_expected.map { |e| Types::PlannedCreate.new(e) }
 
         # order to avoid deadlocks
-        @delete.sort_by! { |item| DELETE_ORDER.index item.api_resource }
-        @update.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
+        deletes.sort_by! { |item| DELETE_ORDER.index item.api_resource }
+        updates.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
+
+        InternalPlan.new(creates, updates, deletes)
       end
     end
 
@@ -138,8 +143,8 @@ module Kennel
 
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
-    def validate_changes
-      @update.each do |item|
+    def validate_changes(internal_plan)
+      internal_plan.updates.each do |item|
         item.expected.validate_update!(item.diff)
       end
     end
@@ -164,14 +169,14 @@ module Kennel
         @attribute_differ = AttributeDiffer.new
       end
 
-      def display(create, update, delete)
+      def display(internal_plan)
         Kennel.out.puts "Plan:"
-        if create.empty? && update.empty? && delete.empty?
+        if internal_plan.empty?
           Kennel.out.puts Console.color(:green, "Nothing to do")
         else
-          print_changes "Create", create, :green
-          print_changes "Update", update, :yellow
-          print_changes "Delete", delete, :red
+          print_changes "Create", internal_plan.creates, :green
+          print_changes "Update", internal_plan.updates, :yellow
+          print_changes "Delete", internal_plan.deletes, :red
         end
       end
 
@@ -272,7 +277,7 @@ module Kennel
       class << self
         def partition(expected, actual)
           lookup_map = matching_expected_lookup_map(expected)
-          unmatched_expected = expected.dup
+          unmatched_expected = Set.new(expected) # for efficient deletion
           unmatched_actual = []
           matched = []
           actual.each do |a|
@@ -283,7 +288,7 @@ module Kennel
               unmatched_actual << a
             end
           end.compact
-          [matched, unmatched_expected, unmatched_actual]
+          [matched, unmatched_expected.to_a, unmatched_actual]
         end
 
         private
