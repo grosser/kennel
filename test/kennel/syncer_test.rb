@@ -3,6 +3,10 @@ require_relative "../test_helper"
 require "stringio"
 
 SingleCov.covered!
+SingleCov.covered! file: 'lib/kennel/syncer/matched_expected.rb'
+SingleCov.covered! file: 'lib/kennel/syncer/plan_displayer.rb'
+SingleCov.covered! file: 'lib/kennel/syncer/resolver.rb'
+SingleCov.covered! file: 'lib/kennel/syncer/types.rb'
 
 describe Kennel::Syncer do
   define_test_classes
