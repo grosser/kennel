@@ -3,6 +3,9 @@ require_relative "../test_helper"
 require "stringio"
 
 SingleCov.covered!
+SingleCov.covered! file: "lib/kennel/syncer/plan_displayer.rb"
+SingleCov.covered! file: "lib/kennel/syncer/resolver.rb"
+SingleCov.covered! file: "lib/kennel/syncer/types.rb"
 
 describe Kennel::Syncer do
   define_test_classes
@@ -253,13 +256,6 @@ describe Kennel::Syncer do
     it "leaves unmanaged alone" do
       monitors << monitor_api_response("ignore", "ignore", { id: 123, message: "foo", tags: [] })
       output.must_equal "Plan:\nNothing to do\n"
-    end
-
-    it "notifies about duplicate components since they would be ignored otherwise" do
-      expected << monitor("a", "b") << monitor("a", "b")
-      monitors << monitor_api_response("a", "c") # need something to trigger lookup_map to initialize
-      e = assert_raises(RuntimeError) { output }
-      e.message.must_equal "Lookup a:b is duplicated"
     end
 
     it "shows progress" do
