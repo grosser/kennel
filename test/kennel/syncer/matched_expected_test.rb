@@ -9,7 +9,7 @@ describe Kennel::Syncer::MatchedExpected do
   let(:monitor) { Kennel::Models::Monitor }
   let(:dashboard) { Kennel::Models::Dashboard }
 
-  let(:expected_class) { Struct.new(:tracking_id, :class, :id) }
+  let(:expected_class) { Struct.new(:tracking_id, :class, :id) } # rubocop:disable Lint/StructNewOverride
 
   let(:expected) { [] }
   let(:actual) { [] }
