@@ -129,4 +129,30 @@ describe Kennel::Syncer::MatchedExpected do
       result
     end
   end
+
+  describe "resolution order" do
+    it "prefers tracking_id over id" do
+      e0 = make_expected("a:a", monitor, 999)
+      e1 = make_expected("b:b", monitor, 777)
+      a = make_actual("a:a", monitor, 777)
+      expected << e0
+      expected << e1
+      actual << a
+
+      matched.must_equal [[e0, a]]
+      unmatched_expected.must_equal [e1]
+      unmatched_actual.must_be_empty
+    end
+  end
+
+  it "refuses to match on tracking_id if the api_resource is different" do
+    e = make_expected("a:a", monitor, nil)
+    a = make_actual("a:a", dashboard, 999)
+    expected << e
+    actual << a
+
+    matched.must_be_empty
+    unmatched_expected.must_equal [e]
+    unmatched_actual.must_equal [a]
+  end
 end

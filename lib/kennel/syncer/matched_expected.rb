@@ -36,7 +36,12 @@ module Kennel
 
         def matching_expected(a, map)
           klass = a.fetch(:klass)
-          map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
+
+          if (e = map[a.fetch(:tracking_id)])
+            return e if e.class.api_resource == klass.api_resource
+          end
+
+          map["#{klass.api_resource}:#{a.fetch(:id)}"]
         end
       end
     end
