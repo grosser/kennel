@@ -2,6 +2,24 @@
 
 module Kennel
   class PartsSerializer
+    class << self
+      def existing_project_ids
+        Dir["generated/*"].map { |path| path.sub("generated/", "") }.sort
+      end
+
+      def existing_tracking_ids
+        Dir["generated/*/*"].map { |path| tracking_id_from_path(path) }.compact.sort
+      end
+
+      private
+
+      def tracking_id_from_path(path)
+        if (m = path.match(/^generated\/(.*)\/(.*)\.json$/))
+          "#{m[1]}:#{m[2]}"
+        end
+      end
+    end
+
     def initialize(filter:)
       @filter = filter
     end

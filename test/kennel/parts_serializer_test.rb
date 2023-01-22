@@ -188,4 +188,27 @@ describe Kennel::PartsSerializer do
       end
     end
   end
+
+  it ".existing_project_ids" do
+    write "generated/foo/one.json", "whatever"
+    write "generated/foo/two.json", "whatever"
+    write "generated/bar/two.json", "whatever"
+    Dir.mkdir "generated/empty"
+    Kennel::PartsSerializer.existing_project_ids.must_equal(["foo", "bar", "empty"].sort)
+  end
+
+  it ".existing_tracking_ids" do
+    write "generated/foo/one.json", "whatever"
+    write "generated/foo/two.json", "whatever"
+    write "generated/bar/two.json", "whatever"
+    Dir.mkdir "generated/empty"
+    Kennel::PartsSerializer.existing_tracking_ids.must_equal(["foo:one", "foo:two", "bar:two"].sort)
+  end
+
+  it "ignores unexpected files" do
+    write "generated/foo/one.json", "whatever"
+    write "generated/bar/baz/x", "whatever"
+    write "generated/bar/baz/y.json", "whatever"
+    Kennel::PartsSerializer.existing_tracking_ids.must_equal(["foo:one"].sort)
+  end
 end
