@@ -64,6 +64,7 @@ module Kennel
 
     def path_for_tracking_id(tracking_id)
       raise "Invalid tracking id #{tracking_id.inspect}" unless tracking_id.match?(/^[A-Za-z0-9._-]+:[A-Za-z0-9._-]+$/o)
+
       "generated/#{tracking_id.tr("/", ":").sub(":", "/")}.json"
     end
 

@@ -3,4 +3,4 @@
 require_relative "../../test_helper"
 
 # Covered by syncer_test.rb
-SingleCov.covered! uncovered: 31
+SingleCov.covered! uncovered: 27
