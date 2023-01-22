@@ -125,17 +125,5 @@ describe Kennel::Filter do
       things << baz
       run_filter(["foo", "bar"]).must_equal([foo, bar, another_foo])
     end
-
-    it "raises if nothing matched (1 spec)" do
-      e = assert_raises(RuntimeError) { run_filter ["baz"] }
-      e.message.must_include("SOME_PROPERTY_ENV_VAR")
-      e.message.must_include("things")
-    end
-
-    it "raises if nothing matched (> 1 spec)" do
-      e = assert_raises(RuntimeError) { run_filter ["foo", "baz"] }
-      e.message.must_include("SOME_PROPERTY_ENV_VAR")
-      e.message.must_include("things")
-    end
   end
 end

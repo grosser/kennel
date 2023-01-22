@@ -33,19 +33,10 @@ module Kennel
       (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").sort.uniq
     end
 
-    def filter_resources(resources, by, expected, name, env)
+    def filter_resources(resources, by, expected, _name, _env)
       return resources unless expected
 
-      expected = expected.uniq
-      before = resources.dup
-      resources = resources.select { |p| expected.include?(p.send(by)) }
-      keeping = resources.uniq(&by).size
-      return resources if keeping == expected.size
-
-      raise <<~MSG.rstrip
-        #{env}=#{expected.join(",")} matched #{keeping} #{name}, try any of these:
-        #{before.map(&by).sort.uniq.join("\n")}
-      MSG
+      resources.select { |p| expected.uniq.include?(p.send(by)) }
     end
   end
 end
