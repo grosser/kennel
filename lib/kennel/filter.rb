@@ -37,7 +37,7 @@ module Kennel
     def tracking_id_in_scope?(tracking_id)
       return true if project_filter.nil? # Minor optimization
 
-      project_id = tracking_id.split(':')[0]
+      project_id = tracking_id.split(":")[0]
       project_id_in_scope?(project_id) && (tracking_id_filter.nil? || tracking_id_filter.include?(tracking_id))
     end
 
@@ -56,7 +56,7 @@ module Kennel
       (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").sort.uniq
     end
 
-    def filter_resources(resources, by, expected, _name, env, existing)
+    def filter_resources(resources, by, expected, _name, _env, existing)
       return resources unless expected
 
       matched = []
@@ -65,7 +65,7 @@ module Kennel
       expected.uniq.each do |exp|
         m = resources.select { |p| p.public_send(by) == exp }
         if m.empty?
-          if !existing.include?(exp)
+          unless existing.include?(exp)
             useless << exp
           end
         else
