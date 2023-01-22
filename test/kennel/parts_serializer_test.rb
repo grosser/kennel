@@ -165,5 +165,27 @@ describe Kennel::PartsSerializer do
         ]
       end
     end
+
+    describe "invalid tracking ids" do
+      def refuses(bad_tracking_id)
+        part = Struct.new(:tracking_id).new(bad_tracking_id)
+        e = assert_raises(RuntimeError) do
+          Kennel::PartsSerializer.new(filter: filter).write([part])
+        end
+        e.message.must_include "Invalid tracking id"
+      end
+
+      it "refuses /" do
+        refuses("a/b")
+      end
+
+      it "refuses zero :" do
+        refuses("a-b")
+      end
+
+      it "refuses multiple :" do
+        refuses("a:b:c")
+      end
+    end
   end
 end
