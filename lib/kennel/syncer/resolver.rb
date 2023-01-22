@@ -20,8 +20,6 @@ module Kennel
 
       def add_actual(actual)
         # override resources that exist with their id
-        project_prefixes = filter.project_filter&.map { |p| "#{p}:" }
-
         actual.each do |a|
           # ignore when not managed by kennel
           next unless tracking_id = a.fetch(:tracking_id)
@@ -29,10 +27,7 @@ module Kennel
           # ignore when deleted from the codebase
           # (when running with filters we cannot see the other resources in the codebase)
           api_resource = a.fetch(:klass).api_resource
-          next if
-            !id_map.get(api_resource, tracking_id) &&
-            (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
-            (!filter.tracking_id_filter || filter.tracking_id_filter.include?(tracking_id))
+          next if !id_map.get(api_resource, tracking_id) && filter.matches_tracking_id?(tracking_id)
 
           id_map.set(api_resource, tracking_id, a.fetch(:id))
           if a.fetch(:klass).api_resource == "synthetics/tests"
