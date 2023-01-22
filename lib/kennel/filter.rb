@@ -18,6 +18,10 @@ module Kennel
       filter_resources(parts, :tracking_id, tracking_id_filter, "resources", "TRACKING_ID")
     end
 
+    def filtering?
+      !project_filter.nil?
+    end
+
     def matches_tracking_id?(tracking_id)
       return true if project_filter.nil?
       return tracking_id_filter.include?(tracking_id) if tracking_id_filter

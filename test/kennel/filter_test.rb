@@ -12,6 +12,7 @@ describe Kennel::Filter do
         f = Kennel::Filter.new
         f.project_filter.must_be_nil
         f.tracking_id_filter.must_be_nil
+        refute f.filtering?
         assert f.matches_tracking_id?("a:b")
       end
     end
@@ -22,6 +23,7 @@ describe Kennel::Filter do
           f = Kennel::Filter.new
           f.project_filter.must_equal(["bar", "foo"])
           f.tracking_id_filter.must_be_nil
+          assert f.filtering?
           assert f.matches_tracking_id?("foo:x")
           refute f.matches_tracking_id?("x:foo")
         end
@@ -35,6 +37,7 @@ describe Kennel::Filter do
         end
         f.project_filter.must_equal(["bar", "foo"])
         f.tracking_id_filter.must_equal(["bar:y", "foo:x"])
+        assert f.filtering?
         assert f.matches_tracking_id?("foo:x")
         refute f.matches_tracking_id?("foo:y")
         assert f.matches_tracking_id?("bar:y")
@@ -56,6 +59,7 @@ describe Kennel::Filter do
       it "works" do
         with_env("PROJECT" => nil, "TRACKING_ID" => "foo:x,bar:y") do
           f = Kennel::Filter.new
+          assert f.filtering?
           f.project_filter.must_equal(["bar", "foo"])
           f.tracking_id_filter.must_equal(["bar:y", "foo:x"])
         end
