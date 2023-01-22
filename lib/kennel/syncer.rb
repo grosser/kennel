@@ -154,17 +154,11 @@ module Kennel
     end
 
     def filter_actual!(actual)
-      if filter.tracking_id_filter
-        actual.select! do |a|
-          tracking_id = a.fetch(:tracking_id)
-          !tracking_id || filter.tracking_id_filter.include?(tracking_id)
-        end
-      elsif filter.project_filter
-        project_prefixes = filter.project_filter.map { |p| "#{p}:" }
-        actual.select! do |a|
-          tracking_id = a.fetch(:tracking_id)
-          !tracking_id || tracking_id.start_with?(*project_prefixes)
-        end
+      return if filter.project_filter.nil? # minor optimization
+
+      actual.select! do |a|
+        tracking_id = a.fetch(:tracking_id)
+        tracking_id.nil? || filter.matches_tracking_id?(tracking_id)
       end
     end
   end
