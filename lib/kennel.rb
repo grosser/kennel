@@ -92,9 +92,8 @@ module Kennel
         preload
         Syncer.new(
           api, generated, definitions,
-          strict_imports: strict_imports,
-          project_filter: filter.project_filter,
-          tracking_id_filter: filter.tracking_id_filter
+          filter: filter,
+          strict_imports: strict_imports
         )
       end
     end

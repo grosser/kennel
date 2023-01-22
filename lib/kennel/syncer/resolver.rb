@@ -5,10 +5,9 @@ require_relative "../id_map"
 module Kennel
   class Syncer
     class Resolver
-      def initialize(expected:, project_filter:, tracking_id_filter:)
+      def initialize(expected:, filter:)
         @id_map = IdMap.new
-        @project_filter = project_filter
-        @tracking_id_filter = tracking_id_filter
+        @filter = filter
 
         # mark everything as new
         expected.each do |e|
@@ -21,7 +20,7 @@ module Kennel
 
       def add_actual(actual)
         # override resources that exist with their id
-        project_prefixes = project_filter&.map { |p| "#{p}:" }
+        project_prefixes = filter.project_filter&.map { |p| "#{p}:" }
 
         actual.each do |a|
           # ignore when not managed by kennel
@@ -33,7 +32,7 @@ module Kennel
           next if
             !id_map.get(api_resource, tracking_id) &&
             (!project_prefixes || tracking_id.start_with?(*project_prefixes)) &&
-            (!tracking_id_filter || tracking_id_filter.include?(tracking_id))
+            (!filter.tracking_id_filter || filter.tracking_id_filter.include?(tracking_id))
 
           id_map.set(api_resource, tracking_id, a.fetch(:id))
           if a.fetch(:klass).api_resource == "synthetics/tests"
@@ -68,7 +67,7 @@ module Kennel
 
       private
 
-      attr_reader :id_map, :project_filter, :tracking_id_filter
+      attr_reader :id_map, :filter
 
       # TODO: optimize by storing an instance variable if already resolved
       def resolved?(e)

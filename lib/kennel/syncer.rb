@@ -20,13 +20,12 @@ module Kennel
 
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
 
-    def initialize(api, expected, actual, strict_imports: true, project_filter: nil, tracking_id_filter: nil)
+    def initialize(api, expected, actual, filter:, strict_imports: true)
       @api = api
       @strict_imports = strict_imports
-      @project_filter = project_filter
-      @tracking_id_filter = tracking_id_filter
+      @filter = filter
 
-      @resolver = Resolver.new(expected: expected, project_filter: @project_filter, tracking_id_filter: @tracking_id_filter)
+      @resolver = Resolver.new(expected: expected, filter: filter)
 
       internal_plan = calculate_changes(expected: expected, actual: actual)
       validate_changes(internal_plan)
@@ -86,7 +85,7 @@ module Kennel
 
     private
 
-    attr_reader :resolver, :internal_plan
+    attr_reader :filter, :resolver, :internal_plan
 
     def calculate_changes(expected:, actual:)
       @warnings = []
@@ -106,7 +105,7 @@ module Kennel
           # Refuse to "adopt" existing items into kennel while running with a filter (i.e. on a branch).
           # Without this, we'd adopt an item, then the next CI run would delete it
           # (instead of "unadopting" it).
-          e.add_tracking_id unless @project_filter && a.fetch(:tracking_id).nil?
+          e.add_tracking_id unless filter.project_filter && a.fetch(:tracking_id).nil?
           id = a.fetch(:id)
           diff = e.diff(a)
           a[:id] = id
@@ -155,13 +154,13 @@ module Kennel
     end
 
     def filter_actual!(actual)
-      if @tracking_id_filter
+      if filter.tracking_id_filter
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
-          !tracking_id || @tracking_id_filter.include?(tracking_id)
+          !tracking_id || filter.tracking_id_filter.include?(tracking_id)
         end
-      elsif @project_filter
-        project_prefixes = @project_filter.map { |p| "#{p}:" }
+      elsif filter.project_filter
+        project_prefixes = filter.project_filter.map { |p| "#{p}:" }
         actual.select! do |a|
           tracking_id = a.fetch(:tracking_id)
           !tracking_id || tracking_id.start_with?(*project_prefixes)

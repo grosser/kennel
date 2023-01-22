@@ -116,8 +116,15 @@ describe Kennel::Syncer do
   let(:expected) { [] }
   let(:actual) { dashboards + monitors + slos + synthetics }
   let(:strict_imports) { [true] } # array to allow modification
+
   let(:project_filter) { [] }
   let(:tracking_id_filter) { [] }
+  let(:filter) do
+    p_arg = Kennel::Utils.presence(project_filter)&.join(",")
+    t_arg = Kennel::Utils.presence(tracking_id_filter)&.join(",")
+    with_env(PROJECT: p_arg, TRACKING_ID: t_arg) { Kennel::Filter.new }
+  end
+
   let(:syncer) do
     actual.each do |a|
       klass = a.fetch(:klass)
@@ -126,9 +133,8 @@ describe Kennel::Syncer do
 
     Kennel::Syncer.new(
       api, expected, actual,
-      strict_imports: strict_imports[0],
-      project_filter: Kennel::Utils.presence(project_filter),
-      tracking_id_filter: Kennel::Utils.presence(tracking_id_filter)
+      filter: filter,
+      strict_imports: strict_imports[0]
     )
   end
 
