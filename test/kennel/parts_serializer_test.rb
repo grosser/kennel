@@ -35,11 +35,9 @@ describe Kennel::PartsSerializer do
   let(:project_filter) { nil }
   let(:tracking_id_filter) { nil }
   let(:filter) do
-    stub(
-      "Filter",
-      project_filter: project_filter,
-      tracking_id_filter: tracking_id_filter
-    )
+    p_arg = Kennel::Utils.presence(project_filter)&.join(",")
+    t_arg = Kennel::Utils.presence(tracking_id_filter)&.join(",")
+    with_env(PROJECT: p_arg, TRACKING_ID: t_arg) { Kennel::Filter.new }
   end
 
   capture_all

@@ -2,8 +2,6 @@
 
 module Kennel
   class Filter
-    attr_reader :project_filter, :tracking_id_filter
-
     def initialize
       # build early so we fail fast on invalid user input
       @tracking_id_filter = build_tracking_id_filter
@@ -22,14 +20,22 @@ module Kennel
       !project_filter.nil?
     end
 
+    def matches_project_id?(project_id)
+      return true unless filtering?
+
+      project_filter.include?(project_id)
+    end
+
     def matches_tracking_id?(tracking_id)
-      return true if project_filter.nil?
+      return true unless filtering?
       return tracking_id_filter.include?(tracking_id) if tracking_id_filter
 
       project_filter.include?(tracking_id.split(":").first)
     end
 
     private
+
+    attr_reader :project_filter, :tracking_id_filter
 
     def build_project_filter
       project_names = ENV["PROJECT"]&.split(",")&.sort&.uniq
