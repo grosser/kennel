@@ -21,9 +21,7 @@ module Kennel
     end
 
     def matches_project_id?(project_id)
-      return true unless filtering?
-
-      project_filter.include?(project_id)
+      !filtering? || project_filter.include?(project_id)
     end
 
     def matches_tracking_id?(tracking_id)

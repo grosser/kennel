@@ -38,13 +38,9 @@ module Kennel
       paths = Dir["generated/**/*"]
 
       if filter.filtering?
-        segment = Kennel::Models::Record::ALLOWED_KENNEL_ID_SEGMENT
         paths.select! do |path|
-          if (m = path.match(/^generated\/(#{segment})\/(#{segment})\.json$/o))
-            filter.matches_tracking_id?("#{m[1]}:#{m[2]}")
-          elsif (m = path.match(/^generated\/(#{segment})(?:\/|$)/o)) && File.directory?(path)
-            filter.matches_project_id?(m[1])
-          end
+          tracking_id = path.split("/")[1..2].to_a.join(":")
+          filter.matches_tracking_id?(tracking_id)
         end
       end
 
