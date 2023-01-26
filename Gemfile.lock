@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (1.131.0)
+    kennel (1.132.0)
       diff-lcs (~> 1.5)
       faraday (~> 1.8)
       hashdiff (~> 1.0)
@@ -23,7 +23,7 @@ GEM
     crack (0.4.5)
       rexml
     diff-lcs (1.5.0)
-    faraday (1.10.2)
+    faraday (1.10.3)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)
@@ -57,7 +57,7 @@ GEM
     mocha (2.0.2)
       ruby2_keywords (>= 0.0.5)
     msgpack (1.6.0)
-    multipart-post (2.2.3)
+    multipart-post (2.3.0)
     net-http-persistent (4.0.1)
       connection_pool (~> 2.2)
     parallel (1.22.1)
