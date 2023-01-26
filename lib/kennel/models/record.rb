@@ -35,7 +35,8 @@ module Kennel
         :klass, :tracking_id # added by syncer.rb
       ].freeze
       ALLOWED_KENNEL_ID_CHARS = "a-zA-Z_\\d.-"
-      ALLOWED_KENNEL_ID_FULL = "[#{ALLOWED_KENNEL_ID_CHARS}]+:[#{ALLOWED_KENNEL_ID_CHARS}]+".freeze
+      ALLOWED_KENNEL_ID_SEGMENT = /[#{ALLOWED_KENNEL_ID_CHARS}]+/
+      ALLOWED_KENNEL_ID_FULL = "#{ALLOWED_KENNEL_ID_SEGMENT}:#{ALLOWED_KENNEL_ID_SEGMENT}".freeze
       ALLOWED_KENNEL_ID_REGEX = /\A#{ALLOWED_KENNEL_ID_FULL}\z/
 
       settings :id, :kennel_id

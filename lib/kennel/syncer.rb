@@ -105,7 +105,7 @@ module Kennel
           # Refuse to "adopt" existing items into kennel while running with a filter (i.e. on a branch).
           # Without this, we'd adopt an item, then the next CI run would delete it
           # (instead of "unadopting" it).
-          e.add_tracking_id unless filter.project_filter && a.fetch(:tracking_id).nil?
+          e.add_tracking_id unless filter.filtering? && a.fetch(:tracking_id).nil?
           id = a.fetch(:id)
           diff = e.diff(a)
           a[:id] = id
@@ -154,7 +154,7 @@ module Kennel
     end
 
     def filter_actual!(actual)
-      return if filter.project_filter.nil? # minor optimization
+      return unless filter.filtering? # minor optimization
 
       actual.select! do |a|
         tracking_id = a.fetch(:tracking_id)

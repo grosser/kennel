@@ -10,8 +10,8 @@ describe Kennel::Filter do
 
       it "works" do
         f = Kennel::Filter.new
-        f.project_filter.must_be_nil
-        f.tracking_id_filter.must_be_nil
+        refute f.filtering?
+        assert f.matches_project_id?("a")
         assert f.matches_tracking_id?("a:b")
       end
     end
@@ -20,8 +20,10 @@ describe Kennel::Filter do
       it "works" do
         with_env("PROJECT" => "foo,bar", "TRACKING_ID" => nil) do
           f = Kennel::Filter.new
-          f.project_filter.must_equal(["bar", "foo"])
-          f.tracking_id_filter.must_be_nil
+          assert f.filtering?
+          assert f.matches_project_id?("foo")
+          assert f.matches_project_id?("bar")
+          refute f.matches_project_id?("x")
           assert f.matches_tracking_id?("foo:x")
           refute f.matches_tracking_id?("x:foo")
         end
@@ -33,8 +35,10 @@ describe Kennel::Filter do
         f = with_env("PROJECT" => "foo,bar", "TRACKING_ID" => "foo:x,bar:y") do
           Kennel::Filter.new
         end
-        f.project_filter.must_equal(["bar", "foo"])
-        f.tracking_id_filter.must_equal(["bar:y", "foo:x"])
+        assert f.filtering?
+        assert f.matches_project_id?("foo")
+        assert f.matches_project_id?("bar")
+        refute f.matches_project_id?("z")
         assert f.matches_tracking_id?("foo:x")
         refute f.matches_tracking_id?("foo:y")
         assert f.matches_tracking_id?("bar:y")
@@ -56,8 +60,15 @@ describe Kennel::Filter do
       it "works" do
         with_env("PROJECT" => nil, "TRACKING_ID" => "foo:x,bar:y") do
           f = Kennel::Filter.new
-          f.project_filter.must_equal(["bar", "foo"])
-          f.tracking_id_filter.must_equal(["bar:y", "foo:x"])
+          assert f.filtering?
+          assert f.matches_project_id?("foo")
+          assert f.matches_project_id?("bar")
+          refute f.matches_project_id?("z")
+          assert f.matches_tracking_id?("foo:x")
+          refute f.matches_tracking_id?("foo:y")
+          assert f.matches_tracking_id?("bar:y")
+          refute f.matches_tracking_id?("bar:z")
+          refute f.matches_tracking_id?("z:z")
         end
       end
     end

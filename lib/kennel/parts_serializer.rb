@@ -35,13 +35,16 @@ module Kennel
     end
 
     def existing_files_and_folders
-      if filter.tracking_id_filter
-        filter.tracking_id_filter.map { |tracking_id| path_for_tracking_id(tracking_id) }
-      elsif filter.project_filter
-        filter.project_filter.flat_map { |project| Dir["generated/#{project}/*"] }
-      else
-        Dir["generated/**/*"] # also includes folders so we clean up empty directories
+      paths = Dir["generated/**/*"]
+
+      if filter.filtering?
+        paths.select! do |path|
+          tracking_id = path.split("/")[1..2].to_a.join(":")
+          filter.matches_tracking_id?(tracking_id)
+        end
       end
+
+      paths
     end
 
     def path_for_tracking_id(tracking_id)
