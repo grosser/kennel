@@ -22,7 +22,8 @@ module Kennel
         notify_audit: false,
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         groupby_simple_monitor: false,
-        variables: nil
+        variables: nil,
+        on_missing_data: "default"
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -31,7 +32,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables
+        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data
       )
 
       defaults(
@@ -52,7 +53,8 @@ module Kennel
         warning_recovery: -> { nil },
         threshold_windows: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
-        variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) }
+        variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
+        on_missing_data: -> { notify_no_data ? "show_and_notify_no_data" : "default" } # "default" is "evaluate as zero"
       )
 
       def build_json
@@ -121,6 +123,13 @@ module Kennel
           statuses << "no data" if options[:notify_no_data]
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
+        end
+
+        # for events: on_missing_data cannot be used with notify_no_data or no_data_timeframe
+        if data.fetch(:type) == "event-v2 alert"
+          options[:on_missing_data] = on_missing_data
+          options[:notify_no_data] = false # cannot set nil or it's an endless update loop
+          options.delete :no_data_timeframe
         end
 
         data

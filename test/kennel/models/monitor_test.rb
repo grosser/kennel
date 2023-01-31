@@ -238,6 +238,28 @@ describe Kennel::Models::Monitor do
       refute json[:options].key?(:no_data_timeframe)
     end
 
+    describe "on_missing_data" do
+      it "defaults when no-data is true" do
+        monitor(
+          type: -> { "event-v2 alert" }
+        ).as_json.dig(:options, :on_missing_data).must_equal "show_and_notify_no_data"
+      end
+
+      it "defaults when no-data is fale" do
+        monitor(
+          type: -> { "event-v2 alert" },
+          notify_no_data: -> { false }
+        ).as_json.dig(:options, :on_missing_data).must_equal "default"
+      end
+
+      it "sets" do
+        monitor(
+          type: -> { "event-v2 alert" },
+          on_missing_data: -> { "resolve" }
+        ).as_json.dig(:options, :on_missing_data).must_equal "resolve"
+      end
+    end
+
     describe "renotify_interval" do
       it "sets 0 when disabled" do
         monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
