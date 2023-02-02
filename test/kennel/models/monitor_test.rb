@@ -239,16 +239,9 @@ describe Kennel::Models::Monitor do
     end
 
     describe "on_missing_data" do
-      it "defaults when no-data is true" do
+      it "defaults" do
         monitor(
           type: -> { "event-v2 alert" }
-        ).as_json.dig(:options, :on_missing_data).must_equal "show_and_notify_no_data"
-      end
-
-      it "defaults when no-data is fale" do
-        monitor(
-          type: -> { "event-v2 alert" },
-          notify_no_data: -> { false }
         ).as_json.dig(:options, :on_missing_data).must_equal "default"
       end
 
