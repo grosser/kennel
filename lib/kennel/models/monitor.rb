@@ -23,7 +23,7 @@ module Kennel
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         groupby_simple_monitor: false,
         variables: nil,
-        on_missing_data: "default"
+        on_missing_data: "default" # "default" is "evaluate as zero"
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -54,7 +54,7 @@ module Kennel
         threshold_windows: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
-        on_missing_data: -> { notify_no_data ? "show_and_notify_no_data" : "default" } # "default" is "evaluate as zero"
+        on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) }
       )
 
       def build_json
