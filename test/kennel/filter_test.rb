@@ -5,6 +5,13 @@ SingleCov.covered!
 
 describe Kennel::Filter do
   describe "#initialize" do
+    it "can translate file path to tracking id" do
+      f = with_env("TRACKING_ID" => "generated/foo/bar.json") { Kennel::Filter.new }
+      assert f.matches_tracking_id?("foo:bar")
+      refute f.matches_tracking_id?("foo:baz")
+      refute f.matches_tracking_id?("bar:bar")
+    end
+
     context "without project, without tracking_id" do
       with_env("PROJECT" => nil, "TRACKING_ID" => nil)
 
