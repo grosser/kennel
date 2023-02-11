@@ -45,7 +45,13 @@ module Kennel
     end
 
     def build_tracking_id_filter
-      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").sort.uniq
+      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").map { |id| tracking_id_path_conversion(id) }.sort.uniq
+    end
+
+    # allow users to paste the generated path of an objects to update it without manually converting
+    def tracking_id_path_conversion(tracking_id)
+      return tracking_id unless tracking_id.end_with?(".json")
+      tracking_id.sub("generated/", "").sub(".json", "").sub("/", ":")
     end
 
     def filter_resources(resources, by, expected, name, env)
