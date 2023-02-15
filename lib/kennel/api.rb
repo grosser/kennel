@@ -3,7 +3,7 @@
 # especially 1-off weirdness that should not leak into other parts of the code
 module Kennel
   class Api
-    CACHE_FILE = "tmp/cache/details"
+    CACHE_FILE = ENV.fetch("KENNEL_API_CACHE_FILE", "tmp/cache/details")
 
     def self.tag(api_resource, reply)
       klass = Models::Record.api_resource_map[api_resource]
