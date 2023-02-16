@@ -747,6 +747,10 @@ describe Kennel::Importer do
     it "prints empty arrays as single line" do
       importer.send(:pretty_print, foo: { bar: [] }).must_equal "  foo: -> {\n    {\n      bar: []\n    }\n  }"
     end
+
+    it "prints empty hash as single line because that is what rubocop wants for Layout/SpaceInsideHashLiteralBraces" do
+      importer.send(:pretty_print, foo: { bar: {} }).must_equal "  foo: -> {\n    {\n      bar: {}\n    }\n  }"
+    end
   end
 
   describe "#convert_strings_to_heredoc" do

@@ -148,6 +148,7 @@ module Kennel
               .gsub(": null", ": nil")
               .gsub(/(^\s*)"([a-zA-Z][a-zA-Z\d_]*)":/, "\\1\\2:") # "foo": 1 -> foo: 1
               .gsub(/: \[\n\s+\]/, ": []") # empty arrays on a single line
+              .gsub(/: \{\n\s+\}/, ": {}") # empty hash on a single line
               .gsub('q: "metadata"', "q: :metadata") # bring symbols back
               .gsub(/^/, "    ") # indent
             pretty = convert_strings_to_heredoc(pretty)
