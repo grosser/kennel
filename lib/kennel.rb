@@ -54,48 +54,88 @@ module Kennel
   self.err = $stderr
 
   class Engine
-    attr_accessor :strict_imports
-
-    def initialize
-      @strict_imports = true
+    def initialize(
+      update_generated: true,
+      show_plan: false,
+      require_confirm: nil,
+      update_datadog: false,
+      strict_imports: true
+    )
+      @update_generated = update_generated
+      @show_plan = show_plan
+      @require_confirm =
+        if require_confirm.nil?
+          default_require_confirm?
+        else
+          require_confirm
+        end
+      @update_datadog = update_datadog
+      @strict_imports = strict_imports
     end
 
-    # start generation and download in parallel to make planning faster
-    def preload
-      Utils.parallel([:generated, :definitions]) { |m| send m, plain: true }
-    end
+    def run
+      if !update_generated? && !show_plan? && !update_datadog?
+        generated
+        return
+      end
 
-    def generate
-      parts = generated
-      PartsSerializer.new(filter: filter).write(parts) if ENV["STORE"] != "false" # quicker when debugging
-      parts
-    end
+      if show_plan? || update_datadog?
+        # start generation and download in parallel to make planning faster
+        Utils.parallel([:generated, :definitions]) { |m| send m, plain: true }
+      end
 
-    def plan
-      syncer.print_plan
-      syncer.plan
-    end
+      if update_generated?
+        PartsSerializer.new(filter: filter).write(generated)
+      end
 
-    def update
-      syncer.print_plan
-      syncer.update if syncer.confirm
+      if show_plan? || update_datadog?
+        syncer # Instantiating the syncer calculates the plan
+
+        syncer.print_plan if show_plan?
+
+        if update_datadog?
+          syncer.update if update_datadog? && (!require_confirm? || syncer.confirm)
+        else
+          syncer.plan # i.e. get & return the already-calculated plan
+        end
+      end
     end
 
     private
+
+    attr_reader :strict_imports
+
+    def default_require_confirm?
+      $stdin.tty? && $stdout.tty?
+    end
+
+    def update_generated?
+      @update_generated
+    end
+
+    def show_plan?
+      @show_plan
+    end
+
+    def require_confirm?
+      @require_confirm
+    end
+
+    def update_datadog?
+      @update_datadog
+    end
 
     def filter
       @filter ||= Filter.new
     end
 
     def syncer
-      @syncer ||= begin
-        preload
+      @syncer ||=
         Syncer.new(
           api, generated, definitions,
           filter: filter,
           strict_imports: strict_imports
         )
-      end
     end
 
     def api

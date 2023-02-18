@@ -14,7 +14,6 @@ describe Kennel do
   end
 
   let(:models_count) { 4 }
-  let(:kennel) { Kennel::Engine.new }
 
   capture_all
   in_temp_dir
@@ -48,14 +47,6 @@ describe Kennel do
     Object.send(:remove_const, :TempProject3) if defined?(TempProject3)
   end
 
-  describe ".preload" do
-    it "prepares" do
-      Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      kennel.preload
-      stdout.string.must_equal ""
-    end
-  end
-
   describe ".generate" do
     it "stores if requested" do
       writer = "some writer".dup
@@ -66,7 +57,7 @@ describe Kennel do
         parts.map(&:tracking_id) == ["temp_project:foo"]
       end.once
 
-      with_env(STORE: nil) { kennel.generate }
+      Kennel::Engine.new(update_generated: true).run
     end
 
     it "does not store if requested" do
@@ -74,7 +65,7 @@ describe Kennel do
       Kennel::PartsSerializer.stubs(:new).returns(writer)
       writer.stubs(:write).never
 
-      with_env(STORE: "false") { kennel.generate }
+      Kennel::Engine.new(update_generated: false).run
     end
 
     it "complains when duplicates would be written" do
@@ -83,7 +74,9 @@ describe Kennel do
           defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
         end
       RUBY
-      e = assert_raises(RuntimeError) { kennel.generate }
+      e = assert_raises(RuntimeError) do
+        Kennel::Engine.new(update_generated: true).run
+      end
       e.message.must_equal <<~ERROR
         test_project2:bar is defined 2 times
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
@@ -95,7 +88,7 @@ describe Kennel do
     it "plans" do
       stdout.stubs(:tty?).returns(true)
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      kennel.plan
+      Kennel::Engine.new(update_generated: false, show_plan: true, update_datadog: false).run
       stdout.string.must_include "Plan:\n\e[32mCreate monitor temp_project:foo\e[0m\n"
     end
   end
@@ -111,7 +104,7 @@ describe Kennel do
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(Kennel::Api.tag("monitor", id: 123))
 
-      kennel.update
+      Kennel::Engine.new(update_generated: false, show_plan: false, require_confirm: true, update_datadog: true).run
 
       stderr.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo https://app.datadoghq.com/monitors/123"
@@ -120,10 +113,8 @@ describe Kennel do
     it "does not update when user does not confirm" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       STDIN.expects(:gets).returns("n\n") # proceed ? ... no!
-      stdout.expects(:tty?).returns(true)
-      stderr.expects(:tty?).returns(true)
 
-      kennel.update
+      Kennel::Engine.new(update_generated: false, show_plan: false, require_confirm: true, update_datadog: true).run
 
       stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end

@@ -13,7 +13,9 @@ describe Kennel::ProjectsProvider do
   in_temp_dir
   capture_all
 
-  let(:kennel) { Kennel::Engine.new }
+  def generate
+    Kennel::Engine.new(update_generated: false, show_plan: false, update_datadog: false).run
+  end
 
   after do
     Kennel::Models::Project.recursive_subclasses.each do |klass|
@@ -70,7 +72,7 @@ describe Kennel::ProjectsProvider do
         FooBar::BazFoo
       end
     RUBY
-    e = assert_raises(NameError) { kennel.generate }
+    e = assert_raises(NameError) { generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant TestProject3::FooBar
 
@@ -88,7 +90,7 @@ describe Kennel::ProjectsProvider do
         Teams::BazFoo
       end
     RUBY
-    e = assert_raises(NameError) { kennel.generate }
+    e = assert_raises(NameError) { generate }
     e.message.must_equal("\n" + <<~MSG.gsub(/^/, "  "))
       uninitialized constant Teams::BazFoo
 
@@ -106,7 +108,7 @@ describe Kennel::ProjectsProvider do
         raise NameError, "wut"
       end
     RUBY
-    e = assert_raises(NameError) { kennel.generate }
+    e = assert_raises(NameError) { generate }
     e.message.must_equal <<~MSG.rstrip
       wut
 

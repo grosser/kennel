@@ -8,10 +8,6 @@ require "json"
 module Kennel
   module Tasks
     class << self
-      def kennel
-        @kennel ||= Kennel::Engine.new
-      end
-
       def abort(message = nil)
         Kennel.err.puts message if message
         raise SystemExit.new(1), message
@@ -19,7 +15,6 @@ module Kennel
 
       def load_environment
         @load_environment ||= begin
-          require "kennel"
           gem "dotenv"
           require "dotenv"
           source = ".env"
@@ -39,10 +34,10 @@ module Kennel
         load_environment
 
         if on_default_branch? && git_push?
-          Kennel::Tasks.kennel.strict_imports = false
-          Kennel::Tasks.kennel.update
+          Kennel::Engine.new(update_generated: false, show_plan: true, require_confirm: false, update_datadog: true, strict_imports: false).run
         else
-          Kennel::Tasks.kennel.plan # show plan in CI logs
+          # show plan in CI logs
+          Kennel::Engine.new(update_generated: false, show_plan: true, require_confirm: false, update_datadog: false, strict_imports: true).run
         end
       end
 
@@ -59,7 +54,7 @@ module Kennel
 end
 
 namespace :kennel do
-  desc "Ensure there are no uncommited changes that would be hidden from PR reviewers"
+  desc "Ensure there are no uncommitted changes that would be hidden from PR reviewers"
   task no_diff: :generate do
     result = `git status --porcelain generated/`.strip
     Kennel::Tasks.abort "Diff found:\n#{result}\nrun `rake generate` and commit the diff to fix" unless result == ""
@@ -97,23 +92,19 @@ namespace :kennel do
 
   desc "generate local definitions"
   task generate: :environment do
-    Kennel::Tasks.kennel.generate
+    Kennel::Engine.new(update_generated: true, show_plan: false, update_datadog: false).run
   end
 
   # also generate parts so users see and commit updated generated automatically
   # (generate must run after plan to enable parallel .download+.generate inside of .plan)
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :environment do
-    Kennel::Tasks.kennel.preload
-    Kennel::Tasks.kennel.generate
-    Kennel::Tasks.kennel.plan
+    Kennel::Engine.new(update_generated: true, show_plan: true, update_datadog: false).run
   end
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
-    Kennel::Tasks.kennel.preload
-    Kennel::Tasks.kennel.generate
-    Kennel::Tasks.kennel.update
+    Kennel::Engine.new(update_generated: true, show_plan: true, update_datadog: true).run
   end
 
   desc "update on push to the default branch, otherwise show plan"
