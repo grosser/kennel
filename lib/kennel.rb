@@ -74,7 +74,9 @@ module Kennel
         return
       end
 
-      if show_plan? || update_datadog?
+      needs_syncing = show_plan? || update_datadog?
+
+      if needs_syncing
         # start generation and download in parallel to make planning faster
         Utils.parallel([:parts, :definitions]) { |m| send m, plain: true }
       end
@@ -83,7 +85,7 @@ module Kennel
         PartsSerializer.new(filter: filter).write(parts)
       end
 
-      if show_plan? || update_datadog?
+      if needs_syncing
         syncer # Instantiating the syncer calculates the plan
 
         syncer.print_plan if show_plan?
