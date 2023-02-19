@@ -94,7 +94,7 @@ module Kennel
         syncer.print_plan if show_plan?
 
         if update_datadog?
-          syncer.update if update_datadog? && (!require_confirm? || syncer.confirm)
+          syncer.update if !require_confirm? || syncer.confirm
         else
           syncer.plan # i.e. get & return the already-calculated plan
         end
