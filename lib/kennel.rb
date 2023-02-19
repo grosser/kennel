@@ -57,18 +57,13 @@ module Kennel
     def initialize(
       generate: true,
       show_plan: false,
-      require_confirm: nil,
+      require_confirm: default_require_confirm?,
       update_datadog: false,
       strict_imports: true
     )
       @generate = generate
       @show_plan = show_plan
-      @require_confirm =
-        if require_confirm.nil?
-          default_require_confirm?
-        else
-          require_confirm
-        end
+      @require_confirm = require_confirm
       @update_datadog = update_datadog
       @strict_imports = strict_imports
     end
