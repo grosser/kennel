@@ -3,11 +3,11 @@ require_relative "../test_helper"
 
 SingleCov.covered!
 
-describe Kennel::PredicateAccessors do
+describe Kennel::AttrPredicate do
   def make_test(happy:)
     Class.new do
-      include Kennel::PredicateAccessors
-      attr_reader :happy?
+      include Kennel::AttrPredicate
+      attr_predicate :happy?
 
       def initialize(happy:)
         @happy = happy
@@ -19,17 +19,13 @@ describe Kennel::PredicateAccessors do
     assert make_test(happy: true).happy?
   end
 
-  it "still works for normal accessors" do
-    c = Class.new do
-      include Kennel::PredicateAccessors
-      attr_reader :size
-
-      def initialize
-        @size = 9001
+  it "rejects invalid predicate names" do
+    assert_raises(NameError) do
+      Class.new do
+        include Kennel::AttrPredicate
+        attr_predicate :size
       end
     end
-
-    assert_equal c.new.size, 9001
   end
 
   it "coerces falsey to false" do
