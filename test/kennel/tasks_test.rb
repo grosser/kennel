@@ -3,7 +3,7 @@ require_relative "../test_helper"
 require "rake"
 require "kennel/tasks"
 
-SingleCov.covered! uncovered: 45 # TODO: reduce this
+SingleCov.covered! uncovered: 47 # TODO: reduce this
 
 describe "tasks" do
   enable_api

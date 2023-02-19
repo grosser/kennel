@@ -111,6 +111,8 @@ namespace :kennel do
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
+    Kennel::Tasks.kennel.preload
+    Kennel::Tasks.kennel.generate
     Kennel::Tasks.kennel.update
   end
 
