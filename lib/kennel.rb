@@ -5,6 +5,7 @@ require "zeitwerk"
 require "English"
 
 require "kennel/version"
+require "kennel/predicate_accessors"
 require "kennel/console"
 require "kennel/string_utils"
 require "kennel/utils"
@@ -100,26 +101,11 @@ module Kennel
 
     private
 
-    attr_reader :strict_imports
+    include Kennel::PredicateAccessors
+    attr_reader :strict_imports, :generate?, :show_plan?, :require_confirm?, :update_datadog?
 
     def default_require_confirm?
       $stdin.tty? && $stdout.tty?
-    end
-
-    def generate?
-      @generate
-    end
-
-    def show_plan?
-      @show_plan
-    end
-
-    def require_confirm?
-      @require_confirm
-    end
-
-    def update_datadog?
-      @update_datadog
     end
 
     def filter
