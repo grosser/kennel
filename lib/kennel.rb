@@ -71,20 +71,28 @@ module Kennel
 
     def run
       if !generate? && !show_plan? && !update_datadog?
-        parts
-        return
+        return parts
       end
 
       needs_syncing = show_plan? || update_datadog?
 
-      if needs_syncing
-        # start generation and download in parallel to make planning faster
-        Utils.parallel([:parts, :definitions]) { |m| send m, plain: true }
-      end
+      # The syncer part is rather messy to do nicely with promises,
+      # because of the various combinations (maybe show plan;
+      # maybe the plan is empty; maybe update datadog; maybe need
+      # confirmation; maybe we get confirmation). So to keep it
+      # relatively simple, do all the promise stuff first, then
+      # run the syncer stuff, without using promises.
 
-      if generate?
-        PartsSerializer.new(filter: filter).write(parts)
-      end
+      require "rosarium"
+      Rosarium::Promise.all(
+        [
+          p_parts,
+          (p_generate if generate?),
+          (p_definitions if needs_syncing)
+        ].compact
+      ).value!.first
+
+      # Now we're done with the promises, so just do simple sequential work.
 
       if needs_syncing
         syncer # Instantiating the syncer calculates the plan
@@ -96,6 +104,8 @@ module Kennel
         else
           syncer.plan # i.e. get & return the already-calculated plan
         end
+      else
+        parts
       end
     end
 
@@ -125,6 +135,20 @@ module Kennel
       @api ||= Api.new
     end
 
+    def p_parts
+      @p_parts ||= Rosarium::Promise.execute { parts(plain: true) }
+    end
+
+    def p_definitions
+      @p_definitions ||= Rosarium::Promise.execute { definitions(plain: true) }
+    end
+
+    def p_generate
+      @p_generate ||= p_parts.then do |parts|
+        PartsSerializer.new(filter: filter).write(parts, plain: true)
+      end
+    end
+
     def parts(**kwargs)
       @parts ||= begin
         parts = Progress.progress "Finding parts", **kwargs do
@@ -143,7 +167,7 @@ module Kennel
           ERROR
         end
 
-        Progress.progress "Building json" do
+        Progress.progress "Building json", **kwargs do
           # trigger json caching here so it counts into generating
           Utils.parallel(parts, &:build)
         end

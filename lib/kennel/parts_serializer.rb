@@ -6,8 +6,8 @@ module Kennel
       @filter = filter
     end
 
-    def write(parts)
-      Progress.progress "Storing" do
+    def write(parts, **kwargs)
+      Progress.progress "Storing", **kwargs do
         existing = existing_files_and_folders
         used = write_changed(parts)
         FileUtils.rm_rf(existing - used)
