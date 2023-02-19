@@ -57,7 +57,7 @@ describe Kennel do
         parts.map(&:tracking_id) == ["temp_project:foo"]
       end.once
 
-      Kennel::Engine.new(update_generated: true).run
+      Kennel::Engine.new(generate: true).run
     end
 
     it "does not store if requested" do
@@ -65,7 +65,7 @@ describe Kennel do
       Kennel::PartsSerializer.stubs(:new).returns(writer)
       writer.stubs(:write).never
 
-      Kennel::Engine.new(update_generated: false).run
+      Kennel::Engine.new(generate: false).run
     end
 
     it "complains when duplicates would be written" do
@@ -75,7 +75,7 @@ describe Kennel do
         end
       RUBY
       e = assert_raises(RuntimeError) do
-        Kennel::Engine.new(update_generated: true).run
+        Kennel::Engine.new(generate: true).run
       end
       e.message.must_equal <<~ERROR
         test_project2:bar is defined 2 times
@@ -88,7 +88,7 @@ describe Kennel do
     it "plans" do
       stdout.stubs(:tty?).returns(true)
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      Kennel::Engine.new(update_generated: false, show_plan: true, update_datadog: false).run
+      Kennel::Engine.new(generate: false, show_plan: true, update_datadog: false).run
       stdout.string.must_include "Plan:\n\e[32mCreate monitor temp_project:foo\e[0m\n"
     end
   end
@@ -104,7 +104,7 @@ describe Kennel do
       STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(Kennel::Api.tag("monitor", id: 123))
 
-      Kennel::Engine.new(update_generated: false, show_plan: false, require_confirm: true, update_datadog: true).run
+      Kennel::Engine.new(generate: false, show_plan: false, require_confirm: true, update_datadog: true).run
 
       stderr.string.must_include "press 'y' to continue"
       stdout.string.must_include "Created monitor temp_project:foo https://app.datadoghq.com/monitors/123"
@@ -114,7 +114,7 @@ describe Kennel do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
       STDIN.expects(:gets).returns("n\n") # proceed ? ... no!
 
-      Kennel::Engine.new(update_generated: false, show_plan: false, require_confirm: true, update_datadog: true).run
+      Kennel::Engine.new(generate: false, show_plan: false, require_confirm: true, update_datadog: true).run
 
       stderr.string.must_match(/press 'y' to continue: \e\[0m\z/m) # nothing after
     end

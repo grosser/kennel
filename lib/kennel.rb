@@ -55,13 +55,13 @@ module Kennel
 
   class Engine
     def initialize(
-      update_generated: true,
+      generate: true,
       show_plan: false,
       require_confirm: nil,
       update_datadog: false,
       strict_imports: true
     )
-      @update_generated = update_generated
+      @generate = generate
       @show_plan = show_plan
       @require_confirm =
         if require_confirm.nil?
@@ -74,18 +74,18 @@ module Kennel
     end
 
     def run
-      if !update_generated? && !show_plan? && !update_datadog?
-        generated
+      if !generate? && !show_plan? && !update_datadog?
+        parts
         return
       end
 
       if show_plan? || update_datadog?
         # start generation and download in parallel to make planning faster
-        Utils.parallel([:generated, :definitions]) { |m| send m, plain: true }
+        Utils.parallel([:parts, :definitions]) { |m| send m, plain: true }
       end
 
-      if update_generated?
-        PartsSerializer.new(filter: filter).write(generated)
+      if generate?
+        PartsSerializer.new(filter: filter).write(parts)
       end
 
       if show_plan? || update_datadog?
@@ -109,8 +109,8 @@ module Kennel
       $stdin.tty? && $stdout.tty?
     end
 
-    def update_generated?
-      @update_generated
+    def generate?
+      @generate
     end
 
     def show_plan?
@@ -132,7 +132,7 @@ module Kennel
     def syncer
       @syncer ||=
         Syncer.new(
-          api, generated, definitions,
+          api, parts, definitions,
           filter: filter,
           strict_imports: strict_imports
         )
@@ -142,8 +142,8 @@ module Kennel
       @api ||= Api.new
     end
 
-    def generated(**kwargs)
-      @generated ||= begin
+    def parts(**kwargs)
+      @parts ||= begin
         parts = Progress.progress "Finding parts", **kwargs do
           projects = ProjectsProvider.new.projects
           projects = filter.filter_projects projects

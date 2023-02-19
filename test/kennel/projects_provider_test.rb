@@ -14,7 +14,7 @@ describe Kennel::ProjectsProvider do
   capture_all
 
   def generate
-    Kennel::Engine.new(update_generated: false, show_plan: false, update_datadog: false).run
+    Kennel::Engine.new(generate: false, show_plan: false, update_datadog: false).run
   end
 
   after do
