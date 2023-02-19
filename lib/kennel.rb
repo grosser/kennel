@@ -101,10 +101,8 @@ module Kennel
 
     private
 
-    attr_reader :strict_imports
-
     include Kennel::AttrPredicate
-    attr_predicate :generate?, :show_plan?, :require_confirm?, :update_datadog?
+    attr_predicate :generate?, :show_plan?, :require_confirm?, :update_datadog?, :strict_imports?
 
     def default_require_confirm?
       $stdin.tty? && $stdout.tty?
@@ -119,7 +117,7 @@ module Kennel
         Syncer.new(
           api, parts, definitions,
           filter: filter,
-          strict_imports: strict_imports
+          strict_imports: strict_imports?
         )
     end
 
