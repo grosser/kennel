@@ -151,7 +151,7 @@ module Kennel
         rescue StandardError
           if unfiltered_validation_errors.empty?
             @unfiltered_validation_errors = nil
-            raise PrepareError, safe_tracking_id # FIXME: this makes errors hard to debug when running tests
+            raise PrepareError, safe_tracking_id
           end
         end
 
