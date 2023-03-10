@@ -105,14 +105,14 @@ namespace :kennel do
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :environment do
     Kennel::Tasks.kennel.preload
-    Kennel::Tasks.kennel.generate
+    Kennel::Tasks.kennel.generate unless ENV["KENNEL_NO_GENERATE"]
     Kennel::Tasks.kennel.plan
   end
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
     Kennel::Tasks.kennel.preload
-    Kennel::Tasks.kennel.generate
+    Kennel::Tasks.kennel.generate unless ENV["KENNEL_NO_GENERATE"]
     Kennel::Tasks.kennel.update
   end
 
