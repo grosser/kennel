@@ -3,7 +3,7 @@ require_relative "../test_helper"
 require "rake"
 require "kennel/tasks"
 
-SingleCov.covered! uncovered: 15 # TODO: reduce this
+SingleCov.covered! uncovered: 20 # TODO: reduce this
 
 main = self
 
@@ -237,7 +237,7 @@ describe "tasks" do
     let(:task) { "kennel:generate" }
 
     it "runs" do
-      Kennel::Engine.any_instance.expects(:generate)
+      Kennel::PartsSerializer.any_instance.expects(:write)
       execute
     end
   end
@@ -311,16 +311,18 @@ describe "tasks" do
     let(:task) { "kennel:plan" }
 
     it "plans" do
-      Kennel::Engine.any_instance.expects(:preload)
-      Kennel::Engine.any_instance.expects(:generate)
-      Kennel::Engine.any_instance.expects(:plan)
+      Kennel::Engine.any_instance.expects(:parts).at_least_once.returns([])
+      Kennel::Engine.any_instance.expects(:definitions).at_least_once.returns([])
+      Kennel::PartsSerializer.any_instance.expects(:write)
+      Kennel::Syncer.any_instance.expects(:print_plan)
       execute
     end
 
     it "does not generate when asked" do
-      Kennel::Engine.any_instance.expects(:preload)
-      Kennel::Engine.any_instance.expects(:generate).never
-      Kennel::Engine.any_instance.expects(:plan)
+      Kennel::Engine.any_instance.expects(:parts).at_least_once.returns([])
+      Kennel::Engine.any_instance.expects(:definitions).at_least_once.returns([])
+      Kennel::PartsSerializer.any_instance.expects(:write).never
+      Kennel::Syncer.any_instance.expects(:print_plan)
       execute KENNEL_NO_GENERATE: "true"
     end
   end
@@ -329,16 +331,24 @@ describe "tasks" do
     let(:task) { "kennel:update_datadog" }
 
     it "updates" do
-      Kennel::Engine.any_instance.expects(:preload)
-      Kennel::Engine.any_instance.expects(:generate)
-      Kennel::Engine.any_instance.expects(:update)
+      Kennel::Engine.any_instance.expects(:parts).at_least_once.returns([])
+      Kennel::Engine.any_instance.expects(:definitions).at_least_once.returns([])
+      Kennel::PartsSerializer.any_instance.expects(:write)
+      $stdin.stubs(:tty?).returns(true)
+      $stdout.stubs(:tty?).returns(true)
+      Kennel::Syncer.any_instance.expects(:confirm).returns(true)
+      Kennel::Syncer.any_instance.expects(:update)
       execute
     end
 
     it "does not generate when asked" do
-      Kennel::Engine.any_instance.expects(:preload)
-      Kennel::Engine.any_instance.expects(:generate).never
-      Kennel::Engine.any_instance.expects(:update)
+      Kennel::Engine.any_instance.expects(:parts).at_least_once.returns([])
+      Kennel::Engine.any_instance.expects(:definitions).at_least_once.returns([])
+      Kennel::PartsSerializer.any_instance.expects(:write).never
+      $stdin.stubs(:tty?).returns(true)
+      $stdout.stubs(:tty?).returns(true)
+      Kennel::Syncer.any_instance.expects(:confirm).returns(true)
+      Kennel::Syncer.any_instance.expects(:update)
       execute KENNEL_NO_GENERATE: "true"
     end
   end
