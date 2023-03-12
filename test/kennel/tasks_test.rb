@@ -3,11 +3,12 @@ require_relative "../test_helper"
 require "rake"
 require "kennel/tasks"
 
-SingleCov.covered! uncovered: 40 # TODO: reduce this
+SingleCov.covered! uncovered: 15 # TODO: reduce this
 
+main = self
+
+# task tests do not call dependencies
 describe "tasks" do
-  enable_api
-
   def execute(env = {})
     with_env(env) { Rake::Task[task].execute }
   rescue SystemExit
@@ -15,6 +16,7 @@ describe "tasks" do
     raise "Aborted #{$!.message}"
   end
 
+  enable_api
   capture_all
 
   let(:dump_output) do
@@ -48,6 +50,7 @@ describe "tasks" do
       ]
     TXT
   end
+  let(:aborted) { Class.new(RuntimeError) }
 
   describe "kennel:nodata" do
     let(:task) { "kennel:nodata" }
@@ -227,6 +230,116 @@ describe "tasks" do
       execute ID: "123", RESOURCE: "monitor"
       stdout.string.must_equal "foo:bar\n"
       assert_requested get
+    end
+  end
+
+  describe "kennel:generate" do
+    let(:task) { "kennel:generate" }
+
+    it "runs" do
+      Kennel::Engine.any_instance.expects(:generate)
+      execute
+    end
+  end
+
+  describe "kennel:no_diff" do
+    let(:task) { "kennel:no_diff" }
+
+    it "does not complain when there is no diff" do
+      `true` # fake success signal
+      main.expects(:`).returns ""
+      execute
+    end
+
+    it "complains on diff" do
+      `true` # fake success signal
+      main.expects(:`).returns "foo"
+      assert_raises { execute }.message.must_include "Aborted Diff found"
+    end
+
+    it "complains on error" do
+      `false` # fake success signal
+      main.expects(:`).returns ""
+      assert_raises { execute }.message.must_include "Error during diffing"
+    end
+  end
+
+  describe "kennel:validate_mentions" do
+    let(:task) { "kennel:validate_mentions" }
+    let(:content) { { message: "" } }
+
+    def execute(...)
+      Tempfile.create do |f|
+        f.write(content.to_json)
+        f.flush
+        Dir.expects(:[]).returns([f.path])
+        super
+      end
+    end
+
+    before do
+      Kennel::Api.any_instance.expects(:request).returns({ handles: { foo: [{ value: "bar" }, { value: "baz" }] } })
+    end
+
+    it "passes" do
+      execute
+    end
+
+    it "ignores @here" do
+      content[:message] = "@here"
+      execute
+    end
+
+    it "ignores known bad" do
+      content[:message] = "@oo@ps"
+      execute KNOWN: "@oo@ps"
+    end
+
+    it "ignores non-monitors" do
+      content.delete :message
+      execute
+    end
+
+    it "fails when unknown mentions are used" do
+      content[:message] = "@oo@ps"
+      assert_raises { execute }.message.must_equal "Aborted SystemExit"
+      stdout.string.must_include "Invalid mentions"
+    end
+  end
+
+  describe "kennel:plan" do
+    let(:task) { "kennel:plan" }
+
+    it "plans" do
+      Kennel::Engine.any_instance.expects(:preload)
+      Kennel::Engine.any_instance.expects(:generate)
+      Kennel::Engine.any_instance.expects(:plan)
+      execute
+    end
+
+    it "does not generate when asked" do
+      Kennel::Engine.any_instance.expects(:preload)
+      Kennel::Engine.any_instance.expects(:generate).never
+      Kennel::Engine.any_instance.expects(:plan)
+      execute KENNEL_NO_GENERATE: "true"
+    end
+  end
+
+  describe "kennel:update_datadog" do
+    let(:task) { "kennel:update_datadog" }
+
+    it "updates" do
+      Kennel::Engine.any_instance.expects(:preload)
+      Kennel::Engine.any_instance.expects(:generate)
+      Kennel::Engine.any_instance.expects(:update)
+      execute
+    end
+
+    it "does not generate when asked" do
+      Kennel::Engine.any_instance.expects(:preload)
+      Kennel::Engine.any_instance.expects(:generate).never
+      Kennel::Engine.any_instance.expects(:update)
+      execute KENNEL_NO_GENERATE: "true"
     end
   end
 end

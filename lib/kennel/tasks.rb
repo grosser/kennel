@@ -77,15 +77,17 @@ namespace :kennel do
     bad = []
     Dir["generated/**/*.json"].each do |f|
       next unless message = JSON.parse(File.read(f))["message"]
-      used = message.scan(/\s(@[^\s{,'"]+)/).flatten(1)
+      used = message
+        .scan(/(?:^|\s)(@[^\s{,'"]+)/)
+        .flatten(1)
         .grep(/^@.*@|^@.*-/) # ignore @here etc handles ... datadog uses @foo@bar.com for emails and @foo-bar for integrations
       (used - known).each { |v| bad << [f, v] }
     end
 
     if bad.any?
       url = Kennel::Utils.path_to_url "/account/settings"
-      puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
-      bad.each { |f, v| puts "Invalid mention #{v} in monitor message of #{f}" }
+      Kennel.out.puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
+      bad.each { |f, v| Kennel.out.puts "Invalid mention #{v} in monitor message of #{f}" }
       Kennel::Tasks.abort ENV["KNOWN_WARNING"]
     end
   end
@@ -99,12 +101,12 @@ namespace :kennel do
   # (generate must run after plan to enable parallel .download+.generate inside of .plan)
   desc "show planned datadog changes (scope with PROJECT=name)"
   task plan: :environment do
-    Kennel::Engine.new(generate: true, show_plan: true, update_datadog: false).run
+    Kennel::Engine.new(generate: !ENV.key?("KENNEL_NO_GENERATE"), show_plan: true, update_datadog: false).run
   end
 
   desc "update datadog (scope with PROJECT=name)"
   task update_datadog: :environment do
-    Kennel::Engine.new(generate: true, show_plan: true, update_datadog: true).run
+    Kennel::Engine.new(generate: !ENV.key?("KENNEL_NO_GENERATE"), show_plan: true, update_datadog: true).run
   end
 
   desc "update on push to the default branch, otherwise show plan"

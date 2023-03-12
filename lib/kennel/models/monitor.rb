@@ -32,7 +32,7 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data
+        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data
       )
 
       defaults(
@@ -52,6 +52,7 @@ module Kennel
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
         threshold_windows: -> { nil },
+        scheduling_options: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
         on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) }
@@ -112,6 +113,10 @@ module Kennel
 
         if windows = threshold_windows
           options[:threshold_windows] = windows
+        end
+
+        if schedule = scheduling_options
+          options[:scheduling_options] = schedule
         end
 
         # Datadog requires only either new_group_delay or new_host_delay, never both
