@@ -66,12 +66,19 @@ Minitest::Test.class_eval do
     let(:stdout) { StringIO.new }
     let(:stderr) { StringIO.new }
 
-    before do
-      Kennel.out = stdout
-      Kennel.err = stderr
+    around do |t|
+      old = [Kennel.in, Kennel.out, Kennel.err]
+      File.open("/dev/null") do |dev_null|
+        Kennel.in = dev_null
+        Kennel.out = stdout
+        Kennel.err = stderr
+        t.call
+      end
+    ensure
+      Kennel.in, Kennel.out, Kennel.err = old
     end
 
-    reset_instance
+    reset_instance # Nothing to do with capture_all, actually
   end
 
   def self.in_temp_dir(&block)

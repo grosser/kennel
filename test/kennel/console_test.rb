@@ -56,23 +56,23 @@ describe Kennel::Console do
     capture_all
 
     it "is true on yes" do
-      STDIN.expects(:gets).returns("y\n")
+      Kennel.in.expects(:gets).returns("y\n")
       assert Kennel::Console.ask?("foo")
       stderr.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m"
     end
 
     it "is false on no" do
-      STDIN.expects(:gets).returns("n\n")
+      Kennel.in.expects(:gets).returns("n\n")
       refute Kennel::Console.ask?("foo")
     end
 
     it "is false on enter" do
-      STDIN.expects(:gets).returns("\n")
+      Kennel.in.expects(:gets).returns("\n")
       refute Kennel::Console.ask?("foo")
     end
 
     it "does not print a backtrace when user decides to stop with Ctrl+C" do
-      STDIN.expects(:gets).raises(Interrupt)
+      Kennel.in.expects(:gets).raises(Interrupt)
       Kennel::Console.expects(:exit).with(1)
       refute Kennel::Console.ask?("foo")
 

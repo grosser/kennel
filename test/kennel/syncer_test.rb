@@ -464,15 +464,15 @@ describe Kennel::Syncer do
 
   describe "#confirm" do
     def expect_gets(answer)
-      STDIN.unstub(:gets)
-      STDIN.stubs(:gets).returns(answer)
+      Kennel.in.unstub(:gets)
+      Kennel.in.stubs(:gets).returns(answer)
     end
 
     before do
       expected << monitor("a", "b")
-      STDIN.stubs(:tty?).returns(true)
+      Kennel.in.stubs(:tty?).returns(true)
       Kennel.err.stubs(:tty?).returns(true)
-      STDIN.expects(:gets).with { raise "unexpected STDIN.gets called" }.never
+      Kennel.in.expects(:gets).with { raise "unexpected Kennel.in.gets called" }.never
     end
 
     it "confirms on y" do
@@ -482,7 +482,7 @@ describe Kennel::Syncer do
     end
 
     it "confirms when automated" do
-      STDIN.stubs(:tty?).returns(false)
+      Kennel.in.stubs(:tty?).returns(false)
       assert syncer.confirm
     end
 

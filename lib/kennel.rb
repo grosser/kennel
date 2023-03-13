@@ -47,9 +47,10 @@ module Kennel
   GenerationAbortedError = Class.new(StandardError)
 
   class << self
-    attr_accessor :out, :err
+    attr_accessor :in, :out, :err
   end
 
+  self.in = $stdin
   self.out = $stdout
   self.err = $stderr
 
