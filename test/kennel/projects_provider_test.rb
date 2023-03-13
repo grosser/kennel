@@ -12,6 +12,7 @@ describe Kennel::ProjectsProvider do
 
   in_temp_dir
   capture_all
+  without_cached_projects
 
   let(:kennel) { Kennel::Engine.new }
 

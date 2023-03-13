@@ -17,6 +17,7 @@ describe Kennel do
   let(:kennel) { Kennel::Engine.new }
 
   capture_all
+  without_cached_projects
   in_temp_dir
   enable_api
 
