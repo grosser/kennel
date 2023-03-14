@@ -43,9 +43,8 @@ Minitest::Test.class_eval do
     RUBY
   end
 
-  def self.reset_instance
+  def self.without_cached_projects
     after do
-      Kennel.instance_variable_set(:@instance, nil)
       Kennel::ProjectsProvider.remove_class_variable(:@@load_all) if Kennel::ProjectsProvider.class_variable_defined?(:@@load_all)
     end
   end
@@ -66,12 +65,17 @@ Minitest::Test.class_eval do
     let(:stdout) { StringIO.new }
     let(:stderr) { StringIO.new }
 
-    before do
-      Kennel.out = stdout
-      Kennel.err = stderr
+    around do |t|
+      old = [Kennel.in, Kennel.out, Kennel.err]
+      File.open("/dev/null") do |dev_null|
+        Kennel.in = dev_null
+        Kennel.out = stdout
+        Kennel.err = stderr
+        t.call
+      end
+    ensure
+      Kennel.in, Kennel.out, Kennel.err = old
     end
-
-    reset_instance
   end
 
   def self.in_temp_dir(&block)

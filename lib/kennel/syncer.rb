@@ -47,7 +47,7 @@ module Kennel
 
     def confirm
       return false if internal_plan.empty?
-      return true if ENV["CI"] || !STDIN.tty? || !Kennel.err.tty?
+      return true if ENV["CI"] || !Kennel.in.tty? || !Kennel.err.tty?
       Console.ask?("Execute Plan ?")
     end
 

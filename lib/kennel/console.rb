@@ -18,7 +18,7 @@ module Kennel
       def ask?(question)
         Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ", force: true)
         begin
-          STDIN.gets.chomp == "y"
+          Kennel.in.gets.chomp == "y"
         rescue Interrupt # do not show a backtrace if user decides to Ctrl+C here
           Kennel.err.print "\n"
           exit 1

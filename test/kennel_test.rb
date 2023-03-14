@@ -17,6 +17,7 @@ describe Kennel do
   let(:kennel) { Kennel::Engine.new }
 
   capture_all
+  without_cached_projects
   in_temp_dir
   enable_api
 
@@ -102,13 +103,13 @@ describe Kennel do
 
   describe ".update" do
     before do
-      STDIN.expects(:tty?).returns(true)
+      Kennel.in.expects(:tty?).returns(true)
       Kennel.err.stubs(:tty?).returns(true)
     end
 
     it "update" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      STDIN.expects(:gets).returns("y\n") # proceed ? ... yes!
+      Kennel.in.expects(:gets).returns("y\n") # proceed ? ... yes!
       Kennel::Api.any_instance.expects(:create).returns(Kennel::Api.tag("monitor", id: 123))
 
       kennel.update
@@ -119,7 +120,7 @@ describe Kennel do
 
     it "does not update when user does not confirm" do
       Kennel::Api.any_instance.expects(:list).times(models_count).returns([])
-      STDIN.expects(:gets).returns("n\n") # proceed ? ... no!
+      Kennel.in.expects(:gets).returns("n\n") # proceed ? ... no!
       stdout.expects(:tty?).returns(true)
       stderr.expects(:tty?).returns(true)
 
