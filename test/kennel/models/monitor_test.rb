@@ -242,6 +242,11 @@ describe Kennel::Models::Monitor do
       refute json[:options].key?(:no_data_timeframe)
     end
 
+    it "can set notification_preset_name" do
+      monitor(notification_preset_name: -> { "hide_query" })
+        .as_json.dig(:options, :notification_preset_name).must_equal "hide_query"
+    end
+
     describe "on_missing_data" do
       it "defaults" do
         monitor(
