@@ -23,7 +23,8 @@ module Kennel
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         groupby_simple_monitor: false,
         variables: nil,
-        on_missing_data: "default" # "default" is "evaluate as zero"
+        on_missing_data: "default", # "default" is "evaluate as zero"
+        notification_preset_name: nil
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -32,7 +33,8 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data
+        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data,
+        :notification_preset_name
       )
 
       defaults(
@@ -55,7 +57,8 @@ module Kennel
         scheduling_options: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
-        on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) }
+        on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
+        notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) }
       )
 
       def build_json
@@ -135,6 +138,11 @@ module Kennel
           options[:on_missing_data] = on_missing_data
           options[:notify_no_data] = false # cannot set nil or it's an endless update loop
           options.delete :no_data_timeframe
+        end
+
+        # only set when needed to avoid big diff
+        if (notification_preset_name = notification_preset_name())
+          options[:notification_preset_name] = notification_preset_name
         end
 
         data
