@@ -334,7 +334,7 @@ describe Kennel::Models::Dashboard do
 
     describe "with missing default" do
       let(:json) { expected_json_with_requests }
-      before { json[:widgets][0][:definition][:show_legend] = true }
+      before { json[:widgets][0][:definition][:legend_size] = "0" }
 
       it "ignores timeseries defaults" do
         dashboard_with_requests.diff(json).must_equal []

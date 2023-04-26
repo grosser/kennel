@@ -31,7 +31,6 @@ module Kennel
             min: "auto",
             max: "auto"
           },
-          show_legend: true,
           time: {},
           title_align: "left",
           title_size: "16"
