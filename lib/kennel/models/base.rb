@@ -27,7 +27,7 @@ module Kennel
       def kennel_id_base
         name = self.class.name
         if name.start_with?("Kennel::") # core objects would always generate the same id
-          raise_with_location ArgumentError, "Set :kennel_id"
+          raise_with_location ArgumentError, "Set :kennel_id in #{name}"
         end
         name
       end
