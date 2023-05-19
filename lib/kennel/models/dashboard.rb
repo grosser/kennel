@@ -71,6 +71,8 @@ module Kennel
         template_variable_presets: nil
       }.freeze
 
+      TAG_PREFIX = /^team:/
+
       settings(
         :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
         :tags
@@ -82,10 +84,7 @@ module Kennel
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
-        tags: -> do # not inherited by default to make onboarding to using dashboard tags simple
-          team = project.team
-          team.tag_dashboards ? team.tags : []
-        end
+        tags: -> { project.team.tags } # ideally project.tags but that causes diffs
       )
 
       class << self
@@ -153,7 +152,9 @@ module Kennel
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
         tags = tags()
-        tags_as_string = (tags.empty? ? "" : " (#{tags.join(" ")})")
+
+        # TODO: remove this once dd UI shows all tags ... maybe remove team tag once that is usable vis UI
+        tags_as_string = (project.team.tag_dashboards && !tags.empty? ? " (#{tags.join(" ")})" : "")
 
         json = super.merge(
           layout_type: layout_type,
@@ -161,7 +162,8 @@ module Kennel
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
-          widgets: all_widgets
+          widgets: all_widgets,
+          tags: tags.grep(TAG_PREFIX)
         )
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
