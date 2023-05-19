@@ -5,8 +5,7 @@ module Kennel
       include TemplateVariables
 
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles,
-        :tags
+        :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles
       ]
       TRACKING_FIELD = :description
       REQUEST_DEFAULTS = {
@@ -72,6 +71,8 @@ module Kennel
         template_variable_presets: nil
       }.freeze
 
+      TAG_PREFIX = /^team:/
+
       settings(
         :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
         :tags
@@ -83,10 +84,7 @@ module Kennel
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
-        tags: -> do # not inherited by default to make onboarding to using dashboard tags simple
-          team = project.team
-          team.tag_dashboards ? team.tags : []
-        end
+        tags: -> { project.tags }
       )
 
       class << self
@@ -153,16 +151,14 @@ module Kennel
       def build_json
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
-        tags = tags()
-        tags_as_string = (tags.empty? ? "" : " (#{tags.join(" ")})")
-
         json = super.merge(
           layout_type: layout_type,
-          title: "#{title}#{tags_as_string}#{LOCK}",
+          title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
-          widgets: all_widgets
+          widgets: all_widgets,
+          tags: tags.grep(TAG_PREFIX)
         )
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"

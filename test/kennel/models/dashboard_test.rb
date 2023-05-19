@@ -23,7 +23,8 @@ describe Kennel::Models::Dashboard do
       template_variables: [],
       template_variable_presets: nil,
       widgets: [],
-      reflow_type: "auto"
+      reflow_type: "auto",
+      tags: ["team:test_team"]
     }
   end
   let(:dashboard_with_requests) do
@@ -59,15 +60,6 @@ describe Kennel::Models::Dashboard do
       dashboard_with_requests.as_json.must_equal expected_json_with_requests
     end
 
-    it "complains when datadog would created a diff by sorting template_variable_presets" do
-      validation_error_from(dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }))
-        .must_equal "template_variable_presets must be sorted by name"
-    end
-
-    it "doesn't complain on sorted template_variable_presets" do
-      dashboard(template_variable_presets: -> { [{ name: "A" }, { name: "B" }] }).as_json
-    end
-
     it "adds ID when given" do
       dashboard(id: -> { "abc" }).as_json.must_equal expected_json.merge(id: "abc")
     end
@@ -83,11 +75,6 @@ describe Kennel::Models::Dashboard do
       expected_json[:layout_type] = "free"
       expected_json.delete(:reflow_type)
       dashboard(layout_type: -> { "free" }).as_json.must_equal(expected_json)
-    end
-
-    it "adds team tags when requested" do
-      project.team.class.any_instance.expects(:tag_dashboards).returns(true)
-      dashboard.as_json[:title].must_equal "Hello (team:test_team)🔒"
     end
 
     describe "definitions" do
@@ -137,6 +124,23 @@ describe Kennel::Models::Dashboard do
         assert_raises prepare_error_of(ArgumentError) do
           dashboard(definitions: -> { [["bar", "timeseries", "area", "foo", { a: 1 }]] }).as_json
         end
+      end
+    end
+
+    describe "template_variable_presets" do
+      it "doesn't complain on sorted template_variable_presets" do
+        dashboard(template_variable_presets: -> { [{ name: "A" }, { name: "B" }] }).as_json
+      end
+
+      it "complains when datadog would created a diff by sorting template_variable_presets" do
+        validation_error_from(dashboard(template_variable_presets: -> { [{ name: "B" }, { name: "A" }] }))
+          .must_equal "template_variable_presets must be sorted by name"
+      end
+    end
+
+    describe "tags" do
+      it "does not add non-team tags, mirroring datadogs validation" do
+        dashboard(tags: -> { ["foo"] }).as_json[:tags].must_equal []
       end
     end
   end
