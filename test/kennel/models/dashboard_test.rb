@@ -139,11 +139,6 @@ describe Kennel::Models::Dashboard do
     end
 
     describe "tags" do
-      it "adds tags to title when requested" do
-        project.team.class.any_instance.expects(:tag_dashboards).returns(true)
-        dashboard.as_json[:title].must_equal "Hello (team:test_team)🔒"
-      end
-
       it "does not add non-team tags, mirroring datadogs validation" do
         dashboard(tags: -> { ["foo"] }).as_json[:tags].must_equal []
       end

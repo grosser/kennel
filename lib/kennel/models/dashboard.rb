@@ -84,7 +84,7 @@ module Kennel
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
-        tags: -> { project.team.tags } # ideally project.tags but that causes diffs
+        tags: -> { project.tags }
       )
 
       class << self
@@ -151,14 +151,9 @@ module Kennel
       def build_json
         all_widgets = render_definitions(definitions) + widgets
         expand_q all_widgets
-        tags = tags()
-
-        # TODO: remove this once dd UI shows all tags ... maybe remove team tag once that is usable vis UI
-        tags_as_string = (project.team.tag_dashboards && !tags.empty? ? " (#{tags.join(" ")})" : "")
-
         json = super.merge(
           layout_type: layout_type,
-          title: "#{title}#{tags_as_string}#{LOCK}",
+          title: "#{title}#{LOCK}",
           description: description,
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
