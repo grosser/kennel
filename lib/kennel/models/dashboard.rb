@@ -5,8 +5,7 @@ module Kennel
       include TemplateVariables
 
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles,
-        :tags
+        :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles
       ]
       TRACKING_FIELD = :description
       REQUEST_DEFAULTS = {
