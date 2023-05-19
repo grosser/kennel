@@ -158,7 +158,7 @@ module Kennel
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
           widgets: all_widgets,
-          tags: tags.grep(TAG_PREFIX)
+          tags: tags.grep(TAG_PREFIX).uniq
         )
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"

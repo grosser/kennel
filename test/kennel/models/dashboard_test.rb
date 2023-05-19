@@ -142,6 +142,10 @@ describe Kennel::Models::Dashboard do
       it "does not add non-team tags, mirroring datadogs validation" do
         dashboard(tags: -> { ["foo"] }).as_json[:tags].must_equal []
       end
+
+      it "avoids dupes since they are invalid in dd" do
+        dashboard(tags: -> { ["team:a", "team:a"] }).as_json[:tags].must_equal ["team:a"]
+      end
     end
   end
 
