@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Slo < Record
+      include TagsValidation
+
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold]
       TRACKING_FIELD = :description
       DEFAULTS = {
@@ -29,7 +31,7 @@ module Kennel
           description: description,
           thresholds: thresholds,
           monitor_ids: monitor_ids,
-          tags: tags.uniq,
+          tags: tags,
           type: type
         )
 
@@ -84,6 +86,13 @@ module Kennel
       def validate_json(data)
         super
 
+        # datadog does not allow uppercase tags for slos
+        bad_tags = data[:tags].grep(/[A-Z]/)
+        if bad_tags.any?
+          invalid! :tags_are_upper_case, "Tags must not be upper case (bad tags: #{bad_tags.sort.inspect})"
+        end
+
+        # warning must be <= critical
         if data[:thresholds].any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
           invalid! :warning_must_be_gt_critical, "Threshold warning must be greater-than critical value"
         end

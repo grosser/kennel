@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class Monitor < Record
+      include TagsValidation
+
       RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
@@ -67,7 +69,7 @@ module Kennel
           type: type,
           query: query.strip,
           message: message.strip,
-          tags: tags.uniq,
+          tags: tags,
           priority: priority,
           options: {
             timeout_h: timeout_h,

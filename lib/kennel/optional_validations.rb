@@ -73,7 +73,7 @@ module Kennel
 
         unused_ignores = ignored_errors - unfiltered_validation_errors.map(&:tag)
 
-        unless unused_ignores.empty?
+        if unused_ignores.any?
           to_report << ValidationMessage.new(UNIGNORABLE, "Unused ignores #{unused_ignores.map(&:inspect).sort.uniq.join(" ")}. Remove these from `ignored_errors`")
         end
 

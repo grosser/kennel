@@ -2,6 +2,8 @@
 module Kennel
   module Models
     class SyntheticTest < Record
+      include TagsValidation
+
       TRACKING_FIELD = :message
       DEFAULTS = {}.freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:status, :monitor_id]

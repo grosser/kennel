@@ -112,23 +112,37 @@ describe Kennel::Models::Slo do
   end
 
   describe "#validate_json" do
-    it "is valid with no thresholds" do
-      slo.as_json
+    describe :warning_must_be_gt_critical do
+      it "is valid with no thresholds" do
+        slo.as_json
+      end
+
+      it "is valid when warning not set" do
+        s = slo(thresholds: [{ critical: 99 }])
+        s.as_json
+      end
+
+      it "is invalid if warning < critical" do
+        validation_error_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
+          .must_equal "Threshold warning must be greater-than critical value"
+      end
+
+      it "is invalid if warning == critical" do
+        validation_error_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
+          .must_equal "Threshold warning must be greater-than critical value"
+      end
     end
 
-    it "is valid when warning not set" do
-      s = slo(thresholds: [{ critical: 99 }])
-      s.as_json
-    end
+    describe :tags_are_upper_case do
+      it "is valid with regular tags" do
+        s = slo(tags: ["foo:bar"])
+        s.as_json
+      end
 
-    it "is invalid if warning < critical" do
-      validation_error_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
-        .must_equal "Threshold warning must be greater-than critical value"
-    end
-
-    it "is invalid if warning == critical" do
-      validation_error_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
-        .must_equal "Threshold warning must be greater-than critical value"
+      it "is invalid with upcase tags" do
+        validation_error_from(slo(tags: ["foo:BAR"]))
+          .must_equal "Tags must not be upper case (bad tags: [\"foo:BAR\"])"
+      end
     end
   end
 
