@@ -133,8 +133,14 @@ describe Kennel::OptionalValidations do
           item.build
           errs = item.filtered_validation_errors
           errs.length.must_equal 1
-          errs[0].tag.must_equal :unignorable
+          errs[0].tag.must_equal :unused_ignores
           errs[0].text.must_include "there are no errors to ignore"
+        end
+
+        it "can ignore failures" do
+          ignored_errors << :unused_ignores
+          item.build
+          item.filtered_validation_errors.must_equal []
         end
       end
     end
@@ -194,8 +200,14 @@ describe Kennel::OptionalValidations do
           item.build
           errs = item.filtered_validation_errors
           errs.length.must_equal 1
-          errs[0].tag.must_equal :unignorable
+          errs[0].tag.must_equal :unused_ignores
           errs[0].text.must_include ":zzz"
+        end
+
+        it "does not complain if that was ignored" do
+          ignored_errors << :unused_ignores
+          item.build
+          item.filtered_validation_errors.must_equal []
         end
       end
 

@@ -4,6 +4,7 @@ module Kennel
     ValidationMessage = Struct.new(:tag, :text)
 
     UNIGNORABLE = :unignorable
+    UNUSED_IGNORES = :unused_ignores
 
     def self.included(base)
       base.settings :ignored_errors
@@ -58,13 +59,13 @@ module Kennel
       ignored_tags = ignored_errors
 
       if errors.empty? # 95% case, so keep it fast
-        if ignored_tags.empty?
+        if ignored_tags.empty? || ignored_tags.include?(UNUSED_IGNORES)
           []
         else
           # tell users to remove the whole line and not just an element
           [
             ValidationMessage.new(
-              UNIGNORABLE,
+              UNUSED_IGNORES,
               "`ignored_errors` is non-empty, but there are no errors to ignore. Remove `ignored_errors`"
             )
           ]
@@ -77,13 +78,15 @@ module Kennel
             errors.select { |err| err.tag == UNIGNORABLE || !ignored_tags.include?(err.tag) }
           end
 
-        # let users know when they can remove an ignore
-        unused_ignored_tags = ignored_tags - errors.map(&:tag)
-        if unused_ignored_tags.any?
-          reported_errors << ValidationMessage.new(
-            UNIGNORABLE,
-            "Unused ignores #{unused_ignored_tags.map(&:inspect).sort.uniq.join(" ")}. Remove these from `ignored_errors`"
-          )
+        # let users know when they can remove an ignore ... unless they don't care (for example for a generic monitor)
+        unless ignored_tags.include?(UNUSED_IGNORES)
+          unused_ignored_tags = ignored_tags - errors.map(&:tag)
+          if unused_ignored_tags.any?
+            reported_errors << ValidationMessage.new(
+              UNUSED_IGNORES,
+              "Unused ignores #{unused_ignored_tags.map(&:inspect).sort.uniq.join(" ")}. Remove these from `ignored_errors`"
+            )
+          end
         end
 
         reported_errors
