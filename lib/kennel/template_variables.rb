@@ -16,7 +16,7 @@ module Kennel
 
     # check for queries that do not use the variables and would be misleading
     # TODO: do the same check for apm_query and their group_by
-    def validate_template_variables(data)
+    def validate_json(data)
       variables = (data[:template_variables] || []).map { |v| "$#{v.fetch(:name)}" }
       return if variables.empty?
 

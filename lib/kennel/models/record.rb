@@ -162,7 +162,7 @@ module Kennel
       def as_json
         # A courtesy to those tests that still expect as_json to perform validation and raise on error
         build if @unfiltered_validation_errors.nil?
-        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" unless filtered_validation_errors.empty?
+        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" if filtered_validation_errors.any?
 
         @as_json
       end

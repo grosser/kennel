@@ -3,6 +3,7 @@ module Kennel
   module Models
     class Dashboard < Record
       include TemplateVariables
+      include TagsValidation
 
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :author_handle, :author_name, :modified_at, :deleted_at, :url, :is_read_only, :notify_list, :restricted_roles
@@ -158,7 +159,7 @@ module Kennel
           template_variables: render_template_variables,
           template_variable_presets: template_variable_presets,
           widgets: all_widgets,
-          tags: tags.grep(TAG_PREFIX).uniq
+          tags: tags.grep(TAG_PREFIX)
         )
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
@@ -221,8 +222,6 @@ module Kennel
 
       def validate_json(data)
         super
-
-        validate_template_variables data
 
         # Avoid diff from datadog presets sorting.
         presets = data[:template_variable_presets]

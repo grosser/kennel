@@ -28,16 +28,13 @@ describe Kennel::TemplateVariables do
     end
   end
 
-  describe "#validate_template_variables" do
+  describe "#validate_json" do
     let(:errors) { [] }
 
     let(:item) do
       item = Object.new
       item.extend Kennel::TemplateVariables
-      copy_of_errors = errors
-      item.define_singleton_method(:invalid!) do |_tag, err|
-        copy_of_errors << err
-      end
+      item.stubs(:invalid!).with { |_tag, err| errors << err }
       item
     end
 
@@ -47,7 +44,7 @@ describe Kennel::TemplateVariables do
         widgets: widgets
       }
 
-      item.send(:validate_template_variables, data)
+      item.send(:validate_json, data)
     end
 
     it "is valid when empty" do
