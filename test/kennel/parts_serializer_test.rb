@@ -45,7 +45,7 @@ describe Kennel::PartsSerializer do
 
   describe "#write" do
     it "saves formatted json" do
-      parts = make_project("temp_project", ["foo"]).validated_parts
+      parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
       Kennel::PartsSerializer.new(filter: filter).write(parts)
       content = File.read("generated/temp_project/foo.json")
       assert content.start_with?("{\n") # pretty generated
@@ -54,7 +54,7 @@ describe Kennel::PartsSerializer do
     end
 
     it "keeps same" do
-      parts = make_project("temp_project", ["foo"]).validated_parts
+      parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
       Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       old = Time.now - 10
@@ -66,7 +66,7 @@ describe Kennel::PartsSerializer do
     end
 
     it "overrides different" do
-      parts = make_project("temp_project", ["foo"]).validated_parts
+      parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
       Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       old = Time.now - 10
@@ -84,7 +84,7 @@ describe Kennel::PartsSerializer do
       Dir.mkdir "generated/old_empty_project"
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
-      parts = make_project("temp_project", ["foo"]).validated_parts
+      parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
       Kennel::PartsSerializer.new(filter: filter).write(parts)
 
       Dir["generated/**/*"].sort.must_equal [
@@ -107,8 +107,8 @@ describe Kennel::PartsSerializer do
         write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
         parts = [
-          *make_project("included1", ["foo1"]).validated_parts,
-          *make_project("included2", ["foo2"]).validated_parts
+          *make_project("included1", ["foo1"]).validated_parts.each(&:build),
+          *make_project("included2", ["foo2"]).validated_parts.each(&:build)
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 
@@ -143,8 +143,8 @@ describe Kennel::PartsSerializer do
         write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
         parts = [
-          *make_project("included1", ["foo1"]).validated_parts,
-          *make_project("included2", ["foo2"]).validated_parts
+          *make_project("included1", ["foo1"]).validated_parts.each(&:build),
+          *make_project("included2", ["foo2"]).validated_parts.each(&:build)
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 

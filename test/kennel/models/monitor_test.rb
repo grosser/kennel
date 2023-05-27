@@ -59,56 +59,62 @@ describe Kennel::Models::Monitor do
     end
   end
 
-  describe "#as_json" do
+  describe "#build_json" do
+    def valid_monitor_json(...)
+      m = monitor(...)
+      validation_errors_from(m).must_equal []
+      m.as_json
+    end
+
     it "creates a basic json" do
       assert_json_equal(
-        monitor.as_json,
+        valid_monitor_json,
         expected_basic_json
       )
     end
 
     it "can set warning" do
-      monitor(warning: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning).must_equal 123.0
+      valid_monitor_json(warning: -> { 123.0 }).dig(:options, :thresholds, :warning).must_equal 123.0
     end
 
     it "can set timeout_h" do
-      monitor(timeout_h: -> { 1 }).as_json.dig(:options, :timeout_h).must_equal 1
+      valid_monitor_json(timeout_h: -> { 1 }).dig(:options, :timeout_h).must_equal 1
     end
 
     it "does not call optional methods twice" do
       called = 0
-      monitor(warning: -> { called += 1 }).as_json
+      valid_monitor_json(warning: -> { called += 1 })
       called.must_equal 1
     end
 
     it "can set warning_recovery" do
-      monitor(warning_recovery: -> { 123.0 }).as_json.dig(:options, :thresholds, :warning_recovery).must_equal 123.0
+      valid_monitor_json(warning_recovery: -> { 123.0 }).dig(:options, :thresholds, :warning_recovery).must_equal 123.0
     end
 
     it "can set critical_recovery" do
-      monitor(critical_recovery: -> { 123.0 }).as_json.dig(:options, :thresholds, :critical_recovery).must_equal 123.0
+      valid_monitor_json(critical_recovery: -> { 123.0 }).dig(:options, :thresholds, :critical_recovery).must_equal 123.0
     end
 
     it "adds project tags" do
-      monitor(project: TestProject.new(tags: -> { ["foo"] })).as_json[:tags].must_equal(["foo"])
+      valid_monitor_json(project: TestProject.new(tags: -> { ["foo"] }))[:tags].must_equal(["foo"])
     end
 
     it "can set require_full_window" do
-      monitor(require_full_window: -> { true }).as_json[:options][:require_full_window].must_equal true
+      valid_monitor_json(require_full_window: -> { true })[:options][:require_full_window].must_equal true
     end
 
     it "can set variables" do
-      monitor(variables: -> { { a: 1 } }).as_json[:options][:variables].must_equal a: 1
+      valid_monitor_json(variables: -> { { a: 1 } })[:options][:variables].must_equal a: 1
     end
 
     describe "query alert" do
       it "converts threshold values to floats to avoid api diff" do
-        monitor(critical: -> { 234 }).as_json
+        valid_monitor_json(critical: -> { 234 })
           .dig(:options, :thresholds, :critical).must_equal 234.0
       end
 
       it "does not converts threshold values to floats for types that store integers" do
-        monitor(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" }).as_json
+        valid_monitor_json(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" })
           .dig(:options, :thresholds, :critical).must_equal 234
       end
     end
@@ -119,50 +125,44 @@ describe Kennel::Models::Monitor do
         query: -> { "1 || 2" },
         type: -> { "composite" },
         validate_using_links: ->(*) {}
-      ).as_json
+      ).build_json
       refute json[:options].key?(:thresholds)
     end
 
     it "fills default values for service check ok/warning" do
-      json = monitor(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" }).as_json
+      json = valid_monitor_json(critical: -> { 234 }, type: -> { "service check" }, query: -> { "foo.by(x)" })
       json.dig(:options, :thresholds, :ok).must_equal 1
       json.dig(:options, :thresholds, :warning).must_equal 1
     end
 
     it "allows next_x interval for query alert type" do
-      monitor(critical: -> { 234.1 }, query: -> { "avg(next_20m).count() < #{critical}" }).as_json
+      valid_monitor_json(critical: -> { 234.1 }, query: -> { "avg(next_20m).count() < #{critical}" })
     end
 
     it "does not allow mismatching query and critical" do
-      validation_error_from(monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }))
-        .must_equal "critical and value used in query must match"
+      validation_errors_from(monitor(critical: -> { 123.0 }, query: -> { "foo < 12" }))
+        .must_equal ["critical and value used in query must match"]
     end
 
     it "does not allow mismatching query and critical with >=" do
-      validation_error_from(monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }))
-        .must_equal "critical and value used in query must match"
+      validation_errors_from(monitor(critical: -> { 123.0 }, query: -> { "foo <= 12" }))
+        .must_equal ["critical and value used in query must match"]
     end
 
     it "does not break on queries that are unparseable for critical" do
       validation_errors_from(monitor(critical: -> { 123.0 }, query: -> { "(last_5m) foo = 12" }))
-        .must_be_empty
+        .must_equal []
     end
 
     it "sets no_data_timeframe to `nil` when notify_no_data is false" do
       monitor(
         notify_no_data: -> { false },
         no_data_timeframe: -> { 2 }
-      ).as_json[:options][:no_data_timeframe].must_be_nil
+      ).build_json[:options][:no_data_timeframe].must_be_nil
     end
 
     it "can set notify_audit" do
-      monitor(notify_audit: -> { false }).as_json.dig(:options, :notify_audit).must_equal false
-    end
-
-    it "is cached so we can modify it in syncer" do
-      m = monitor
-      m.as_json[:foo] = 1
-      m.as_json[:foo].must_equal 1
+      valid_monitor_json(notify_audit: -> { false }).dig(:options, :notify_audit).must_equal false
     end
 
     it "fails on deprecated metric alert type" do
@@ -172,103 +172,103 @@ describe Kennel::Models::Monitor do
 
     it "sets id when not given" do
       assert_json_equal(
-        monitor(id: -> { 123 }).as_json,
+        valid_monitor_json(id: -> { 123 }),
         expected_basic_json.merge(id: 123)
       )
     end
 
     it "strips query to avoid perma-diff" do
-      monitor(query: -> { " avg(last_5m) > 123.0 " }).as_json.dig(:query).must_equal "avg(last_5m) > 123.0"
+      valid_monitor_json(query: -> { " avg(last_5m) > 123.0 " }).dig(:query).must_equal "avg(last_5m) > 123.0"
     end
 
     it "can set mention on the project" do
-      monitor(project: TestProject.new(mention: -> { "@slack-project" })).as_json[:message].must_equal "@slack-project"
+      valid_monitor_json(project: TestProject.new(mention: -> { "@slack-project" }))[:message].must_equal "@slack-project"
     end
 
     it "can set evaluation_delay" do
-      monitor(evaluation_delay: -> { 20 }).as_json.dig(:options, :evaluation_delay).must_equal 20
+      valid_monitor_json(evaluation_delay: -> { 20 }).dig(:options, :evaluation_delay).must_equal 20
     end
 
     it "can set new_host_delay" do
-      monitor(new_host_delay: -> { 300 }).as_json.dig(:options, :new_host_delay).must_equal 300
+      valid_monitor_json(new_host_delay: -> { 300 }).dig(:options, :new_host_delay).must_equal 300
     end
 
     it "can set new_group_delay" do
-      monitor(new_group_delay: -> { 120 }).as_json.dig(:options, :new_group_delay).must_equal 120
+      valid_monitor_json(new_group_delay: -> { 120 }).dig(:options, :new_group_delay).must_equal 120
     end
 
     it "can set threshold_windows" do
-      monitor(threshold_windows: -> { 20 }).as_json.dig(:options, :threshold_windows).must_equal 20
+      valid_monitor_json(threshold_windows: -> { 20 }).dig(:options, :threshold_windows).must_equal 20
     end
 
     it "can set scheduling_options" do
-      monitor(scheduling_options: -> { { evaluation_window: { day_starts: "14:00" } } }).as_json.dig(:options, :scheduling_options).must_equal({ evaluation_window: { day_starts: "14:00" } })
+      valid_monitor_json(scheduling_options: -> { { evaluation_window: { day_starts: "14:00" } } }).dig(:options, :scheduling_options).must_equal({ evaluation_window: { day_starts: "14:00" } })
     end
 
     # happens when project/team have the same tags and they double up
     it "only sets tags once to avoid perma-diff when datadog unqiues them" do
-      monitor(tags: -> { ["a", "b", "a"] }).as_json[:tags].must_equal ["a", "b"]
+      valid_monitor_json(tags: -> { ["a", "b", "a"] })[:tags].must_equal ["a", "b"]
     end
 
     it "does not allow invalid priority" do
-      validation_error_from(monitor(priority: -> { 2.0 }))
-        .must_equal "priority needs to be an Integer"
+      validation_errors_from(monitor(priority: -> { 2.0 }))
+        .must_equal ["priority needs to be an Integer"]
     end
 
     it "does not include new_host_delay when new_group_delay is provided" do
-      monitor(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).as_json.dig(:options).key?(:new_host_delay).must_equal(false)
+      valid_monitor_json(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).dig(:options).key?(:new_host_delay).must_equal(false)
     end
 
     it "blocks invalid service check query without .by early" do
-      validation_error_from(monitor(type: -> { "service check" }))
-        .must_equal "query must include a .by() at least .by(\"*\")"
+      validation_errors_from(monitor(type: -> { "service check" }))
+        .must_equal ["query must include a .by() at least .by(\"*\")"]
     end
 
     it "blocks names that create perma-diff" do
-      validation_error_from(monitor(name: -> { " oops" }))
-        .must_equal "name cannot start with a space"
+      validation_errors_from(monitor(name: -> { " oops" }))
+        .must_equal ["name cannot start with a space"]
     end
 
     it "blocks invalid timeout_h" do
-      validation_error_from(monitor(timeout_h: -> { 200 }))
-        .must_equal "timeout_h must be <= 24"
+      validation_errors_from(monitor(timeout_h: -> { 200 }))
+        .must_equal ["timeout_h must be <= 24"]
     end
 
     it "does not set no_data_timeframe for log alert to not break the UI" do
       json = monitor(
         type: -> { "log alert" },
         no_data_timeframe: -> { 10 }
-      ).as_json
+      ).build_json
       refute json[:options].key?(:no_data_timeframe)
     end
 
     it "can set notification_preset_name" do
       monitor(notification_preset_name: -> { "hide_query" })
-        .as_json.dig(:options, :notification_preset_name).must_equal "hide_query"
+        .build_json.dig(:options, :notification_preset_name).must_equal "hide_query"
     end
 
     describe "on_missing_data" do
       it "defaults" do
         monitor(
           type: -> { "event-v2 alert" }
-        ).as_json.dig(:options, :on_missing_data).must_equal "default"
+        ).build_json.dig(:options, :on_missing_data).must_equal "default"
       end
 
       it "sets" do
         monitor(
           type: -> { "event-v2 alert" },
           on_missing_data: -> { "resolve" }
-        ).as_json.dig(:options, :on_missing_data).must_equal "resolve"
+        ).build_json.dig(:options, :on_missing_data).must_equal "resolve"
       end
     end
 
     describe "renotify_interval" do
       it "sets 0 when disabled" do
-        monitor(renotify_interval: -> { false }).as_json[:options][:renotify_interval].must_equal 0
+        valid_monitor_json(renotify_interval: -> { false })[:options][:renotify_interval].must_equal 0
       end
 
       it "can set" do
-        monitor(renotify_interval: -> { 60 }).as_json[:options][:renotify_interval].must_equal 60
+        valid_monitor_json(renotify_interval: -> { 60 })[:options][:renotify_interval].must_equal 60
       end
 
       it "fails on invalid" do
@@ -281,33 +281,33 @@ describe Kennel::Models::Monitor do
       it "sets alert and no-data when renotify_interval is set" do
         monitor(
           renotify_interval: -> { 10 }
-        ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data"]
+        ).build_json[:options][:renotify_statuses].must_equal ["alert", "no data"]
       end
 
       it "sets warn when warning is defined" do
         monitor(
           renotify_interval: -> { 10 },
           warning: -> { 10 }
-        ).as_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
+        ).build_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
       end
 
       it "does not set no-data when no-data is disabled" do
         monitor(
           renotify_interval: -> { 10 },
           notify_no_data: -> { false }
-        ).as_json[:options][:renotify_statuses].must_equal ["alert"]
+        ).build_json[:options][:renotify_statuses].must_equal ["alert"]
       end
 
       it "do not set renotify_statuses when renotify_interval is 0" do
         monitor(
           renotify_interval: -> { 0 }
-        ).as_json[:options][:renotify_statuses].must_be_nil
+        ).build_json[:options][:renotify_statuses].must_be_nil
       end
 
       it "do not set renotify_statuses when renotify_interval is not defined" do
         monitor(
           renotify_interval: -> {}
-        ).as_json[:options][:renotify_statuses].must_be_nil
+        ).build_json[:options][:renotify_statuses].must_be_nil
       end
     end
   end
@@ -317,77 +317,77 @@ describe Kennel::Models::Monitor do
       let(:mon) { monitor(query: -> { "avg(last_5m):avg:foo by {env} > 123.0" }) }
 
       it "passes without is_match" do
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-        validation_error_from(mon)
-          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
       end
 
       it "fails when using invalid negative is_match" do
         mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
-        validation_error_from(mon)
-          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
       end
 
       it "fails when using invalid is_exact_match" do
         mon.stubs(:message).returns('{{#is_exact_match "environment.name" "production"}}TEST{{/is_exact_match}}')
-        validation_error_from(mon)
-          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
       end
 
       it "fails when not using .name" do
         mon.stubs(:message).returns('{{#is_match "env" "production"}}TEST{{/is_match}}')
-        validation_error_from(mon)
-          .must_equal "Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used env in the message, but can only be used with env.name.\nGroup or filter the query by env to use it."]
       end
 
       it "ignores when not using quotes" do
         mon.stubs(:message).returns('{{#is_match env.name "production"}}TEST{{/is_match}}')
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "passes when using valid is_match" do
         mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "passes when using valid variable" do
         mon.expects(:message).returns("{{env.name}}")
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "passes when using variable from filter" do
         mon.stubs(:query).returns("avg(last_5m):avg:foo{bar:foo} by {env} > 123.0")
         mon.expects(:message).returns("{{bar.name}}")
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "passes when using unknown query" do
         mon.stubs(:query).returns("wuuut")
         mon.expects(:message).returns("{{bar.name}}")
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "does not show * from filter" do
         mon.stubs(:query).returns("avg(last_5m):avg:foo{*} by {env} > 123.0")
         mon.expects(:message).returns("{{bar.name}}")
-        validation_error_from(mon)
-          .must_equal "Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."]
       end
 
       it "fails when using invalid variable" do
         mon.expects(:message).returns("{{foo.name}}")
-        validation_error_from(mon)
-          .must_equal "Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used foo.name in the message, but can only be used with env.name.\nGroup or filter the query by foo to use it."]
       end
 
       it "passes with [escaped] query style" do
         mon.stubs(:query).returns("avg(last_5m):avg:foo{bar.baz:foo} by {env} > 123.0")
         mon.expects(:message).returns("{{[bar.baz].name}}")
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
     end
 
@@ -395,24 +395,24 @@ describe Kennel::Models::Monitor do
       let(:mon) { monitor(query: -> { "\"foo\".over(\"bar\").by(\"env\")" }) }
 
       it "passes without is_match" do
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "fails when using invalid is_match" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
-        validation_error_from(mon)
-          .must_equal "Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."
+        validation_errors_from(mon)
+          .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
       end
 
       it "passes when using valid is_match" do
         mon.expects(:message).returns('{{#is_match "env.name" "production"}}TEST{{/is_match}}')
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
 
       it "allows everything when using *" do
         mon.stubs(:message).returns('{{#is_match "environment.name" "production"}}TEST{{/is_match}}')
         mon.stubs(:query).returns("\"foo\".over(\"bar\").by(\"*\")")
-        mon.as_json
+        validation_errors_from(mon).must_equal []
       end
     end
   end
@@ -437,26 +437,26 @@ describe Kennel::Models::Monitor do
     end
 
     it "fails when not using links" do
-      validation_error_from(make_invalid)
-        .must_include '["1", "2"]'
+      validation_error_from(make_invalid).must_include '["1", "2"]'
     end
 
     it "allows external list" do
       with_allow_list [["test_project:m1", "1"], ["test_project:m1", "2"]] do
-        validation_errors_from(make_invalid)
-          .must_be_empty
+        validation_errors_from(make_invalid).must_equal []
       end
     end
   end
 
   describe "#resolve_linked_tracking_ids" do
     let(:mon) do
-      monitor(query: -> { "%{#{project.kennel_id}:mon}" })
+      m = monitor(query: -> { "%{#{project.kennel_id}:mon}" })
+      m.build
+      m
     end
 
     it "does nothing for regular monitors" do
       mon.resolve_linked_tracking_ids!(id_map, force: false)
-      mon.as_json[:query].must_equal "%{#{project.kennel_id}:mon}"
+      mon.build_json[:query].must_equal "%{#{project.kennel_id}:mon}"
     end
 
     describe "composite monitor" do
@@ -465,6 +465,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails when matching monitor is missing" do
+        mon.build
         e = assert_raises Kennel::UnresolvableIdError do
           mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
@@ -474,6 +475,7 @@ describe Kennel::Models::Monitor do
       it "does not fail when unable to try to resolve" do
         id_map.set("monitor", "foo:mon_a", Kennel::IdMap::NEW)
         id_map.set("monitor", "bar:mon_b", Kennel::IdMap::NEW)
+        mon.build
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal "%{foo:mon_a} || !%{bar:mon_b}", "query not modified"
       end
@@ -482,6 +484,7 @@ describe Kennel::Models::Monitor do
         id_map.set("monitor", "foo:mon_x", 3)
         id_map.set("monitor", "foo:mon_a", 1)
         id_map.set("monitor", "bar:mon_b", 2)
+        mon.build
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("1 || !2")
       end
@@ -493,6 +496,7 @@ describe Kennel::Models::Monitor do
       end
 
       it "fails when matching monitor is missing" do
+        mon.build
         e = assert_raises Kennel::UnresolvableIdError do
           mon.resolve_linked_tracking_ids!(id_map, force: false)
         end
@@ -503,6 +507,7 @@ describe Kennel::Models::Monitor do
         id_map.set("slo", "foo:slo_x", "3")
         id_map.set("slo", "foo:slo_a", "1")
         id_map.set("slo", "foo:slo_b", "2")
+        mon.build
         mon.resolve_linked_tracking_ids!(id_map, force: false)
         mon.as_json[:query].must_equal("error_budget(\"1\").over(\"7d\") > 123.0")
       end
@@ -514,7 +519,9 @@ describe Kennel::Models::Monitor do
     def diff_resource(e, a)
       a = expected_basic_json.merge(a)
       a[:options] = expected_basic_json[:options].merge(a[:options] || {})
-      monitor(e).diff(a)
+      m = monitor(e)
+      m.build
+      m.diff(a)
     end
 
     it "calls super" do
@@ -659,23 +666,23 @@ describe Kennel::Models::Monitor do
 
   describe "#require_full_window" do
     it "is true for on_average query" do
-      assert monitor.as_json.dig(:options, :require_full_window)
+      assert monitor.build_json.dig(:options, :require_full_window)
     end
 
     it "is true for at_all_times query" do
-      assert monitor(query: -> { "min(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+      assert monitor(query: -> { "min(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
     end
 
     it "is true for in_total query" do
-      assert monitor(query: -> { "sum(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+      assert monitor(query: -> { "sum(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
     end
 
     it "is false for at_least_once query" do
-      refute monitor(query: -> { "max(last_5m) > #{critical}" }).as_json.dig(:options, :require_full_window)
+      refute monitor(query: -> { "max(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
     end
 
     it "is true for non-query" do
-      assert monitor(type: -> { "foo bar" }).as_json.dig(:options, :require_full_window)
+      assert monitor(type: -> { "foo bar" }).build_json.dig(:options, :require_full_window)
     end
   end
 end

@@ -114,78 +114,6 @@ describe Kennel::Models::Record do
     end
   end
 
-  describe "#as_json" do
-    context "#build crashes" do
-      it "calls build, and crashes each time" do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-        r.stubs(:build_json).returns({})
-        r.stubs(:validate_json).raises("Bang")
-
-        e = assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-        e.message.must_equal("Error while preparing test_project:x")
-        e.cause.message.must_equal("Bang")
-
-        assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-      end
-
-      it "can deal with tracking_id itself crashing" do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "not a valid id")
-        r.stubs(:validate_json).raises("Bang")
-
-        e = assert_raises(Kennel::Models::Record::PrepareError) { r.as_json }
-        e.message.must_equal("Error while preparing <unknown; #tracking_id crashed>")
-        e.cause.message.must_equal("Bang")
-      end
-    end
-
-    context "#build finds validation errors" do
-      let(:record) do
-        r = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-        r.define_singleton_method(:validate_json) { |_json| invalid! :oh_no, "oh no" }
-        r
-      end
-
-      it "does not call build if already built" do
-        record.stubs(:build_json).once.returns({})
-        record.build
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-      end
-
-      it "calls build if not already built" do
-        record.stubs(:build_json).once.returns({})
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-        assert_raises(Kennel::Models::Record::UnvalidatedRecordError) { record.as_json }
-      end
-    end
-
-    context "build succeeds" do
-      let(:record) do
-        Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      end
-
-      it "does not call build if already built" do
-        some_data = { some: "data" }
-        record.stubs(:build_json).once.returns(some_data)
-        record.build
-        record.as_json.must_equal(some_data)
-        record.as_json.must_equal(some_data)
-      end
-
-      it "calls build if not already built" do
-        some_data = { some: "data" }
-        record.stubs(:build_json).once.returns(some_data)
-        record.as_json.must_equal(some_data)
-        record.as_json.must_equal(some_data)
-      end
-    end
-
-    it "includes the id if set" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", id: 123)
-      record.as_json.must_equal({ id: 123 })
-    end
-  end
-
   describe "#validate_json" do
     def expect_error(bad)
       errors.length.must_equal 1
@@ -268,14 +196,23 @@ describe Kennel::Models::Record do
     end
   end
 
+  describe "#safe_tracking_id" do
+    it "shows something useful when crashing" do
+      monitor.stubs(:tracking_id).raises("foo")
+      monitor.safe_tracking_id.must_equal "<unknown; #tracking_id crashed>"
+    end
+  end
+
   describe "#add_tracking_id" do
     it "adds" do
+      monitor.build
       monitor.as_json[:message].wont_include "kennel"
       monitor.add_tracking_id
       monitor.as_json[:message].must_include "kennel"
     end
 
     it "fails when it would have been added twice (user already added it by mistake)" do
+      monitor.build
       monitor.add_tracking_id
       assert_raises(RuntimeError) { monitor.add_tracking_id }.message.must_include("to copy a resource")
     end
@@ -283,6 +220,7 @@ describe Kennel::Models::Record do
 
   describe "#remove_tracking_id" do
     it "removes" do
+      monitor.build
       old = monitor.as_json[:message].dup
       monitor.add_tracking_id
       monitor.remove_tracking_id
