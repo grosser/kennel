@@ -184,6 +184,17 @@ module Kennel
 
       private
 
+      def validate_json(data)
+        bad = Kennel::Utils.all_keys(data).grep_v(Symbol).sort.uniq
+        return if bad.empty?
+        invalid!(
+          :hash_keys_must_be_symbols,
+          "Only use Symbols as hash keys to avoid permanent diffs when updating.\n" \
+          "Change these keys to be symbols (usually 'foo' => 1 --> 'foo': 1)\n" \
+          "#{bad.map(&:inspect).join("\n")}"
+        )
+      end
+
       def resolve(value, type, id_map, force:)
         return value unless tracking_id?(value)
         resolve_link(value, type, id_map, force: force)

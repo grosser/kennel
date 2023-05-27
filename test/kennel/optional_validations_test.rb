@@ -212,46 +212,4 @@ describe Kennel::OptionalValidations do
       end
     end
   end
-
-  describe "#validate_json" do
-    def expect_error(bad)
-      errors.length.must_equal 1
-      errors[0].must_match(/Only use Symbols as hash keys/)
-      errors[0].must_match(/'foo' => 1 --> 'foo': 1/)
-      found = errors[0].scan(/^"(.*?)"$/m).flatten
-      found.must_equal(bad)
-    end
-
-    it "passes on symbols" do
-      item.send(:validate_json, { some_key: "bar" })
-      errors.must_be_empty
-    end
-
-    it "fails on strings" do
-      item.send(:validate_json, { "some_key" => "bar" })
-      expect_error(["some_key"])
-    end
-
-    it "checks inside hashes" do
-      item.send(:validate_json, { outer: { "some_key" => "bar" } })
-      expect_error(["some_key"])
-    end
-
-    it "checks inside arrays" do
-      item.send(:validate_json, { outer: [{ "some_key" => "bar" }] })
-      expect_error(["some_key"])
-    end
-
-    it "reports all bad keys" do
-      data = {
-        "bad_y" => 1,
-        :good => {
-          "bad_x" => 1,
-          :good_z => { "bad_y" => 0 }
-        }
-      }
-      item.send(:validate_json, data)
-      expect_error(["bad_x", "bad_y"])
-    end
-  end
 end

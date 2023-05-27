@@ -35,7 +35,6 @@ describe Kennel::Models::Record do
       critical: -> { 10 }
     )
   end
-
   let(:id_map) { Kennel::IdMap.new }
 
   describe "#initialize" do
@@ -184,6 +183,53 @@ describe Kennel::Models::Record do
     it "includes the id if set" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", id: 123)
       record.as_json.must_equal({ id: 123 })
+    end
+  end
+
+  describe "#validate_json" do
+    def expect_error(bad)
+      errors.length.must_equal 1
+      errors[0].text.must_match(/Only use Symbols as hash keys/)
+      errors[0].text.must_match(/'foo' => 1 --> 'foo': 1/)
+      found = errors[0].text.scan(/^"(.*?)"$/m).flatten
+      found.must_equal(bad)
+    end
+
+    let(:item) { TestRecord.new(TestProject.new) }
+    let(:errors) { item.unfiltered_validation_errors }
+
+    before { item.instance_variable_set(:@unfiltered_validation_errors, []) } # what `build` does
+
+    it "passes on symbols" do
+      item.send(:validate_json, { some_key: "bar" })
+      errors.must_equal []
+    end
+
+    it "fails on strings" do
+      item.send(:validate_json, { "some_key" => "bar" })
+      expect_error(["some_key"])
+    end
+
+    it "checks inside hashes" do
+      item.send(:validate_json, { outer: { "some_key" => "bar" } })
+      expect_error(["some_key"])
+    end
+
+    it "checks inside arrays" do
+      item.send(:validate_json, { outer: [{ "some_key" => "bar" }] })
+      expect_error(["some_key"])
+    end
+
+    it "reports all bad keys" do
+      data = {
+        "bad_y" => 1,
+        :good => {
+          "bad_x" => 1,
+          :good_z => { "bad_y" => 0 }
+        }
+      }
+      item.send(:validate_json, data)
+      expect_error(["bad_x", "bad_y"])
     end
   end
 
