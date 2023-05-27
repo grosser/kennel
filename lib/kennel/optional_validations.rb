@@ -54,30 +54,39 @@ module Kennel
     end
 
     def filter_validation_errors
-      if unfiltered_validation_errors.empty?
-        if ignored_errors.empty?
+      errors = unfiltered_validation_errors
+      ignored_tags = ignored_errors
+
+      if errors.empty? # 95% case, so keep it fast
+        if ignored_tags.empty?
           []
         else
-          [ValidationMessage.new(UNIGNORABLE, "`ignored_errors` is non-empty, but there are no errors to ignore. Remove `ignored_errors`")]
+          # tell users to remove the whole line and not just an element
+          [
+            ValidationMessage.new(
+              UNIGNORABLE,
+              "`ignored_errors` is non-empty, but there are no errors to ignore. Remove `ignored_errors`"
+            )
+          ]
         end
       else
-        to_report =
-          if ENV["NO_IGNORED_ERRORS"]
-            # Turn off all suppressions, to see what errors are actually being suppressed
-            unfiltered_validation_errors
+        reported_errors =
+          if ENV["NO_IGNORED_ERRORS"] # let users see what errors are suppressed
+            errors
           else
-            unfiltered_validation_errors.reject do |err|
-              err.tag != UNIGNORABLE && ignored_errors.include?(err.tag)
-            end
+            errors.select { |err| err.tag == UNIGNORABLE || !ignored_tags.include?(err.tag) }
           end
 
-        unused_ignores = ignored_errors - unfiltered_validation_errors.map(&:tag)
-
-        if unused_ignores.any?
-          to_report << ValidationMessage.new(UNIGNORABLE, "Unused ignores #{unused_ignores.map(&:inspect).sort.uniq.join(" ")}. Remove these from `ignored_errors`")
+        # let users know when they can remove an ignore
+        unused_ignored_tags = ignored_tags - errors.map(&:tag)
+        if unused_ignored_tags.any?
+          reported_errors << ValidationMessage.new(
+            UNIGNORABLE,
+            "Unused ignores #{unused_ignored_tags.map(&:inspect).sort.uniq.join(" ")}. Remove these from `ignored_errors`"
+          )
         end
 
-        to_report
+        reported_errors
       end
     end
   end
