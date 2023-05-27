@@ -28,14 +28,16 @@ describe Kennel::OptionalValidations do
 
     def good
       part = mock
-      part.stubs(:filtered_validation_errors).returns([])
+      part.stubs(:validation_errors).returns([])
+      part.stubs(:ignored_errors).returns([])
       part
     end
 
     def bad(id, errors)
       part = mock
       part.stubs(:safe_tracking_id).returns(id)
-      part.stubs(:filtered_validation_errors).returns(errors)
+      part.stubs(:validation_errors).returns(errors)
+      part.stubs(:ignored_errors).returns([])
       part
     end
 
@@ -113,7 +115,7 @@ describe Kennel::OptionalValidations do
     end
   end
 
-  describe "#filter_validation_errors" do
+  describe ".filter_validation_errors" do
     let(:ignored_errors) { [] }
 
     let(:item) do
@@ -123,7 +125,7 @@ describe Kennel::OptionalValidations do
     context "no validation errors" do
       it "passes if ignored_errors is empty" do
         item.build
-        item.filtered_validation_errors.must_equal []
+        Kennel::OptionalValidations.send(:filter_validation_errors, item).must_equal []
       end
 
       context "when ignored_errors is not empty" do
@@ -131,7 +133,7 @@ describe Kennel::OptionalValidations do
 
         it "fails" do
           item.build
-          errs = item.filtered_validation_errors
+          errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 1
           errs[0].tag.must_equal :unignorable
           errs[0].text.must_include "there are no errors to ignore"
@@ -149,7 +151,7 @@ describe Kennel::OptionalValidations do
 
       it "shows the error" do
         item.build
-        errs = item.filtered_validation_errors
+        errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 2
         errs[0].tag.must_equal :x
         errs[1].tag.must_equal :y
@@ -159,7 +161,7 @@ describe Kennel::OptionalValidations do
         ignored_errors << :x
         ignored_errors << :y
         item.build
-        item.filtered_validation_errors.must_equal []
+        Kennel::OptionalValidations.send(:filter_validation_errors, item).must_equal []
       end
 
       it "cannot ignore unignorable errors" do
@@ -170,7 +172,7 @@ describe Kennel::OptionalValidations do
         ignored_errors << :unignorable
 
         item.build
-        errs = item.filtered_validation_errors
+        errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 1
         errs[0].tag.must_equal :unignorable
       end
@@ -178,7 +180,7 @@ describe Kennel::OptionalValidations do
       it "reports non-ignored errors" do
         ignored_errors << :x
         item.build
-        errs = item.filtered_validation_errors
+        errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 1
         errs[0].tag.must_equal :y
       end
@@ -192,7 +194,7 @@ describe Kennel::OptionalValidations do
 
         it "complains" do
           item.build
-          errs = item.filtered_validation_errors
+          errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 1
           errs[0].tag.must_equal :unignorable
           errs[0].text.must_include ":zzz"
@@ -204,7 +206,7 @@ describe Kennel::OptionalValidations do
           ignored_errors << :x
           ignored_errors << :y
           item.build
-          errs = item.filtered_validation_errors
+          errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 2
           errs[0].tag.must_equal :x
           errs[1].tag.must_equal :y
