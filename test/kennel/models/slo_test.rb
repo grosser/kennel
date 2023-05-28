@@ -43,10 +43,10 @@ describe Kennel::Models::Slo do
     end
   end
 
-  describe "#as_json" do
+  describe "#build_json" do
     it "creates a basic json" do
       assert_json_equal(
-        slo.as_json,
+        slo.build_json,
         expected_basic_json
       )
     end
@@ -54,7 +54,7 @@ describe Kennel::Models::Slo do
     it "sets query for metrics" do
       expected_basic_json[:query] = "foo"
       assert_json_equal(
-        slo(query: -> { "foo" }).as_json,
+        slo(query: -> { "foo" }).build_json,
         expected_basic_json
       )
     end
@@ -62,7 +62,7 @@ describe Kennel::Models::Slo do
     it "sets id when updating by id" do
       expected_basic_json[:id] = 123
       assert_json_equal(
-        slo(id: -> { 123 }).as_json,
+        slo(id: -> { 123 }).build_json,
         expected_basic_json
       )
     end
@@ -70,7 +70,7 @@ describe Kennel::Models::Slo do
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
-        slo(groups: -> { ["foo"] }).as_json,
+        slo(groups: -> { ["foo"] }).build_json,
         expected_basic_json
       )
     end
@@ -79,18 +79,21 @@ describe Kennel::Models::Slo do
   describe "#resolve_linked_tracking_ids!" do
     it "ignores empty caused by ignore_default" do
       slo = slo(monitor_ids: -> { nil })
+      slo.build
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       refute slo.as_json[:monitor_ids]
     end
 
     it "does nothing for hardcoded ids" do
       slo = slo(monitor_ids: -> { [123] })
+      slo.build
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
     end
 
     it "resolves relative ids" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo.build
       id_map.set("monitor", "#{project.kennel_id}:mon", 123)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal [123]
@@ -98,6 +101,7 @@ describe Kennel::Models::Slo do
 
     it "does not resolve missing ids so they can resolve when monitor was created" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo.build
       id_map.set("monitor", "#{project.kennel_id}:mon", Kennel::IdMap::NEW)
       slo.resolve_linked_tracking_ids!(id_map, force: false)
       slo.as_json[:monitor_ids].must_equal ["test_project:mon"]
@@ -105,6 +109,7 @@ describe Kennel::Models::Slo do
 
     it "fails with typos" do
       slo = slo(monitor_ids: -> { ["#{project.kennel_id}:mon"] })
+      slo.build
       assert_raises Kennel::UnresolvableIdError do
         slo.resolve_linked_tracking_ids!(id_map, force: false)
       end
@@ -114,34 +119,32 @@ describe Kennel::Models::Slo do
   describe "#validate_json" do
     describe :warning_must_be_gt_critical do
       it "is valid with no thresholds" do
-        slo.as_json
+        validation_errors_from(slo).must_equal []
       end
 
       it "is valid when warning not set" do
-        s = slo(thresholds: [{ critical: 99 }])
-        s.as_json
+        validation_errors_from(slo(thresholds: [{ critical: 99 }])).must_equal []
       end
 
       it "is invalid if warning < critical" do
-        validation_error_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
-          .must_equal "Threshold warning must be greater-than critical value"
+        validation_errors_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
+          .must_equal ["Threshold warning must be greater-than critical value"]
       end
 
       it "is invalid if warning == critical" do
-        validation_error_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
-          .must_equal "Threshold warning must be greater-than critical value"
+        validation_errors_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
+          .must_equal ["Threshold warning must be greater-than critical value"]
       end
     end
 
     describe :tags_are_upper_case do
       it "is valid with regular tags" do
-        s = slo(tags: ["foo:bar"])
-        s.as_json
+        validation_errors_from(slo(tags: ["foo:bar"])).must_equal []
       end
 
       it "is invalid with upcase tags" do
-        validation_error_from(slo(tags: ["foo:BAR"]))
-          .must_equal "Tags must not be upper case (bad tags: [\"foo:BAR\"])"
+        validation_errors_from(slo(tags: ["foo:BAR"]))
+          .must_equal ["Tags must not be upper case (bad tags: [\"foo:BAR\"])"]
       end
     end
   end

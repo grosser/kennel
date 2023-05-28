@@ -42,27 +42,21 @@ describe Kennel::Models::SyntheticTest do
     }
   end
 
-  describe "#as_json" do
+  describe "#build_json" do
     it "builds" do
-      assert_json_equal synthetic.as_json, expected_json
-    end
-
-    it "caches" do
-      s = synthetic
-      s.expects(:locations)
-      2.times { s.as_json }
+      assert_json_equal synthetic.build_json, expected_json
     end
 
     it "can add id" do
-      synthetic(id: -> { 123 }).as_json[:id].must_equal 123
+      synthetic(id: -> { 123 }).build_json[:id].must_equal 123
     end
 
     it "can add all locations" do
-      synthetic(locations: -> { :all }).as_json[:locations].size.must_be :>, 5
+      synthetic(locations: -> { :all }).build_json[:locations].size.must_be :>, 5
     end
 
     it "can use super" do
-      synthetic(message: -> { super() }).as_json[:message].must_equal "\n\n@slack-foo"
+      synthetic(message: -> { super() }).build_json[:message].must_equal "\n\n@slack-foo"
     end
   end
 

@@ -8,8 +8,6 @@ module Kennel
         end
       end
 
-      UnvalidatedRecordError = Class.new(StandardError)
-
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -85,7 +83,7 @@ module Kennel
         end
       end
 
-      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors
+      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors, :as_json
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
@@ -157,14 +155,6 @@ module Kennel
 
         @filtered_validation_errors = filter_validation_errors
         @as_json = json # Only valid if filtered_validation_errors.empty?
-      end
-
-      def as_json
-        # A courtesy to those tests that still expect as_json to perform validation and raise on error
-        build if @unfiltered_validation_errors.nil?
-        raise UnvalidatedRecordError, "#{safe_tracking_id} as_json called on invalid part" if filtered_validation_errors.any?
-
-        @as_json
       end
 
       # Can raise DisallowedUpdateError

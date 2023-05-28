@@ -37,6 +37,7 @@ describe Kennel::Syncer do
       critical: -> { 1.0 },
       id: -> { extra[:id] }
     )
+    monitor.build
 
     # make the diff simple
     monitor.as_json[:options] = {
@@ -64,6 +65,7 @@ describe Kennel::Syncer do
       options: -> { nil }
     )
 
+    synthetic.build
     synthetic.as_json.delete_if { |k, _| ![:tags, :message].include?(k) }
     synthetic.as_json.merge!(extra)
 
@@ -79,13 +81,14 @@ describe Kennel::Syncer do
       kennel_id: -> { cid },
       id: -> { extra[:id]&.to_s }
     )
+    dash.build
     dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
     dash.as_json.merge!(extra)
     dash
   end
 
   def slo(pid, cid, extra = {})
-    dash = Kennel::Models::Slo.new(
+    slo = Kennel::Models::Slo.new(
       project(pid),
       name: -> { "x" },
       description: -> { "x" },
@@ -94,9 +97,9 @@ describe Kennel::Syncer do
       id: -> { extra[:id]&.to_s },
       thresholds: -> { [] }
     )
-    # dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
-    dash.as_json.merge!(extra)
-    dash
+    slo.build
+    slo.as_json.merge!(extra)
+    slo
   end
 
   def add_identical
