@@ -2,12 +2,6 @@
 module Kennel
   module Models
     class Record < Base
-      class PrepareError < StandardError
-        def initialize(tracking_id)
-          super("Error while preparing #{tracking_id}")
-        end
-      end
-
       include OptionalValidations
 
       # Apart from if you just don't like the default for some reason,
@@ -140,18 +134,10 @@ module Kennel
 
       def build
         @unfiltered_validation_errors = []
-        json = nil
 
-        begin
-          json = build_json
-          (id = json.delete(:id)) && json[:id] = id
-          validate_json(json)
-        rescue StandardError
-          if unfiltered_validation_errors.empty?
-            @unfiltered_validation_errors = nil
-            raise PrepareError, safe_tracking_id # FIXME: this makes errors hard to debug when running tests
-          end
-        end
+        json = build_json
+        (id = json.delete(:id)) && json[:id] = id
+        validate_json(json)
 
         @filtered_validation_errors = filter_validation_errors
         @as_json = json # Only valid if filtered_validation_errors.empty?

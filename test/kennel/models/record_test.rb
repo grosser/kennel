@@ -55,42 +55,6 @@ describe Kennel::Models::Record do
       record.as_json.must_equal some_json
     end
 
-    it "throws if build_json throws, and there were no validation errors" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      record.define_singleton_method(:build_json) { raise "I crashed :-(" }
-      assert_raises("I crashed :-(") { record.build }
-      record.unfiltered_validation_errors.must_be_nil
-    end
-
-    it "throws if validate_json throws, and there were no validation errors" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      record.define_singleton_method(:validate_json) { |_data| raise "I crashed :-(" }
-      assert_raises("I crashed :-(") { record.build }
-      record.unfiltered_validation_errors.must_be_nil
-    end
-
-    it "does not throw if build_json throws after a validation error" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      record.define_singleton_method(:build_json) do
-        invalid! :wrong, "This is all wrong"
-        raise "I crashed :-("
-      end
-      record.build
-      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
-      record.instance_variable_get(:@as_json).must_be_nil
-    end
-
-    it "does not throw if validate_json throws after a validation error" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
-      record.define_singleton_method(:validate_json) do |_data|
-        invalid! :wrong, "This is all wrong"
-        raise "I crashed :-("
-      end
-      record.build
-      record.unfiltered_validation_errors.map(&:text).must_equal ["This is all wrong"]
-      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
-    end
-
     it "is capable of collecting multiple errors" do
       record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x")
       record.define_singleton_method(:validate_json) do |_data|
