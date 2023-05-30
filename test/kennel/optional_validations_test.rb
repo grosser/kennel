@@ -142,7 +142,8 @@ describe Kennel::OptionalValidations do
         it "can ignore failures" do
           ignored_errors << :unused_ignores
           item.build
-          item.filtered_validation_errors.must_equal []
+          errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
+          errs.must_equal []
         end
       end
     end
@@ -209,7 +210,8 @@ describe Kennel::OptionalValidations do
         it "does not complain if that was ignored" do
           ignored_errors << :unused_ignores
           item.build
-          item.filtered_validation_errors.must_equal []
+          errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
+          errs.must_equal []
         end
       end
 

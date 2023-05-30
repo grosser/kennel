@@ -59,7 +59,7 @@ describe Kennel::SettingsAsMethods do
     it "stores invocation_location" do
       model = Kennel::Models::Monitor.new(TestProject.new)
       location = model.instance_variable_get(:@invocation_location).sub(/:\d+/, ":123")
-      location.must_equal "lib/kennel/models/record.rb:123:in `initialize'"
+      location.must_equal "lib/kennel/optional_validations.rb:123:in `initialize'"
     end
 
     it "stores invocation_location from first outside project line" do
