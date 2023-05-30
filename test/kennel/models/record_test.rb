@@ -51,7 +51,7 @@ describe Kennel::Models::Record do
       record.define_singleton_method(:build_json) { some_json }
       record.define_singleton_method(:validate_json) { |data| data.must_equal(some_json) }
       record.build
-      record.unfiltered_validation_errors.must_equal []
+      record.validation_errors.must_equal []
       record.as_json.must_equal some_json
     end
 
@@ -62,19 +62,8 @@ describe Kennel::Models::Record do
         invalid! :two, "two"
       end
       record.build
-      record.filtered_validation_errors.map(&:text).must_equal ["one", "two"]
-      record.instance_variable_get(:@as_json).wont_be_nil # for debugging
-    end
-
-    it "can skip validation entirely" do
-      record = Kennel::Models::Record.new(TestProject.new, kennel_id: "x", ignored_errors: [:bang])
-      record.define_singleton_method(:validate_json) do |_data|
-        invalid! :bang, "bang"
-      end
-      record.build
-
-      record.filtered_validation_errors.must_be_empty
-      record.instance_variable_get(:@as_json).wont_be_nil # it's valid
+      record.validation_errors.map(&:text).must_equal ["one", "two"]
+      assert record.instance_variable_get(:@as_json) # for debugging
     end
   end
 
@@ -88,9 +77,9 @@ describe Kennel::Models::Record do
     end
 
     let(:item) { TestRecord.new(TestProject.new) }
-    let(:errors) { item.unfiltered_validation_errors }
+    let(:errors) { item.validation_errors }
 
-    before { item.instance_variable_set(:@unfiltered_validation_errors, []) } # what `build` does
+    before { item.instance_variable_set(:@validation_errors, []) } # what `build` does
 
     it "passes on symbols" do
       item.send(:validate_json, { some_key: "bar" })

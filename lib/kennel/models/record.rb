@@ -77,7 +77,7 @@ module Kennel
         end
       end
 
-      attr_reader :project, :unfiltered_validation_errors, :filtered_validation_errors, :as_json
+      attr_reader :project, :validation_errors, :as_json
 
       def initialize(project, *args)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
@@ -133,14 +133,11 @@ module Kennel
       end
 
       def build
-        @unfiltered_validation_errors = []
-
-        json = build_json
-        (id = json.delete(:id)) && json[:id] = id
-        validate_json(json)
-
-        @filtered_validation_errors = filter_validation_errors
-        @as_json = json # Only valid if filtered_validation_errors.empty?
+        @validation_errors = [] # filled by `invalid!` calls
+        @as_json = build_json
+        (id = @as_json.delete(:id)) && @as_json[:id] = id
+        validate_json(@as_json)
+        @as_json
       end
 
       # Can raise DisallowedUpdateError
@@ -202,7 +199,7 @@ module Kennel
       end
 
       def invalid!(tag, message)
-        unfiltered_validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
+        validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
       end
 
       def raise_with_location(error, message)

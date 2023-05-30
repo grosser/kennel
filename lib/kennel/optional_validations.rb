@@ -11,40 +11,38 @@ module Kennel
     end
 
     def self.valid?(parts)
-      parts_with_errors = parts.reject do |part|
-        part.filtered_validation_errors.empty?
-      end
+      parts_with_errors = parts.map { |p| [p, filter_validation_errors(p)] }
+      return true if parts_with_errors.all? { |_, errors| errors.empty? }
 
-      return true if parts_with_errors.empty?
-
+      # print errors in order
       example_tag = nil
-
       Kennel.err.puts
-      parts_with_errors.sort_by(&:safe_tracking_id).each do |part|
-        part.filtered_validation_errors.each do |err|
+      parts_with_errors.sort_by! { |p, _| p.safe_tracking_id }
+      parts_with_errors.each do |part, errors|
+        errors.each do |err|
           Kennel.err.puts "#{part.safe_tracking_id} [#{err.tag.inspect}] #{err.text.gsub("\n", " ")}"
           example_tag = err.tag unless err.tag == :unignorable
         end
       end
       Kennel.err.puts
 
-      Kennel.err.puts <<~MESSAGE if example_tag
-        If a particular error cannot be fixed, it can be marked as ignored via `ignored_errors`, e.g.:
-          Kennel::Models::Monitor.new(
-            ...,
-            ignored_errors: [#{example_tag.inspect}]
-          )
+      if example_tag
+        Kennel.err.puts <<~MESSAGE
+          If a particular error cannot be fixed, it can be marked as ignored via `ignored_errors`, e.g.:
+            Kennel::Models::Monitor.new(
+              ...,
+              ignored_errors: [#{example_tag.inspect}]
+            )
 
-      MESSAGE
+        MESSAGE
+      end
 
       false
     end
 
-    private
-
-    def filter_validation_errors
-      errors = unfiltered_validation_errors
-      ignored_tags = ignored_errors
+    def self.filter_validation_errors(part)
+      errors = part.validation_errors
+      ignored_tags = part.ignored_errors
 
       if errors.empty? # 95% case, so keep it fast
         if ignored_tags.empty?

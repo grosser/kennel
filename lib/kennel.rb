@@ -127,7 +127,7 @@ module Kennel
           Utils.parallel(parts, &:build)
         end
 
-        OptionalValidations.valid?(parts) or raise GenerationAbortedError
+        OptionalValidations.valid?(parts) || raise(GenerationAbortedError)
 
         parts
       end
