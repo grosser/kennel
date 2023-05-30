@@ -77,12 +77,12 @@ module Kennel
         end
       end
 
-      attr_reader :project, :validation_errors, :as_json
+      attr_reader :project, :as_json
 
-      def initialize(project, *args)
+      def initialize(project, ...)
         raise ArgumentError, "First argument must be a project, not #{project.class}" unless project.is_a?(Project)
         @project = project
-        super(*args)
+        super(...)
       end
 
       def diff(actual)
@@ -133,7 +133,6 @@ module Kennel
       end
 
       def build
-        @validation_errors = [] # filled by `invalid!` calls
         @as_json = build_json
         (id = @as_json.delete(:id)) && @as_json[:id] = id
         validate_json(@as_json)
@@ -196,10 +195,6 @@ module Kennel
             or it does exist, but is being deleted.
           MESSAGE
         end
-      end
-
-      def invalid!(tag, message)
-        validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
       end
 
       def raise_with_location(error, message)

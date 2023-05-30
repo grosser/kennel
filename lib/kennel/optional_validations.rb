@@ -9,6 +9,16 @@ module Kennel
     def self.included(base)
       base.settings :ignored_errors
       base.defaults(ignored_errors: -> { [] })
+      base.attr_reader :validation_errors
+    end
+
+    def initialize(...)
+      super
+      @validation_errors = []
+    end
+
+    def invalid!(tag, message)
+      validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
     end
 
     def self.valid?(parts)
