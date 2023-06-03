@@ -30,12 +30,11 @@ module Kennel
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
-      ALLOWED_UNLINKED = [] # rubocop:disable Style/MutableConstant placeholder for custom overrides
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :validate_using_links, :variables, :on_missing_data,
+        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :variables, :on_missing_data,
         :notification_preset_name
       )
 
@@ -320,11 +319,17 @@ module Kennel
         case data[:type]
         when "composite" # TODO: add slo to mirror resolve_linked_tracking_ids! logic
           ids = data[:query].tr("-", "_").scan(/\b\d+\b/)
-          ids.reject! { |id| ALLOWED_UNLINKED.include?([tracking_id, id]) }
           if ids.any?
             invalid! :links_must_be_via_tracking_id, <<~MSG.rstrip
-              Used #{ids} in the query, but should only use links in the form of %{<project id>:<monitor id>}
-              If that is not possible, add `validate_using_links: ->(*){} # linked monitors are not in kennel
+              Use kennel ids in the query for linking monitors instead of #{ids}, for example `%{#{project.kennel_id}:<monitor id>}`
+              If the target monitors are not managed via kennel, add `ignored_errors: [:links_must_be_via_tracking_id] # linked monitors are not in kennel`
+            MSG
+          end
+        when "slo alert"
+          if (id = data[:query][/error_budget\("([a-f\d]+)"\)/, 1])
+            invalid! :links_must_be_via_tracking_id, <<~MSG
+              Use kennel ids in the query for linking alerts to slos instead of "#{id}", for example `error_budget("%{#{project.kennel_id}:slo_id_goes_here}")
+              If the target slo is not managed by kennel, then add `ignored_errors: [:links_must_be_via_tracking_id] # linked slo is not in kennel`
             MSG
           end
         else # do nothing

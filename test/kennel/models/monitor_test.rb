@@ -124,7 +124,7 @@ describe Kennel::Models::Monitor do
         critical: -> { raise },
         query: -> { "1 || 2" },
         type: -> { "composite" },
-        validate_using_links: ->(*) {}
+        ignored_errors: [:links_must_be_via_tracking_id]
       ).build_json
       refute json[:options].key?(:thresholds)
     end
@@ -418,32 +418,14 @@ describe Kennel::Models::Monitor do
   end
 
   describe "#validate_using_links" do
-    def make_invalid
-      monitor(
-        critical: -> { raise },
-        query: -> { "1 || 2" },
-        type: -> { "composite" }
-      )
+    it "fails when not using links in composite" do
+      e = validation_error_from(monitor(query: "1 || 2", type: "composite"))
+      e.must_include '["1", "2"]'
     end
 
-    def with_allow_list(items)
-      const = Kennel::Models::Monitor::ALLOWED_UNLINKED
-      begin
-        const.concat items
-        yield
-      ensure
-        const.pop(items.size)
-      end
-    end
-
-    it "fails when not using links" do
-      validation_error_from(make_invalid).must_include '["1", "2"]'
-    end
-
-    it "allows external list" do
-      with_allow_list [["test_project:m1", "1"], ["test_project:m1", "2"]] do
-        validation_errors_from(make_invalid).must_equal []
-      end
+    it "fails when not using links in slo alert" do
+      e = validation_error_from(monitor(query: "error_budget(\"abcdef\")", type: "slo alert"))
+      e.must_include 'instead of "abcdef"'
     end
   end
 
