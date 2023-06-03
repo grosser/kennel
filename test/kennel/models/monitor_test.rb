@@ -74,7 +74,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "can set warning" do
-      valid_monitor_json(warning: -> { 123.0 }).dig(:options, :thresholds, :warning).must_equal 123.0
+      valid_monitor_json(warning: -> { 1.2 }).dig(:options, :thresholds, :warning).must_equal 1.2
     end
 
     it "can set timeout_h" do
@@ -426,6 +426,28 @@ describe Kennel::Models::Monitor do
     it "fails when not using links in slo alert" do
       e = validation_error_from(monitor(query: "error_budget(\"abcdef\")", type: "slo alert"))
       e.must_include 'instead of "abcdef"'
+    end
+  end
+
+  describe "#validate_thresholds" do
+    it "allows valid" do
+      e = validation_errors_from(monitor(query: "a > 10", critical: 10, warning: 9))
+      e.must_equal []
+    end
+
+    it "allows unknown" do
+      e = validation_errors_from(monitor(query: "weird stuff", critical: 10, warning: 9))
+      e.must_equal []
+    end
+
+    it "fails with invalid and >" do
+      e = validation_errors_from(monitor(query: "a > 10", critical: 10, warning: 11))
+      e.must_equal ["Warning threshold (11.0) must be less than the alert threshold (10.0) with > comparison"]
+    end
+
+    it "fails with invalid and <" do
+      e = validation_errors_from(monitor(query: "a < 10", critical: 10, warning: 9))
+      e.must_equal ["Warning threshold (9.0) must be greater than the alert threshold (10.0) with < comparison"]
     end
   end
 
