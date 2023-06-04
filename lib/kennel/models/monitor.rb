@@ -264,6 +264,7 @@ module Kennel
         end
 
         validate_using_links(data)
+        validate_thresholds(data)
 
         if type == "service check" && !data[:query].to_s.include?(".by(")
           invalid! :query_must_include_by, "query must include a .by() at least .by(\"*\")"
@@ -333,6 +334,29 @@ module Kennel
             MSG
           end
         else # do nothing
+        end
+      end
+
+      # Prevent "Warning threshold (50.0) must be less than the alert threshold (20.0) with > comparison."
+      def validate_thresholds(data)
+        return unless (warning = data.dig(:options, :thresholds, :warning))
+        critical = data.dig(:options, :thresholds, :critical)
+
+        case data[:query]
+        when /<=?\s*\S+\s*$/
+          if warning <= critical
+            invalid!(
+              :alert_less_than_warning,
+              "Warning threshold (#{warning}) must be greater than the alert threshold (#{critical}) with < comparison"
+            )
+          end
+        when />=?\s*\S+\s*$/
+          if warning >= critical
+            invalid!(
+              :alert_less_than_warning,
+              "Warning threshold (#{warning}) must be less than the alert threshold (#{critical}) with > comparison"
+            )
+          end
         end
       end
     end
