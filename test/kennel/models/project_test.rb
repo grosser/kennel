@@ -53,8 +53,8 @@ describe Kennel::Models::Project do
   end
 
   describe "#tags" do
-    it "adds itself by default" do
-      TestProject.new.tags.must_equal ["service:test_project", "team:test_team"]
+    it "uses team" do
+      TestProject.new.tags.must_equal ["team:test_team"]
     end
   end
 

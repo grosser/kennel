@@ -28,7 +28,7 @@ describe Kennel::Models::Slo do
       description: nil,
       thresholds: [],
       monitor_ids: [],
-      tags: ["service:test_project", "team:test_team"],
+      tags: ["team:test_team"],
       type: "metric"
     }
   end

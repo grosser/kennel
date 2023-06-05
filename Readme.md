@@ -28,6 +28,7 @@ end
 class Bar < Kennel::Models::Project
   defaults(
     team: -> { Teams::Foo.new }, # use mention and tags from the team
+    tags: -> { super() + ["project:bar"] }, # unique tag for all project components
     parts: -> {
       [
         Kennel::Models::Monitor.new(
