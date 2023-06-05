@@ -30,7 +30,6 @@ describe Kennel::Models::SyntheticTest do
     {
       message: "hey",
       tags: [
-        "service:test_project",
         "team:test_team"
       ],
       config: {},

@@ -4,7 +4,7 @@ module Kennel
     class Project < Base
       settings :team, :parts, :tags, :mention, :name, :kennel_id
       defaults(
-        tags: -> { ["service:#{kennel_id}"] + team.tags },
+        tags: -> { team.tags },
         mention: -> { team.mention }
       )
 
