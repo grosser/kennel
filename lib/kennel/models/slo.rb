@@ -92,6 +92,14 @@ module Kennel
           invalid! :tags_are_upper_case, "Tags must not be upper case (bad tags: #{bad_tags.sort.inspect})"
         end
 
+        # prevent "Invalid payload: The target is incorrect: target must be a positive number between (0.0, 100.0)"
+        data[:thresholds]&.each do |threshold|
+          target = threshold.fetch(:target)
+          if !target || target <= 0 || target >= 100
+            invalid! :threshold_target_invalid, "SLO threshold target must be > 0 and < 100"
+          end
+        end
+
         # warning must be <= critical
         if data[:thresholds].any? { |t| t[:warning] && t[:warning].to_f <= t[:critical].to_f }
           invalid! :warning_must_be_gt_critical, "Threshold warning must be greater-than critical value"
