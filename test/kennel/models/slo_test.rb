@@ -117,22 +117,32 @@ describe Kennel::Models::Slo do
   end
 
   describe "#validate_json" do
-    describe :warning_must_be_gt_critical do
-      it "is valid with no thresholds" do
-        validation_errors_from(slo).must_equal []
+    it "is valid with no thresholds" do
+      validation_errors_from(slo).must_equal []
+    end
+
+    describe :threshold_target_invalid do
+      it "is valid with good target" do
+        validation_errors_from(slo(thresholds: [{ target: 99 }])).must_equal []
       end
 
+      it "is invalid with bad target" do
+        validation_errors_from(slo(thresholds: [{ target: 0 }])).must_equal ["SLO threshold target must be > 0 and < 100"]
+      end
+    end
+
+    describe :warning_must_be_gt_critical do
       it "is valid when warning not set" do
-        validation_errors_from(slo(thresholds: [{ critical: 99 }])).must_equal []
+        validation_errors_from(slo(thresholds: [{ critical: 99, target: 99.9 }])).must_equal []
       end
 
       it "is invalid if warning < critical" do
-        validation_errors_from(slo(thresholds: [{ warning: 0, critical: 99 }]))
+        validation_errors_from(slo(thresholds: [{ warning: 0, critical: 99, target: 99.9 }]))
           .must_equal ["Threshold warning must be greater-than critical value"]
       end
 
       it "is invalid if warning == critical" do
-        validation_errors_from(slo(thresholds: [{ warning: 99, critical: 99 }]))
+        validation_errors_from(slo(thresholds: [{ warning: 99, critical: 99, target: 99.9 }]))
           .must_equal ["Threshold warning must be greater-than critical value"]
       end
     end
