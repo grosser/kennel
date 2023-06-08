@@ -26,7 +26,8 @@ module Kennel
         groupby_simple_monitor: false,
         variables: nil,
         on_missing_data: "default", # "default" is "evaluate as zero"
-        notification_preset_name: nil
+        notification_preset_name: nil,
+        notify_by: nil
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -35,7 +36,7 @@ module Kennel
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
         :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :variables, :on_missing_data,
-        :notification_preset_name
+        :notification_preset_name, :notify_by
       )
 
       defaults(
@@ -59,7 +60,8 @@ module Kennel
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
         on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
-        notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) }
+        notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) },
+        notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) }
       )
 
       def build_json
@@ -107,6 +109,11 @@ module Kennel
             # metric and query values are stored as float by datadog
             thresholds.each { |k, v| thresholds[k] = Float(v) }
           end
+        end
+
+        # set without causing lots of nulls to be stored
+        if notify_by_value = notify_by
+          options[:notify_by] = notify_by_value
         end
 
         # setting this via the api breaks the UI with
