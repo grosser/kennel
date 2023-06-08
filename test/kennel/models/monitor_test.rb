@@ -119,6 +119,16 @@ describe Kennel::Models::Monitor do
       end
     end
 
+    describe "notify_by" do
+      it "can set notify_by" do
+        valid_monitor_json(notify_by: -> { ["*"] })[:options][:notify_by].must_equal ["*"]
+      end
+
+      it "does not set when nil to avoid diff" do
+        refute valid_monitor_json[:options].key? :notify_by
+      end
+    end
+
     it "does not set thresholds for composite monitors" do
       json = monitor(
         critical: -> { raise },
