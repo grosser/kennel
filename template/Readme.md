@@ -180,7 +180,6 @@ end
 
 ### Updating an existing monitor
  - use [datadog monitor UI](https://app.datadoghq.com/monitors/manage) to find a monitor
- - get the `id` from the url
  - run `URL='https://app.datadoghq.com/monitors/123' bundle exec rake kennel:import` and copy the output
  - import task also works with SLO alerts, e.g. `URL='https://app.datadoghq.com/slo/edit/123abc456def123/alerts/789' bundle exec rake kennel:import`
  - find or create a project in `projects/`
@@ -231,7 +230,6 @@ Remove the code that created the resource. The next update will delete it (see a
 
 ### Updating an existing dashboard
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to find a dashboard
- - get the `id` from the url
  - run `URL='https://app.datadoghq.com/dashboard/bet-foo-bar' bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
  - add a dashboard to `parts: [` list, for example:
