@@ -157,6 +157,13 @@ describe Kennel::Api do
       TEXT
     end
 
+    it "does not crash when datadog returns ascii encoding" do
+      stub_datadog_request(:post, "monitor")
+        .to_return(body: "hi \255".dup.force_encoding(Encoding::ASCII), status: 300)
+      e = assert_raises(RuntimeError) { api.create("monitor", foo: "bar #{Kennel::Models::Record::LOCK}") }
+      e.message.must_include "hi �"
+    end
+
     it "unwraps slo array reply" do
       stub_datadog_request(:post, "slo").to_return(body: { data: [{ bar: "foo" }] }.to_json)
       api.create("slo", foo: "bar").must_equal(bar: "foo", klass: Kennel::Models::Slo, tracking_id: nil)
