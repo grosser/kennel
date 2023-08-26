@@ -430,7 +430,7 @@ rake plan
 
 Then make changes to play around, do not commit changes and make sure to revert with a `rake kennel:update_datadog` after deleting everything.
 
-To make changes via the UI, make a new free datadog account and use it's credentaisl instead.
+To make changes via the UI, make a new free datadog account and use it's credentials instead.
 
 Author
 ======

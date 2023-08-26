@@ -22,7 +22,7 @@ describe Kennel::Syncer do
 
   def monitor_api_response(pid, cid, extra = {})
     tagged("monitor", {
-      tags: extra.delete(:tags) || ["team:test_team"],
+      tags: extra.delete(:tags) || ["team:test-team"],
       message: "@slack-foo\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
       options: {}
     }.merge(extra))
@@ -378,7 +378,7 @@ describe Kennel::Syncer do
           name: "x\u{1F512}",
           type: "metric",
           thresholds: [],
-          tags: ["team:test_team"],
+          tags: ["team:test-team"],
           description: "x\n-- Managed by kennel a:b in test/test_helper.rb, do not modify manually"
         })
       end
