@@ -29,7 +29,7 @@ describe Kennel::Models::Monitor do
       type: "query alert",
       query: +"avg(last_5m) > 123.0",
       message: "@slack-foo",
-      tags: ["team:test_team"],
+      tags: ["team:test-team"],
       priority: nil,
       options: {
         timeout_h: 0,

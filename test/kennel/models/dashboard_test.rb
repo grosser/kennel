@@ -24,7 +24,7 @@ describe Kennel::Models::Dashboard do
       template_variable_presets: nil,
       widgets: [],
       reflow_type: "auto",
-      tags: ["team:test_team"]
+      tags: ["team:test-team"]
     }
   end
   let(:dashboard_with_requests) do

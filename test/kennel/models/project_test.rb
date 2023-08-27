@@ -54,7 +54,7 @@ describe Kennel::Models::Project do
 
   describe "#tags" do
     it "uses team" do
-      TestProject.new.tags.must_equal ["team:test_team"]
+      TestProject.new.tags.must_equal ["team:test-team"]
     end
   end
 
