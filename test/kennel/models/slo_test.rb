@@ -172,29 +172,29 @@ describe Kennel::Models::Slo do
   end
 
   describe ".parse_url" do
-    it "parses" do
-      url = "https://app.datadoghq.com/slo?slo_id=123abc456def123&timeframe=7d&tab=status_and_history"
-      Kennel::Models::Slo.parse_url(url).must_equal "123abc456def123"
+    def call(url)
+      Kennel::Models::Slo.parse_url(url)
     end
 
-    it "parses when other query strings are present" do
-      url = "https://app.datadoghq.com/slo?query=\"bar\"&slo_id=123abc456def123&timeframe=7d&tab=status_and_history"
-      Kennel::Models::Slo.parse_url(url).must_equal "123abc456def123"
+    it "parses url with slo_id" do
+      url = "https://app.datadoghq.com/slo/manage?query=team%3A%28foo%29&slo_id=123abc456def123&timeframe=7d"
+      call(url).must_equal "123abc456def123"
     end
 
-    it "parses url with id" do
-      url = "https://app.datadoghq.com/slo/edit/123abc456def123"
-      Kennel::Models::Slo.parse_url(url).must_equal "123abc456def123"
+    it "parses edit url" do
+      url = "https://zendesk.datadoghq.com/slo/123abc456def123/edit"
+      call(url).must_equal "123abc456def123"
     end
 
-    it "does not parses url with alert" do
-      url = "https://app.datadoghq.com/slo/edit/123abc456def123/alerts/789"
-      Kennel::Models::Slo.parse_url(url).must_be_nil
+    # not sure where to get that url from
+    it "does not parses url with alert because that is importing a monitor" do
+      url = "https://app.datadoghq.com/slo/123abc456def123/edit/alerts/789"
+      call(url).must_be_nil
     end
 
     it "fails to parse other" do
       url = "https://app.datadoghq.com/dashboard/bet-foo-bar?from_ts=1585064592575&to_ts=1585068192575&live=true"
-      Kennel::Models::Slo.parse_url(url).must_be_nil
+      call(url).must_be_nil
     end
   end
 
