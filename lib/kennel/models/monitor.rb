@@ -4,7 +4,6 @@ module Kennel
     class Monitor < Record
       include TagsValidation
 
-      RENOTIFY_INTERVALS = [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 300, 360, 720, 1440].freeze # minutes
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
         :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles
@@ -259,11 +258,6 @@ module Kennel
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
             invalid! :critical_does_not_match_query, "critical and value used in query must match"
           end
-        end
-
-        # verify renotify interval is valid
-        unless RENOTIFY_INTERVALS.include? data.dig(:options, :renotify_interval)
-          invalid! :invalid_renotify_interval, "renotify_interval must be one of #{RENOTIFY_INTERVALS.join(", ")}"
         end
 
         if ["query alert", "service check"].include?(type) # TODO: most likely more types need this
