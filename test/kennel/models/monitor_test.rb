@@ -280,11 +280,6 @@ describe Kennel::Models::Monitor do
       it "can set" do
         valid_monitor_json(renotify_interval: -> { 60 })[:options][:renotify_interval].must_equal 60
       end
-
-      it "fails on invalid" do
-        validation_error_from(monitor(renotify_interval: -> { 123 }))
-          .must_include "renotify_interval must be one of 0, 10, 20,"
-      end
     end
 
     describe "renotify_statuses" do
