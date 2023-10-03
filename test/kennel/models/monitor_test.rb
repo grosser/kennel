@@ -36,7 +36,7 @@ describe Kennel::Models::Monitor do
         notify_no_data: true,
         no_data_timeframe: 60,
         notify_audit: false,
-        require_full_window: true,
+        require_full_window: false,
         new_host_delay: 300,
         include_tags: true,
         escalation_message: nil,
@@ -546,7 +546,7 @@ describe Kennel::Models::Monitor do
       diff_resource({}, {}).must_equal []
     end
 
-    it "ignores include_tags/require_full_window for service alerts" do
+    it "ignores missing include_tags and require_full_window for service alerts" do
       expected_basic_json[:query] = "foo.by(x)"
       expected_basic_json[:options].delete(:include_tags)
       expected_basic_json[:options].delete(:require_full_window)
@@ -567,7 +567,6 @@ describe Kennel::Models::Monitor do
     it "ignores missing critical from event alert" do
       assert expected_basic_json[:query].sub!("123.0", "0")
       expected_basic_json[:options].delete(:thresholds)
-      expected_basic_json[:options][:require_full_window] = true
       diff_resource(
         {
           type: -> { "event alert" },
@@ -670,28 +669,6 @@ describe Kennel::Models::Monitor do
       Kennel::Models::Monitor.normalize(expected, actual)
       expected.must_equal(options: {})
       actual.must_equal(options: {})
-    end
-  end
-
-  describe "#require_full_window" do
-    it "is true for on_average query" do
-      assert monitor.build_json.dig(:options, :require_full_window)
-    end
-
-    it "is true for at_all_times query" do
-      assert monitor(query: -> { "min(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
-    end
-
-    it "is true for in_total query" do
-      assert monitor(query: -> { "sum(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
-    end
-
-    it "is false for at_least_once query" do
-      refute monitor(query: -> { "max(last_5m) > #{critical}" }).build_json.dig(:options, :require_full_window)
-    end
-
-    it "is true for non-query" do
-      assert monitor(type: -> { "foo bar" }).build_json.dig(:options, :require_full_window)
     end
   end
 end

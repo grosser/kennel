@@ -60,7 +60,8 @@ module Kennel
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
         on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
         notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) },
-        notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) }
+        notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) },
+        require_full_window: -> { false }
       )
 
       def build_json
@@ -205,7 +206,7 @@ module Kennel
         # fields are not returned when set to true
         if ["service check", "event alert"].include?(actual[:type])
           options[:include_tags] = true unless options.key?(:include_tags)
-          options[:require_full_window] = true unless options.key?(:require_full_window)
+          options[:require_full_window] = false unless options.key?(:require_full_window)
         end
 
         case actual[:type]
@@ -218,6 +219,7 @@ module Kennel
           OPTIONAL_SERVICE_CHECK_THRESHOLDS.each do |t|
             options[:thresholds][t] ||= 1
           end
+        else # do nothing
         end
 
         # nil / "" / 0 are not returned from the api when set via the UI
@@ -232,12 +234,6 @@ module Kennel
       end
 
       private
-
-      def require_full_window
-        # default 'on_average', 'at_all_times', 'in_total' aggregations to true, otherwise false
-        # https://docs.datadoghq.com/ap/#create-a-monitor
-        type != "query alert" || query.start_with?("avg", "min", "sum")
-      end
 
       def validate_json(data)
         super
@@ -358,6 +354,7 @@ module Kennel
               "Warning threshold (#{warning}) must be less than the alert threshold (#{critical}) with > comparison"
             )
           end
+        else # do nothing
         end
       end
     end

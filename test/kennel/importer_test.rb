@@ -301,7 +301,8 @@ describe Kennel::Importer do
           kennel_id: -> { "hello" },
           critical: -> { 25.0 },
           notify_no_data: -> { false },
-          renotify_interval: -> { 120 }
+          renotify_interval: -> { 120 },
+          require_full_window: -> { false }
         )
       RUBY
     end
@@ -529,7 +530,8 @@ describe Kennel::Importer do
           kennel_id: -> { "hello" },
           type: -> { \"event alert\" },
           query: -> { \"foo = \#{critical}\" },
-          critical: -> { 5 }
+          critical: -> { 5 },
+          require_full_window: -> { false }
         )
       RUBY
     end
