@@ -171,7 +171,7 @@ for simple constants you may prefer to use the plain syntax (`critical: 5.0`).
  - `cp .env.example .env`
  - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
  - create a `API Key` or get an existing one from an admin, then add it to `.env` as `DATADOG_API_KEY`
- - open [Datadog API Settings](https://app.datadoghq.com/access/application-keys) and create a new key, then add it to `.env` as `DATADOG_APP_KEY=`
+ - open [Datadog API Settings](https://app.datadoghq.com/personal-settings/application-keys) and create a new key, then add it to `.env` as `DATADOG_APP_KEY=`
  - if you have a custom subdomain, change the `DATADOG_SUBDOMAIN=app` in `.env`
  - verify it works by running `rake plan`, it might show some diff, but should not crash
 -->
