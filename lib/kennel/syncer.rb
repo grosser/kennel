@@ -62,22 +62,28 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      resolver.each_resolved internal_plan.creates do |item|
-        message = "#{item.api_resource} #{item.tracking_id}"
-        Kennel.out.puts "Creating #{message}"
-        reply = @api.create item.api_resource, item.expected.as_json
-        id = reply.fetch(:id)
-        changes << item.change(id)
-        resolver.add_actual [reply] # allow resolving ids we could previously not resolve
-        Kennel.out.puts "#{LINE_UP}Created #{message} #{item.url(id)}"
-      end
+      planned_actions = internal_plan.creates + internal_plan.updates
 
-      resolver.each_resolved internal_plan.updates do |item|
-        message = "#{item.api_resource} #{item.tracking_id} #{item.url}"
-        Kennel.out.puts "Updating #{message}"
-        @api.update item.api_resource, item.id, item.expected.as_json
-        changes << item.change
-        Kennel.out.puts "#{LINE_UP}Updated #{message}"
+      # slos need to be updated first in case their timeframes changed
+      # because datadog validates that update+create of slo alerts match an existing timeframe
+      planned_actions.sort_by! { |item| item.expected.is_a?(Models::Slo) ? 0 : 1 }
+
+      resolver.each_resolved(planned_actions) do |item|
+        if item.is_a?(Types::PlannedCreate)
+          message = "#{item.api_resource} #{item.tracking_id}"
+          Kennel.out.puts "Creating #{message}"
+          reply = @api.create item.api_resource, item.expected.as_json
+          id = reply.fetch(:id)
+          changes << item.change(id)
+          resolver.add_actual [reply] # allow resolving ids we could previously not resolve
+          Kennel.out.puts "#{LINE_UP}Created #{message} #{item.url(id)}"
+        else
+          message = "#{item.api_resource} #{item.tracking_id} #{item.url}"
+          Kennel.out.puts "Updating #{message}"
+          @api.update item.api_resource, item.id, item.expected.as_json
+          changes << item.change
+          Kennel.out.puts "#{LINE_UP}Updated #{message}"
+        end
       end
 
       Plan.new(changes: changes)
