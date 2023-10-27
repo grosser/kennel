@@ -32,10 +32,7 @@ module Kennel
       @filter = filter
 
       @resolver = Resolver.new(expected: expected, filter: filter)
-
       @plan = calculate_changes(expected: expected, actual: actual)
-      @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
-
       validate_changes
     end
 
@@ -93,8 +90,6 @@ module Kennel
     attr_reader :filter, :resolver
 
     def calculate_changes(expected:, actual:)
-      @warnings = []
-
       Progress.progress "Diffing" do
         resolver.add_actual actual
         filter_actual! actual
@@ -145,7 +140,8 @@ module Kennel
         if @strict_imports
           raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."
         else
-          @warnings << "#{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."
+          message = "Warning: #{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."
+          Kennel.err.puts Console.color(:yellow, message)
         end
       end
     end
