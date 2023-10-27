@@ -2,19 +2,19 @@
 
 module Kennel
   class Syncer
-    class PlanDisplayer
+    class PlanPrinter
       def initialize
         @attribute_differ = AttributeDiffer.new
       end
 
-      def display(internal_plan)
+      def print(plan)
         Kennel.out.puts "Plan:"
-        if internal_plan.empty?
+        if plan.empty?
           Kennel.out.puts Console.color(:green, "Nothing to do")
         else
-          print_changes "Create", internal_plan.creates, :green
-          print_changes "Update", internal_plan.updates, :yellow
-          print_changes "Delete", internal_plan.deletes, :red
+          print_changes "Create", plan.creates, :green
+          print_changes "Update", plan.updates, :yellow
+          print_changes "Delete", plan.deletes, :red
         end
       end
 

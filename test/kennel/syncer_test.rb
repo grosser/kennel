@@ -3,7 +3,7 @@ require_relative "../test_helper"
 require "stringio"
 
 SingleCov.covered!
-SingleCov.covered! file: "lib/kennel/syncer/plan_displayer.rb"
+SingleCov.covered! file: "lib/kennel/syncer/plan_printer.rb"
 SingleCov.covered! file: "lib/kennel/syncer/resolver.rb"
 SingleCov.covered! file: "lib/kennel/syncer/types.rb"
 

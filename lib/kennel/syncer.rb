@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "./syncer/matched_expected"
-require_relative "./syncer/plan_displayer"
+require_relative "./syncer/plan_printer"
 require_relative "./syncer/resolver"
 require_relative "./syncer/types"
 
@@ -10,15 +10,21 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
-    Plan = Struct.new(:changes, keyword_init: true)
+    Plan = Struct.new(:creates, :updates, :deletes) do
+      attr_writer :changes
 
-    InternalPlan = Struct.new(:creates, :updates, :deletes) do
+      def changes
+        @changes || (deletes + creates + updates).map(&:change) # roughly ordered in the way that update works
+      end
+
       def empty?
-        creates.empty? && updates.empty? && deletes.empty?
+        (creates + updates + deletes).empty?
       end
     end
 
     Change = Struct.new(:type, :api_resource, :tracking_id, :id)
+
+    attr_reader :plan
 
     def initialize(api, expected, actual, filter:, strict_imports: true)
       @api = api
@@ -27,26 +33,18 @@ module Kennel
 
       @resolver = Resolver.new(expected: expected, filter: filter)
 
-      internal_plan = calculate_changes(expected: expected, actual: actual)
-      validate_changes(internal_plan)
-      @internal_plan = internal_plan
-
+      @plan = calculate_changes(expected: expected, actual: actual)
       @warnings.each { |message| Kennel.out.puts Console.color(:yellow, "Warning: #{message}") }
-    end
 
-    def plan
-      ip = @internal_plan
-      Plan.new(
-        changes: (ip.creates + ip.updates + ip.deletes).map(&:change)
-      )
+      validate_changes
     end
 
     def print_plan
-      PlanDisplayer.new.display(internal_plan)
+      PlanPrinter.new.print(plan)
     end
 
     def confirm
-      return false if internal_plan.empty?
+      return false if plan.empty?
       return true if ENV["CI"] || !Kennel.in.tty? || !Kennel.err.tty?
       Console.ask?("Execute Plan ?")
     end
@@ -54,7 +52,7 @@ module Kennel
     def update
       changes = []
 
-      internal_plan.deletes.each do |item|
+      plan.deletes.each do |item|
         message = "#{item.api_resource} #{item.tracking_id} #{item.id}"
         Kennel.out.puts "Deleting #{message}"
         @api.delete item.api_resource, item.id
@@ -62,7 +60,7 @@ module Kennel
         Kennel.out.puts "#{LINE_UP}Deleted #{message}"
       end
 
-      planned_actions = internal_plan.creates + internal_plan.updates
+      planned_actions = plan.creates + plan.updates
 
       # slos need to be updated first in case their timeframes changed
       # because datadog validates that update+create of slo alerts match an existing timeframe
@@ -86,12 +84,13 @@ module Kennel
         end
       end
 
-      Plan.new(changes: changes)
+      plan.changes = changes
+      plan
     end
 
     private
 
-    attr_reader :filter, :resolver, :internal_plan
+    attr_reader :filter, :resolver
 
     def calculate_changes(expected:, actual:)
       @warnings = []
@@ -129,7 +128,7 @@ module Kennel
         deletes.sort_by! { |item| DELETE_ORDER.index item.api_resource }
         updates.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
 
-        InternalPlan.new(creates, updates, deletes)
+        Plan.new(creates, updates, deletes)
       end
     end
 
@@ -153,8 +152,8 @@ module Kennel
 
     # We've already validated the desired objects ('generated') in isolation.
     # Now that we have made the plan, we can perform some more validation.
-    def validate_changes(internal_plan)
-      internal_plan.updates.each do |item|
+    def validate_changes
+      @plan.updates.each do |item|
         item.expected.validate_update!(item.diff)
       end
     end
