@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "./syncer/matched_expected"
+require_relative "./syncer/plan"
 require_relative "./syncer/plan_printer"
 require_relative "./syncer/resolver"
 require_relative "./syncer/types"
@@ -10,20 +11,6 @@ module Kennel
     DELETE_ORDER = ["dashboard", "slo", "monitor", "synthetics/tests"].freeze # dashboards references monitors + slos, slos reference monitors
     LINE_UP = "\e[1A\033[K" # go up and clear
 
-    Plan = Struct.new(:creates, :updates, :deletes) do
-      attr_writer :changes
-
-      def changes
-        @changes || (deletes + creates + updates).map(&:change) # roughly ordered in the way that update works
-      end
-
-      def empty?
-        (creates + updates + deletes).empty?
-      end
-    end
-
-    Change = Struct.new(:type, :api_resource, :tracking_id, :id)
-
     attr_reader :plan
 
     def initialize(api, expected, actual, filter:, strict_imports: true)
@@ -32,7 +19,7 @@ module Kennel
       @filter = filter
 
       @resolver = Resolver.new(expected: expected, filter: filter)
-      @plan = calculate_changes(expected: expected, actual: actual)
+      @plan = Plan.new(*calculate_changes(expected: expected, actual: actual))
       validate_changes
     end
 
@@ -123,7 +110,7 @@ module Kennel
         deletes.sort_by! { |item| DELETE_ORDER.index item.api_resource }
         updates.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
 
-        Plan.new(creates, updates, deletes)
+        [creates, updates, deletes]
       end
     end
 
