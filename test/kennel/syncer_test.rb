@@ -3,7 +3,8 @@ require_relative "../test_helper"
 require "stringio"
 
 SingleCov.covered!
-SingleCov.covered! file: "lib/kennel/syncer/plan_displayer.rb"
+SingleCov.covered! file: "lib/kennel/syncer/plan.rb"
+SingleCov.covered! file: "lib/kennel/syncer/plan_printer.rb"
 SingleCov.covered! file: "lib/kennel/syncer/resolver.rb"
 SingleCov.covered! file: "lib/kennel/syncer/types.rb"
 
@@ -454,10 +455,10 @@ describe Kennel::Syncer do
 
         it "warns without strict_imports" do
           strict_imports.replace [false]
-          output.must_equal <<~TXT
+          plan
+          all = (stderr.string + stdout.string).gsub(/\e\[\d+m(.*)\e\[0m/, "\\1") # remove colors
+          all.must_include <<~TXT
             Warning: monitor a:b specifies id 234, but no such monitor exists. 'id' will be ignored. Remove the `id: -> { 234 }` line.
-            Plan:
-            Create monitor a:b
           TXT
         end
 
