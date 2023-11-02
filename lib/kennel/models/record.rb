@@ -93,10 +93,13 @@ module Kennel
 
         return [] if actual == expected # Hashdiff is slow, this is fast
 
-        # strict: ignore Integer vs Float
         # similarity: show diff when not 100% similar
         # use_lcs: saner output
-        Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
+        found = Hashdiff.diff(actual, expected, use_lcs: false, similarity: 1)
+        if found == []
+          raise "No diff found but expected and actual were not equal\n#{expected}\n#{actual}"
+        end
+        found
       end
 
       def tracking_id
