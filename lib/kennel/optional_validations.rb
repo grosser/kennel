@@ -18,7 +18,7 @@ module Kennel
     end
 
     def invalid!(tag, message)
-      validation_errors << ValidationMessage.new(tag || OptionalValidations::UNIGNORABLE, message)
+      validation_errors << ValidationMessage.new(tag, message)
     end
 
     def self.valid?(parts)

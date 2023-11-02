@@ -29,66 +29,67 @@ describe Kennel::TemplateVariables do
   end
 
   describe "#validate_json" do
-    let(:errors) { [] }
-
-    let(:item) do
-      item = Object.new
-      item.extend Kennel::TemplateVariables
-      item.stubs(:invalid!).with { |_tag, err| errors << err }
-      item
-    end
+    let(:errors) { item.validation_errors }
+    let(:error_tags) { errors.map(&:tag) }
+    let(:item) { Kennel::Models::Dashboard.new(TestProject.new) }
 
     def validate(variable_names, widgets)
       data = {
+        tags: [],
         template_variables: variable_names.map { |v| { name: v } },
         widgets: widgets
       }
-
       item.send(:validate_json, data)
     end
 
     it "is valid when empty" do
       validate [], []
-      errors.must_be_empty
+      error_tags.must_equal []
     end
 
     it "is valid when vars are empty" do
       validate [], [{ definition: { requests: [{ q: "x" }] } }]
-      errors.must_be_empty
+      error_tags.must_equal []
     end
 
     it "is valid when vars are used" do
       validate ["a"], [{ definition: { requests: [{ q: "$a" }] } }]
-      errors.must_be_empty
+      error_tags.must_equal []
     end
 
     it "is invalid when vars are not used" do
       validate ["a"], [{ definition: { requests: [{ q: "$b" }] } }]
-      errors.length.must_equal 1
+      error_tags.must_equal [:queries_must_use_template_variables]
     end
 
     it "is invalid when some vars are not used" do
       validate ["a", "b"], [{ definition: { requests: [{ q: "$b" }] } }]
-      errors.length.must_equal 1
+      error_tags.must_equal [:queries_must_use_template_variables]
     end
 
     it "is valid when all vars are used" do
       validate ["a", "b"], [{ definition: { requests: [{ q: "$a,$b" }] } }]
+      error_tags.must_equal []
     end
 
     it "is invalid when nested vars are not used" do
       validate ["a"], [{ definition: { widgets: [{ definition: { requests: [{ q: "$b" }] } }] } }]
-      errors.length.must_equal 1
+      error_tags.must_equal [:queries_must_use_template_variables]
     end
 
     it "works with hostmap widgets" do
       validate ["a"], [{ definition: { requests: { fill: { q: "x" } } } }]
-      errors.length.must_equal 1
+      error_tags.must_equal [:queries_must_use_template_variables]
     end
 
     it "works with new api format" do
       validate ["a"], [{ definition: { requests: [{ queries: [{ query: "x" }] }] } }]
-      errors.length.must_equal 1
+      error_tags.must_equal [:queries_must_use_template_variables]
+    end
+
+    it "still calls existing validations" do
+      validate [], [{ "definition" => { requests: [{ q: "x" }] } }]
+      error_tags.must_equal [:unignorable]
     end
   end
 end

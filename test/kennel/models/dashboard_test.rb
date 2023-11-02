@@ -6,6 +6,7 @@ SingleCov.covered!
 describe Kennel::Models::Dashboard do
   define_test_classes
 
+  # TODO: move into define_test_classes
   class TestDashboard < Kennel::Models::Dashboard
   end
 
