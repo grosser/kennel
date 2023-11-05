@@ -226,6 +226,13 @@ describe Kennel::Models::Record do
     it "ignores numeric class difference since the api is semi random on these" do
       diff_resource({ a: 1 }, a: 1.0).must_equal []
     end
+
+    it "alerts when guard condition is ineffective" do
+      # if something is "diff equal" but not "==" then we are leaving speed on the table
+      Hashdiff.expects(:diff).returns []
+      e = assert_raises(RuntimeError) { diff_resource({ a: 1 }, a: 2) }
+      e.message.must_include "Empty diff detected"
+    end
   end
 
   describe "#tracking_id" do

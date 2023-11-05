@@ -96,7 +96,9 @@ module Kennel
         # strict: ignore Integer vs Float
         # similarity: show diff when not 100% similar
         # use_lcs: saner output
-        Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
+        result = Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
+        raise "Empty diff detected: guard condition failed" if result.empty?
+        result
       end
 
       def tracking_id
