@@ -18,7 +18,7 @@ module Kennel
     def initialize(app_key = nil, api_key = nil)
       @app_key = app_key || ENV.fetch("DATADOG_APP_KEY")
       @api_key = api_key || ENV.fetch("DATADOG_API_KEY")
-      url = Utils.path_to_url("", subdomain: "app")
+      url = Utils.path_to_url("")
       @client = Faraday.new(url: url) { |c| c.adapter :net_http_persistent }
     end
 

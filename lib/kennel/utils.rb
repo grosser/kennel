@@ -12,8 +12,8 @@ module Kennel
         result
       end
 
-      def path_to_url(path, subdomain: nil)
-        subdomain ||= (ENV["DATADOG_SUBDOMAIN"] || "app")
+      def path_to_url(path)
+        subdomain = (ENV["DATADOG_SUBDOMAIN"] || "app")
         "https://#{subdomain}.datadoghq.com#{path}"
       end
 
