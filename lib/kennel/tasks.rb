@@ -68,7 +68,7 @@ namespace :kennel do
 
   # ideally do this on every run, but it's slow (~1.5s) and brittle (might not find all + might find false-positives)
   # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
-  desc "Verify that all used monitor  mentions are valid"
+  desc "Verify that all used monitor mentions are valid"
   task validate_mentions: :environment do
     known = Kennel::Api.new
       .send(:request, :get, "/monitor/notifications")
@@ -91,7 +91,33 @@ namespace :kennel do
 
     if bad.any?
       url = Kennel::Utils.path_to_url "/account/settings"
-      Kennel.out.puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
+
+      Kennel.out.puts <<~MESSAGE
+        ⛔️ Possibly invalid mentions found ⛔️
+
+        The monitor definitions in `generated/` include at least one mention
+        that isn't currently in Datadog. See the list below for exactly what
+        was found.
+
+        This check exists to protect against typos in mentions, mentioning
+        non-existent targets, etc.
+
+        How to resolve this:
+
+        - If the problems listed below are nothing to do with what you're
+          changing on this branch, then rebase onto a fresh `#{ENV.fetch("DEFAULT_BRANCH", "master")}`
+
+        - If the problems listed below seem valid, i.e. a typo or other mistake,
+          then fix them :-)
+
+        - If you want to mention someone whom no existing monitor
+          currently mentions, then add them via #{url}
+
+        - If you cannot add to above url, ensure the mention actually works by sending a test message, and
+          if it does, add the mention to the `KNOWN` environment variable
+
+      MESSAGE
+
       bad.each { |f, v| Kennel.out.puts "Invalid mention #{v} in monitor message of #{f}" }
       Kennel::Tasks.abort ENV["KNOWN_WARNING"]
     end
