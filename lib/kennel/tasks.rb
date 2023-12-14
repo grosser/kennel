@@ -95,7 +95,7 @@ namespace :kennel do
       Kennel.out.puts <<~MESSAGE
         ⛔️ Possibly invalid mentions found ⛔️
 
-        The monitor definitions in `generated` include at least one mention
+        The monitor definitions in `generated/` include at least one mention
         that isn't currently in Datadog. See the list below for exactly what
         was found.
 
