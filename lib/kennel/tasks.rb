@@ -110,9 +110,11 @@ namespace :kennel do
         - If the problems listed below seem valid, i.e. a typo or other mistake,
           then fix them :-)
 
-        - If you want to mention someone new, someone whom no existing monitor
-          currently mentions, then you can allow-list them by adding to the
-          `KNOWN` environment variable, or by adding them via #{url}
+        - If you want to mention someone whom no existing monitor
+          currently mentions, then add them via #{url}
+
+        - If you cannot add to above url, ensure the mention actually works by sending a test message, and
+          if it does, add the mention to the `KNOWN` environment variable
 
       MESSAGE
 
