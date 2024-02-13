@@ -303,7 +303,7 @@ describe "tasks" do
     it "fails when unknown mentions are used" do
       content[:message] = "@oo@ps"
       assert_raises { execute }.message.must_equal "Aborted SystemExit"
-      stdout.string.must_include "Invalid mentions"
+      stderr.string.must_include "Invalid mentions"
     end
   end
 
