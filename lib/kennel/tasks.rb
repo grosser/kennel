@@ -91,8 +91,8 @@ namespace :kennel do
 
     if bad.any?
       url = Kennel::Utils.path_to_url "/account/settings"
-      Kennel.out.puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
-      bad.each { |f, v| Kennel.out.puts "Invalid mention #{v} in monitor message of #{f}" }
+      Kennel.err.puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
+      bad.each { |f, v| Kennel.err.puts "Invalid mention #{v} in monitor message of #{f}" }
       Kennel::Tasks.abort ENV["KNOWN_WARNING"]
     end
   end
