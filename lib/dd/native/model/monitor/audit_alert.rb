@@ -5,6 +5,7 @@ module DD
     class Model
       class Monitor
         class AuditAlert < Monitor
+          # TODO: parse #query
         end
       end
     end

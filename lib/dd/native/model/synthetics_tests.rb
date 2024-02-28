@@ -4,6 +4,8 @@ module DD
   module Native
     class Model
       class SyntheticsTests < Model
+        ID_NAMESPACE = "synthetics/tests"
+
         REQUIRED_KEYS = ["id",
                          "config", "created_at", "creator", "locations", "message",
                          "modified_at", "monitor_id", "name", "options", "status",

@@ -15,7 +15,22 @@ module DD
         end
       end.compact
 
-      new.tap { |o| o.push(*items) }
+      new(items)
+    end
+
+    def initialize(items)
+      push(*items)
+
+      @lookup_index =
+        begin
+          each_with_object({}) do |item, h|
+            klass = item.class::ID_NAMESPACE
+            (h[klass] || (h[klass] = {}))[item.id.to_s] = item
+          end.freeze
+        end
+      @lookup_index.values.each(&:freeze)
+
+      freeze
     end
 
     def inspect
@@ -28,50 +43,37 @@ module DD
       puts inspect
     end
 
-    def each_metric_query
-      return enum_for(:each_metric_query) unless block_given?
+    def lookup(klass, id)
+      @lookup_index.dig(klass, id.to_s)
+    end
+
+    def each_monitor(type = nil)
+      return enum_for(:each_monitor, type) unless block_given?
+
+      includeable_type = (type if type.respond_to?(:include?))
 
       each do |item|
-        case item["api_resource"]
-        when "monitor"
-          case item["type"]
-          when "query alert"
-            yield item["query"]
-          end
+        if item.is_a?(DD::Native::Model::Monitor)
+          yield item if type.nil? || (type === item.type) \
+              || includeable_type&.include?(item.type)
         end
       end
     end
 
-    def scan_widgets
-      return enum_for(:scan_widgets) unless block_given?
+    def each_dashboard_widget(type = nil)
+      return enum_for(:each_dashboard_widget, type) unless block_given?
 
-      each_dashboard_widget do |w|
-        q = [w]
-
-        while (item = q.shift)
-          case item
-          when Array
-            q.unshift(*item)
-          when Hash
-            q.unshift(*item.values)
-          when /:.*\{/
-            yield item
-          end
-        end
-      end
-    end
-
-    def each_dashboard_widget
-      return enum_for(:each_dashboard_widget) unless block_given?
+      includeable_type = (type if type.respond_to?(:include?))
 
       each do |item|
         if item.is_a?(DD::Native::Model::Dashboard)
           queue = item.widgets.dup
 
           while (item = queue.shift)
-            yield item
+            yield item if type.nil? || (type === item.type) \
+              || includeable_type&.include?(item.type)
 
-            if item.definition.type == "group"
+            if item.type == "group"
               queue.unshift *item.definition.widgets
             end
           end

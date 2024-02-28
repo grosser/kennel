@@ -4,6 +4,8 @@ module DD
   module Native
     class Model
       class Dashboard < Model
+        ID_NAMESPACE = "dashboard"
+
         REQUIRED_KEYS = ["id", "created_at", "modified_at", "deleted_at", "description", "layout_type",
                 "author_handle", "author_name", "is_read_only", "notify_list",
                 "restricted_roles", "template_variables", "title", "widgets"].freeze

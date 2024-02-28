@@ -4,6 +4,16 @@ module DD
   module Native
     class Model
       class Monitor < Model
+        ID_NAMESPACE = "monitor"
+
+        REQUIRED_KEYS = [
+          "created", "created_at", "creator", "deleted", "id", "matching_downtimes", "message", "modified", "multi", "name", "options", "org_id", "overall_state", "overall_state_modified", "priority", "query", "restricted_roles", "tags", "type"
+        ].freeze
+
+        OPTIONAL_KEYS = [].freeze
+
+        attr_reader *REQUIRED_KEYS, *OPTIONAL_KEYS
+
         require_relative "monitor/audit_alert"
         require_relative "monitor/ci_tests_alert"
         require_relative "monitor/composite"
@@ -17,14 +27,6 @@ module DD
         require_relative "monitor/service_check"
         require_relative "monitor/slo_alert"
         require_relative "monitor/trace_analytics_alert"
-
-        REQUIRED_KEYS = [
-          "created", "created_at", "creator", "deleted", "id", "matching_downtimes", "message", "modified", "multi", "name", "options", "org_id", "overall_state", "overall_state_modified", "priority", "query", "restricted_roles", "tags", "type"
-        ].freeze
-
-        OPTIONAL_KEYS = [].freeze
-
-        attr_reader *REQUIRED_KEYS, *OPTIONAL_KEYS
 
         TYPE_MAP = {
           "audit alert": Monitor::AuditAlert,

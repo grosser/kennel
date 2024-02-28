@@ -4,6 +4,8 @@ module DD
   module Native
     class Model
       class SLO < Model
+        ID_NAMESPACE = "slo"
+
         REQUIRED_KEYS = ["id", "created_at", "modified_at",
 
                          "creator", "description", "monitor_tags", "name", "tags",

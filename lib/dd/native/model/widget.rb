@@ -25,6 +25,10 @@ module DD
             "#<Widget of type #{definition.type.inspect}>"
           end
         end
+
+        def type
+          definition.type
+        end
       end
     end
   end
