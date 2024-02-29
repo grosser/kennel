@@ -13,9 +13,10 @@ module DD
         attr_reader *REQUIRED_KEYS, *OPTIONAL_KEYS
 
         def initialize(item)
-          super
-          @definition = WidgetDefinition.from_single(definition)
-          @layout = WidgetLayout.new(layout) if layout
+          super do
+            @definition = WidgetDefinition.from_single(definition)
+            @layout = WidgetLayout.new(layout) if layout
+          end
         end
 
         def inspect

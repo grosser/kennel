@@ -2,10 +2,14 @@
 
 module DD
   module MetricAnalysis
+    def self.scan(set)
+
+    end
+
     def self.each_metric_query(set)
       return enum_for(:each_metric_query, set) unless block_given?
 
-      set.each do |item|
+      set.each_monitor do |item|
         case item["api_resource"]
         when "monitor"
           case item["type"]

@@ -22,8 +22,9 @@ module DD
           attr_reader *REQUIRED_KEYS, *OPTIONAL_KEYS
 
           def initialize(item)
-            super
-            @widgets = Widget.from_multi(widgets, allow_nil: false)
+            super do
+              @widgets = Widget.from_multi(widgets, allow_nil: false)
+            end
           end
         end
       end

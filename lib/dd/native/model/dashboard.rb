@@ -15,12 +15,13 @@ module DD
         attr_reader *REQUIRED_KEYS, *OPTIONAL_KEYS
 
         def initialize(item)
-          super
-          @widgets = Widget.from_multi(widgets, allow_nil: false)
-          @template_variables = TemplateVariable.from_multi(template_variables, allow_nil: true)
+          super do
+            @widgets = Widget.from_multi(widgets, allow_nil: false)
+            @template_variables = TemplateVariable.from_multi(template_variables, allow_nil: true)
 
-          raise unless notify_list.nil? || notify_list.all? { |s| s.is_a?(String) } # email addresses
-          raise unless restricted_roles.nil? || restricted_roles.all? { |s| s.is_a?(String) } # UUIDs
+            raise unless notify_list.nil? || notify_list.all? { |s| s.is_a?(String) } # email addresses
+            raise unless restricted_roles.nil? || restricted_roles.all? { |s| s.is_a?(String) } # UUIDs
+          end
         end
 
         # [DD::Native::Model::Dashboard, "notify_list", Array]=>8378,

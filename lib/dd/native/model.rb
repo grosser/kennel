@@ -39,7 +39,7 @@ module DD
         end
       end
 
-      def initialize(item)
+      def initialize(item, &block)
         required_keys = self.class::REQUIRED_KEYS
         optional_keys = self.class::OPTIONAL_KEYS
 
@@ -58,8 +58,12 @@ module DD
           #   $t[stat_key] = $t.fetch(stat_key, 0) + 1
           # end
 
-          instance_variable_set("@#{k}", value)
+          instance_variable_set("@#{k}", value.dup.freeze)
         end
+
+        instance_eval(&block) if block
+
+        freeze
       end
 
       def present?(key)
