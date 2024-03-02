@@ -5,6 +5,8 @@ module Kennel
   class Api
     CACHE_FILE = ENV.fetch("KENNEL_API_CACHE_FILE", "tmp/cache/details")
 
+    RateLimitParams = Data.define(:limit, :period, :remaining, :reset, :name)
+
     def self.tag(api_resource, reply)
       klass = Models::Record.api_resource_map[api_resource]
       return reply unless klass # do not blow up on unknown models
@@ -120,6 +122,23 @@ module Kennel
               request.headers["DD-API-KEY"] = @api_key
               request.headers["DD-APPLICATION-KEY"] = @app_key
             end
+          end
+
+          rate_limit = RateLimitParams.new(
+            limit: response.headers["x-ratelimit-limit"],
+            period: response.headers["x-ratelimit-period"],
+            remaining: response.headers["x-ratelimit-remaining"],
+            reset: response.headers["x-ratelimit-reset"],
+            name: response.headers["x-ratelimit-name"]
+          )
+
+          if response.status == 429
+            message = "Datadog rate limit #{rate_limit.name.inspect} hit"
+            message += " (#{rate_limit.limit} requests per #{rate_limit.period} seconds)"
+            message += "; sleeping #{rate_limit.reset} seconds before trying again"
+            Kennel.err.puts message
+            sleep rate_limit.reset.to_f
+            redo
           end
 
           break if i == tries - 1 || method != :get || response.status < 500

@@ -255,6 +255,28 @@ describe Kennel::Api do
     end
   end
 
+  describe "rate limiting" do
+    capture_all
+
+    it "retries on a rate-limited response" do
+      request = stub_datadog_request(:get, "monitor/1234").to_return(
+        [
+          { status: 429, headers: {
+            "X-RateLimit-Name": "too many secrets",
+            "X-RateLimit-Limit": "1000",
+            "X-RateLimit-Period": "60",
+            "X-RateLimit-Remaining": "-5",
+            "X-RateLimit-Reset": "1.1"
+          } },
+          { status: 200, body: { foo: "bar" }.to_json }
+        ]
+      )
+      api.show("monitor", 1234).must_equal(foo: "bar", klass: Kennel::Models::Monitor, tracking_id: nil)
+      assert_requested request, times: 2
+      stderr.string.must_equal "Datadog rate limit \"too many secrets\" hit (1000 requests per 60 seconds); sleeping 1.1 seconds before trying again\n"
+    end
+  end
+
   describe "retries" do
     capture_all
 
