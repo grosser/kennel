@@ -38,7 +38,10 @@ def expand(v, seen: Set.new)
   case v
   when JData
     raise "Seen #{v.__id__} #{v}" unless seen.add?(v.__id__)
-    v.to_h.transform_values { |vv| expand(vv, seen:) }
+    {
+      class: v.class.to_s,
+      data: v.to_h.transform_values { |vv| expand(vv, seen:) }
+    }
   when Hash
     raise "Seen #{v.__id__} #{v}" unless seen.add?(v.__id__)
     v.transform_values { |vv| expand(vv, seen:) }
@@ -58,52 +61,15 @@ end
 
 if $0 == __FILE__
   all = DD::ObjectSet.from_dump
-  ok = 0
-  errors = 0
+
   all.each_monitor('query alert') do |mon|
     q = mon.query
-    # puts q
-
-    match = q.match(/^(?<aggregate>.*?):(?<expression>.*)(?<comparator>[<>]=?|==)\s*(?<threshold>[+-]?[0-9\.]+)\s*$/sm)
-
-    if match.nil?
-      puts JSON.generate({ error: "Fails basic structure", id: mon.id, query: q })
-    end
-
-    aggregate = match["aggregate"]
-    expression = match["expression"]
-    comparator = match["comparator"]
-    threshold = match["threshold"].to_f
-
-    by_pod_fragments = {}
-    expression.gsub!(/\}\s+by\s+\{(.*?)\}/) do
-      key = "BY-CLAUSE-%03d" % [by_pod_fragments.size]
-      by_pod_fragments[key] = $1.strip.split(/\s*,\s*/)
-      "} #{key}"
-    end
-
-    filter_fragments = {}
-    expression.gsub!(/\{([^}]+)}/) do
-      key = "FILTER-CLAUSE-%03d" % [filter_fragments.size]
-      filter_fragments[key] = $1.strip
-      " #{key} "
-    end
-
-    filter_fragments.transform_values! do |f|
-      DD::MetricFilter.parse(f)
-    end
 
     out = {
       input: { id: mon.id, query: q },
-      output: {
-        aggregate:,
-        expression:,
-        comparator:,
-        threshold:,
-        by_pod_fragments:,
-        filter_fragments:
-      }
+      output: DD::MetricAlertQuery.lazy_parse(q),
     }
+
     puts JSON.generate(expand(out))
   end
 
