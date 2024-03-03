@@ -240,7 +240,7 @@ describe Kennel::Syncer do
       TEXT
     end
 
-    it "wraps in a group, if running under GitHub" do
+    it "wraps in a group to prevent big dumps like dashboard from making things unreadable, if running under GitHub" do
       with_env("GITHUB_STEP_SUMMARY" => "true") do
         expected << monitor("a", "b", tags: ["foo", "bar"])
         monitors << monitor_api_response("a", "b", tags: ["foo", "baz"])
