@@ -10,6 +10,7 @@ SingleCov.covered! file: "lib/kennel/syncer/types.rb"
 
 describe Kennel::Syncer do
   define_test_classes
+  with_env("GITHUB_STEP_SUMMARY" => nil)
 
   def project(pid)
     project = TestProject.new
@@ -237,6 +238,19 @@ describe Kennel::Syncer do
         Update monitor a:b
           ~tags[1] \"baz\" -> \"bar\"
       TEXT
+    end
+
+    it "wraps in a group, if running under GitHub" do
+      with_env("GITHUB_STEP_SUMMARY" => "true") do
+        expected << monitor("a", "b", tags: ["foo", "bar"])
+        monitors << monitor_api_response("a", "b", tags: ["foo", "baz"])
+        output.must_equal <<~TEXT
+          Plan:
+          ::group::Update monitor a:b
+            ~tags[1] \"baz\" -> \"bar\"
+          ::endgroup::
+        TEXT
+      end
     end
 
     it "deletes when removed from code" do
