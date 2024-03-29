@@ -83,7 +83,7 @@ module Kennel
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
-            locked: false, # setting this to true prevents any edit and breaks updates when using replace workflow
+            locked: false, # deprecated: setting this to true will likely fail
             renotify_interval: renotify_interval || 0,
             variables: variables
           }
@@ -152,6 +152,9 @@ module Kennel
         if (notification_preset_name = notification_preset_name())
           options[:notification_preset_name] = notification_preset_name
         end
+
+        # locked is deprecated, will fail if used
+        options.delete :locked
 
         data
       end
@@ -231,6 +234,9 @@ module Kennel
           options.delete(:escalation_message)
           expected_options.delete(:escalation_message)
         end
+        # locked is deprecated: ignored when diffing
+        options.delete(:locked)
+        expected_options.delete(:locked)
       end
 
       private

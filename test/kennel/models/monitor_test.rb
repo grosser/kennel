@@ -41,7 +41,6 @@ describe Kennel::Models::Monitor do
         include_tags: true,
         escalation_message: nil,
         evaluation_delay: nil,
-        locked: false,
         renotify_interval: 0,
         thresholds: { critical: 123.0 },
         variables: nil
@@ -579,6 +578,13 @@ describe Kennel::Models::Monitor do
 
     it "ignores type diff between metric and query since datadog uses both randomly" do
       diff_resource({ type: -> { "query alert" } }, {}).must_equal []
+    end
+
+    describe "#locked" do
+      it "ignores deprecated option locked" do
+        expected_basic_json[:options].delete(:locked)
+        diff_resource({}, {}).must_equal []
+      end
     end
 
     describe "#escalation_message" do
