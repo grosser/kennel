@@ -41,7 +41,6 @@ describe Kennel::Models::Monitor do
         include_tags: true,
         escalation_message: nil,
         evaluation_delay: nil,
-        locked: false,
         renotify_interval: 0,
         thresholds: { critical: 123.0 },
         variables: nil
