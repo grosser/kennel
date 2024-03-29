@@ -1,4 +1,4 @@
 # frozen_string_literal: true
 module Kennel
-  VERSION = "1.149.0"
+  VERSION = "1.150.0"
 end
