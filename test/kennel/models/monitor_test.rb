@@ -580,13 +580,6 @@ describe Kennel::Models::Monitor do
       diff_resource({ type: -> { "query alert" } }, {}).must_equal []
     end
 
-    describe "#locked" do
-      it "ignores deprecated option locked" do
-        expected_basic_json[:options].delete(:locked)
-        diff_resource({}, {}).must_equal []
-      end
-    end
-
     describe "#escalation_message" do
       it "ignores missing escalation_message" do
         expected_basic_json[:options].delete(:escalation_message)
