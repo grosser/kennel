@@ -248,13 +248,13 @@ describe Kennel::Models::Dashboard do
         }
       end
 
+      it "ignores missing ids" do
+        assert_nil resolve[:requests].last[:queries].last[:slo_id]
+      end
+
       it "does not modify regular ids" do
         definition[:requests].last[:queries].last[:slo_id] = "abcdef1234567"
         resolve[:requests].last[:queries].last[:slo_id].must_equal "abcdef1234567"
-      end
-
-      it "ignores missing ids" do
-        assert_nil resolve[:requests].last[:queries].last[:slo_id]
       end
 
       it "resolves the slo widget with full id" do
