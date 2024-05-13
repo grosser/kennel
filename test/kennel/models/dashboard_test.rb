@@ -151,6 +151,8 @@ describe Kennel::Models::Dashboard do
       resolve.must_be_nil
     end
 
+    # Test is necessary for code coverage after adding timeseries support,
+    # to ensure the case statement is tested for unmatched types
     it "ignores unknown widget types" do
       definition[:type] = "unknown"
       resolve.keys.must_equal [:requests, :type, :title]
