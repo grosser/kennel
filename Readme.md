@@ -342,7 +342,6 @@ so they can be created in a single update and can be re-created if any of them i
 |Dashboard|uptime|`monitor: {id: "foo:bar"}`|
 |Dashboard|alert_graph|`alert_id: "foo:bar"`|
 |Dashboard|slo|`slo_id: "foo:bar"`|
-|Dashboard|timeseries|`slo_id: "foo:bar"`|
 |Monitor|composite|`query: -> { "%{foo:bar} && %{foo:baz}" }`|
 |Monitor|slo alert|`query: -> { "error_budget(\"%{foo:bar}\").over(\"7d\") > 123.0" }`|
 |Slo|monitor|`monitor_ids: -> ["foo:bar"]`|
