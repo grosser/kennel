@@ -151,6 +151,11 @@ describe Kennel::Models::Dashboard do
       resolve.must_be_nil
     end
 
+    it "ignores unknown widget types" do
+      definition[:type] = "unknown"
+      resolve.keys.must_equal [:requests, :type, :title]
+    end
+
     describe "uptime" do
       before { definition[:type] = "uptime" }
 
@@ -236,21 +241,32 @@ describe Kennel::Models::Dashboard do
     describe "timeseries" do
       before do
         definition[:requests] << {
-          queries: [{ data_source: "slo", slo_id: nil }]
+          queries: [
+            { data_source: "metrics", query: "avg:system.cpu.user{*}" },
+            { data_source: "slo", slo_id: nil }
+          ]
         }
       end
 
+      it "does nothing for regular widgets" do
+        resolve.keys.must_equal [:requests, :type, :title]
+      end
+
       it "does not modify regular ids" do
-        definition[:requests].last[:queries].first[:slo_id] = "abcdef1234567"
-        resolve[:requests].last[:queries].first[:slo_id].must_equal "abcdef1234567"
+        definition[:requests].last[:queries].last[:slo_id] = "abcdef1234567"
+        resolve[:requests].last[:queries].last[:slo_id].must_equal "abcdef1234567"
+      end
+
+      it "ignores missing ids" do
+        assert_nil resolve[:requests].last[:queries].last[:slo_id]
       end
 
       it "resolves the slo widget with full id" do
-        definition[:requests].last[:queries].first[:slo_id] = "#{project.kennel_id}:b"
+        definition[:requests].last[:queries].last[:slo_id] = "#{project.kennel_id}:b"
         id_map.set("slo", "a:c", "1")
         id_map.set("slo", "#{project.kennel_id}:b", "123")
         resolved = resolve
-        resolved[:requests].last[:queries].first[:slo_id].must_equal "123"
+        resolved[:requests].last[:queries].last[:slo_id].must_equal "123"
       end
     end
   end
