@@ -236,7 +236,7 @@ describe Kennel::Models::Dashboard do
     describe "timeseries" do
       before do
         definition[:requests] << {
-          queries: [{ data_source: 'slo', slo_id: nil }]
+          queries: [{ data_source: "slo", slo_id: nil }]
         }
       end
 
