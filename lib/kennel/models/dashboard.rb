@@ -196,14 +196,10 @@ module Kennel
               definition[:slo_id] = resolve(id, :slo, id_map, **args) || id
             end
           when "timeseries"
-            if requests = definition[:requests]
-              requests.map do |request|
-                next unless queries = request[:queries]
-                queries.map do |query|
-                  next unless query[:data_source] == "slo"
-                  if id = query[:slo_id]
-                    query[:slo_id] = resolve(id, :slo, id_map, **args) || id
-                  end
+            definition[:requests]&.each do |request|
+              request[:queries]&.each do |query|
+                if query[:data_source] == "slo" && (slo_id = query[:slo_id])
+                  query[:slo_id] = resolve(slo_id, :slo, id_map, **args) || slo_id
                 end
               end
             end
