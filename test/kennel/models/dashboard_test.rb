@@ -249,7 +249,7 @@ describe Kennel::Models::Dashboard do
       end
 
       it "ignores missing ids" do
-        assert_nil resolve[:requests].last[:queries].last[:slo_id]
+        assert_nil resolve.dig(:requests, 0, :queries, 0, :slo_id)
       end
 
       it "does not modify regular ids" do
