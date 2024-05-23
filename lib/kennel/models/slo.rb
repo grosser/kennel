@@ -14,7 +14,7 @@ module Kennel
         thresholds: []
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sliSpecification
 
       defaults(
         tags: -> { @project.tags },
@@ -35,7 +35,9 @@ module Kennel
           type: type
         )
 
-        if v = query
+        if v = sliSpecification
+          data[:sliSpecification] = v
+        elsif v = query
           data[:query] = v
         end
 
