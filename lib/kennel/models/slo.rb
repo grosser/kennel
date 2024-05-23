@@ -14,7 +14,7 @@ module Kennel
         thresholds: []
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sliSpecification
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification
 
       defaults(
         tags: -> { @project.tags },
@@ -35,8 +35,8 @@ module Kennel
           type: type
         )
 
-        if type == 'time_slice' && v = sliSpecification
-          data[:sliSpecification] = v
+        if type == 'time_slice'
+          data[:sliSpecification] = :sli_specification
         elsif v = query
           data[:query] = v
         end

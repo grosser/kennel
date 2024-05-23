@@ -11,7 +11,6 @@ describe Kennel::Models::Slo do
 
   def slo(options = {})
     Kennel::Models::Slo.new(
-      # Determine the type from options or default to "metric"
       type = options[:type] || "metric"
       options.delete(:project) || project,
       slo_options ={
@@ -19,7 +18,6 @@ describe Kennel::Models::Slo do
         name: -> { "Foo" },
         kennel_id: -> { "m1" }
       }
-      # Conditionally include sliSpecification if type is "time_slice"
       slo_options[:sliSpecification] = -> { options[:sliSpecification] } if type == "time_slice"
       Kennel::Models::Slo.new(project, slo_options.merge(options))
     )
@@ -85,7 +83,7 @@ describe Kennel::Models::Slo do
 
       expected_basic_json[:sliSpecification] = sli_spec
       assert_json_equal(
-        slo(type: "time_slice", sliSpecification: sli_spec).build_json,
+        slo(type: "time_slice", sli_specification: sli_spec).build_json,
         expected_basic_json
       )
     end
