@@ -35,7 +35,7 @@ module Kennel
           type: type
         )
 
-        if v = sliSpecification
+        if type == 'time_slice' && v = sliSpecification
           data[:sliSpecification] = v
         elsif v = query
           data[:query] = v
