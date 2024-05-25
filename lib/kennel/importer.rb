@@ -2,8 +2,15 @@
 
 module Kennel
   class Importer
+    # title will have the lock symbol we need to remove when re-importing
     TITLES = [:name, :title].freeze
-    SORT_ORDER = [*TITLES, :id, :kennel_id, :type, :tags, :query, :sli_specification, *Models::Record.subclasses.map { |k| k::TRACKING_FIELDS }, :template_variables].freeze
+
+    # bring important fields to the top
+    SORT_ORDER = [
+      *TITLES, :id, :kennel_id, :type, :tags, :query, :sli_specification,
+      *Models::Record.subclasses.flat_map { |k| k::TRACKING_FIELDS },
+      :template_variables
+    ].freeze
 
     def initialize(api)
       @api = api
@@ -19,14 +26,10 @@ module Kennel
         raise(ArgumentError, "#{resource} is not supported")
 
       data = @api.show(model.api_resource, id)
-      # get sli specification before normalization.
-      sli_specification = data[:sli_specification] || data.dig(:sli_specification, :time_slice)
 
       id = data.fetch(:id) # keep native value
       model.normalize({}, data) # removes id
       data[:id] = id
-
-      data[:sli_specification] = sli_specification if sli_specification
 
       title_field = TITLES.detect { |f| data[f] }
       title = data.fetch(title_field)

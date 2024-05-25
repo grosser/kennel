@@ -11,15 +11,12 @@ describe Kennel::Models::Slo do
 
   def slo(options = {})
     Kennel::Models::Slo.new(
-      type = options[:type] || "metric"
       options.delete(:project) || project,
-      slo_options ={
-        type: -> { type },
+      {
+        type: -> { "metric" },
         name: -> { "Foo" },
         kennel_id: -> { "m1" }
-      }
-      slo_options[:sliSpecification] = -> { options[:sliSpecification] } if type == "time_slice"
-      Kennel::Models::Slo.new(project, slo_options.merge(options))
+      }.merge(options)
     )
   end
 
@@ -62,32 +59,6 @@ describe Kennel::Models::Slo do
       )
     end
 
-    it "includes sliSpecification for time slices" do
-      sli_spec = {
-        timeSlice: {
-          query: {
-            formula: {
-              formulaExpression: "query1"
-            },
-            queries: [{
-              metricQuery: {
-                name: "query1",
-                query: "ewma_7(avg:system_cpu{} by {env})"
-              }
-            }]
-          },
-          comparator: "<=",
-          threshold: 40
-        }
-      }
-
-      expected_basic_json[:sliSpecification] = sli_spec
-      assert_json_equal(
-        slo(type: "time_slice", sli_specification: sli_spec).build_json,
-        expected_basic_json
-      )
-    end
-
     it "sets id when updating by id" do
       expected_basic_json[:id] = 123
       assert_json_equal(
@@ -100,6 +71,34 @@ describe Kennel::Models::Slo do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
         slo(groups: -> { ["foo"] }).build_json,
+        expected_basic_json
+      )
+    end
+
+    it "includes sliSpecification for time slices" do
+      sli_spec = {
+        time_slice: {
+          query: {
+            formulas: [{ formula: "query1" }],
+            queries: [
+              {
+                data_source: "metrics",
+                name: "query1",
+                query: "ewma_7(avg:system_cpu{} by {env})"
+              }
+            ]
+          },
+          query_interval_seconds: 300,
+          comparator: "<=",
+          threshold: 0.1,
+          no_data_strategy: "COUNT_AS_UPTIME"
+        }
+      }
+
+      expected_basic_json[:sli_specification] = sli_spec
+      expected_basic_json[:type] = "time_slice"
+      assert_json_equal(
+        slo(type: "time_slice", sli_specification: sli_spec).build_json,
         expected_basic_json
       )
     end
