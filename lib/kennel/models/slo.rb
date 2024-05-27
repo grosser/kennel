@@ -4,7 +4,10 @@ module Kennel
     class Slo < Record
       include TagsValidation
 
-      READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [:type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold]
+      READONLY_ATTRIBUTES = [
+        *superclass::READONLY_ATTRIBUTES,
+        :type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold
+      ].freeze
       TRACKING_FIELD = :description
       DEFAULTS = {
         description: nil,
@@ -14,7 +17,7 @@ module Kennel
         thresholds: []
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification
 
       defaults(
         tags: -> { @project.tags },
@@ -35,7 +38,9 @@ module Kennel
           type: type
         )
 
-        if v = query
+        if type == "time_slice"
+          data[:sli_specification] = sli_specification
+        elsif v = query
           data[:query] = v
         end
 

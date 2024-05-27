@@ -74,6 +74,34 @@ describe Kennel::Models::Slo do
         expected_basic_json
       )
     end
+
+    it "includes sliSpecification for time slices" do
+      sli_spec = {
+        time_slice: {
+          query: {
+            formulas: [{ formula: "query1" }],
+            queries: [
+              {
+                data_source: "metrics",
+                name: "query1",
+                query: "ewma_7(avg:system_cpu{} by {env})"
+              }
+            ]
+          },
+          query_interval_seconds: 300,
+          comparator: "<=",
+          threshold: 0.1,
+          no_data_strategy: "COUNT_AS_UPTIME"
+        }
+      }
+
+      expected_basic_json[:sli_specification] = sli_spec
+      expected_basic_json[:type] = "time_slice"
+      assert_json_equal(
+        slo(type: "time_slice", sli_specification: sli_spec).build_json,
+        expected_basic_json
+      )
+    end
   end
 
   describe "#resolve_linked_tracking_ids!" do
