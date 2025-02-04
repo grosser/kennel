@@ -16,7 +16,9 @@ module Kennel
       @token = token
       commit = Utils.capture_sh("git show #{ref}")
       @sha = commit[/^Merge: \S+ (\S+)/, 1] || commit[/\Acommit (\S+)/, 1] || raise("Unable to find commit")
-      @pr = commit[/^\s+.*\(#(\d+)\)/, 1] # from squash
+      @pr =
+        commit[/^\s+.*\(#(\d+)\)/, 1] || # from squash
+        commit[/^\s+Merge pull request #(\d+)/, 1] # from merge with unmodified commit message
       @repo_part = ENV["GITHUB_REPOSITORY"] || begin
         origin = ENV["PROJECT_REPOSITORY"] || Utils.capture_sh("git remote -v").split("\n").first
         origin[%r{github\.com[:/](\S+?)(\.git|$)}, 1] || raise("no origin found in #{origin}")

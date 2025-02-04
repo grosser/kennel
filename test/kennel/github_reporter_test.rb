@@ -58,8 +58,15 @@ describe Kennel::GithubReporter do
       reporter.instance_variable_get(:@repo_part).must_equal "foo/bar"
     end
 
-    it "can create PR comments" do
+    it "can create PR comments for squash" do
       show_response << "\n  foo (#123)"
+      request = stub_request(:post, "https://api.github.com/repos/foo/bar/issues/123/comments").to_return(status: 201)
+      Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
+      assert_requested request
+    end
+
+    it "can create PR comments for merge" do
+      show_response << "\n  Merge pull request #123"
       request = stub_request(:post, "https://api.github.com/repos/foo/bar/issues/123/comments").to_return(status: 201)
       Kennel::Console.capture_stdout { reporter.report { Kennel.out.puts "HEY" } }
       assert_requested request
