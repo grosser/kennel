@@ -20,7 +20,7 @@ require "kennel"
 
 Minitest::Test.class_eval do
   def self.define_test_classes
-    eval <<~'RUBY', nil, "test/test_helper.rb", __LINE__ + 1
+    eval <<~RUBY, nil, "test/test_helper.rb", __LINE__ + 1
       class TestProject < Kennel::Models::Project
         defaults(
           team: -> { TestTeam.new },
@@ -67,7 +67,7 @@ Minitest::Test.class_eval do
 
     around do |t|
       old = [Kennel.in, Kennel.out, Kennel.err]
-      File.open("/dev/null") do |dev_null|
+      File.open(File::NULL) do |dev_null|
         Kennel.in = dev_null
         Kennel.out = stdout
         Kennel.err = stderr

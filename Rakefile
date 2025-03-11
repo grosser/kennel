@@ -36,7 +36,7 @@ task :readme do
   readme = File.read("Readme.md")
   raise "Unable to find ONLY IN" unless readme.gsub!(/<!-- ONLY IN .*?\n(.*?)\n-->/m, "\\1")
   raise "Unable to find NOT IN" unless readme.gsub!(/<!-- NOT IN .*? -->.*?<!-- NOT IN -->\n/m, "")
-  raise "Unable to find images" unless readme.gsub!(/template\//, "")
+  raise "Unable to find images" unless readme.gsub!("template/", "")
   File.write("template/Readme.md", readme)
   sh "git diff HEAD --exit-code -- template/Readme.md"
 end
@@ -45,4 +45,4 @@ end
 require "yaml"
 ci = YAML.load_file(".github/workflows/actions.yml").dig("jobs", "build", "strategy", "matrix", "task")
 raise if ci.empty?
-task default: ci
+task default: [*ci, "rubocop"]
