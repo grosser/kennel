@@ -48,11 +48,11 @@ module Kennel
 
       def on_default_branch?
         branch = (ENV["TRAVIS_BRANCH"] || ENV["GITHUB_REF"]).to_s.sub(/^refs\/heads\//, "")
-        (branch == (ENV["DEFAULT_BRANCH"] || "master"))
+        branch == (ENV["DEFAULT_BRANCH"] || "master")
       end
 
       def git_push?
-        (ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push")
+        ENV["TRAVIS_PULL_REQUEST"] == "false" || ENV["GITHUB_EVENT_NAME"] == "push"
       end
     end
   end

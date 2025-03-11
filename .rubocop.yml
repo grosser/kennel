@@ -191,3 +191,7 @@ Lint/AmbiguousOperatorPrecedence:
 # TODO: fix
 Style/ClassEqualityComparison:
   Enabled: false
+
+# TODO: fix
+Style/ArgumentsForwarding:
+  Enabled: false

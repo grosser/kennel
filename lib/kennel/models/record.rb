@@ -200,7 +200,7 @@ module Kennel
       end
 
       def raise_with_location(error, message)
-        super error, "#{message} for project #{project.kennel_id}"
+        super(error, "#{message} for project #{project.kennel_id}")
       end
     end
   end

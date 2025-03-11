@@ -35,7 +35,7 @@ describe Kennel::UnmutedAlerts do
   end
 
   it "can display all colors" do
-    Kennel::UnmutedAlerts::COLORS.each do |_, color|
+    Kennel::UnmutedAlerts::COLORS.each_value do |color|
       Kennel::Console::COLORS.fetch(color)
     end
   end

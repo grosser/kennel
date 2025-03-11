@@ -36,12 +36,13 @@ module Kennel
     attr_reader :project_filter, :tracking_id_filter
 
     def build_project_filter
-      project_names = ENV["PROJECT"]&.split(",")&.sort&.uniq
+      project_names = ENV["PROJECT"]
+      project_names = project_names.split(",").sort.uniq if project_names
       tracking_project_names = tracking_id_filter&.map { |id| id.split(":", 2).first }&.sort&.uniq
       if project_names && tracking_project_names && project_names != tracking_project_names
         raise "do not set PROJECT= when using TRACKING_ID="
       end
-      (project_names || tracking_project_names)
+      project_names || tracking_project_names
     end
 
     def build_tracking_id_filter
