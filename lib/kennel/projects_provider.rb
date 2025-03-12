@@ -25,7 +25,8 @@ module Kennel
 
       # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
-        Dir["#{folder}/**/*.rb"].each { |f| require "./#{f}" }
+        # we need the extra sort so foo/bar.rb is loaded before foo/bar/baz.rb
+        Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" } # rubocop:disable Lint/RedundantDirGlobSort
       end
     rescue NameError => e
       message = e.message
