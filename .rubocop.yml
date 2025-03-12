@@ -156,16 +156,12 @@ Style/EvalWithLocation:
 Layout/LineContinuationLeadingSpace:
   Enabled: false
 
-# TODO: fix
+# can be more readalbe by aligning everything to the front
 Layout/LineEndStringConcatenationIndentation:
   Enabled: false
 
 # often more expressive to have multiple loops
 Style/CombinableLoops:
-  Enabled: false
-
-# TODO: fix
-Lint/NonAtomicFileOperation:
   Enabled: false
 
 # on purpose

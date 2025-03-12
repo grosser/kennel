@@ -9,7 +9,7 @@ describe Kennel do
 
   def write(file, content)
     folder = File.dirname(file)
-    FileUtils.mkdir_p folder unless File.exist?(folder)
+    FileUtils.mkdir_p folder
     File.write file, content
   end
 
