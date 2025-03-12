@@ -181,10 +181,6 @@ Lint/RedundantDirGlobSort:
   Enabled: false
 
 # TODO: fix
-Style/SingleArgumentDig:
-  Enabled: false
-
-# TODO: fix
 Lint/AmbiguousOperatorPrecedence:
   Enabled: false
 
