@@ -80,7 +80,7 @@ module Kennel
       # need expand_path so it works wih rake and when run individually
       pwd = /^#{Regexp.escape(Dir.pwd)}\//
       @invocation_location = caller.detect do |l|
-        if found = File.expand_path(l).sub!(pwd, "")
+        if (found = File.expand_path(l).sub!(pwd, ""))
           break found
         end
       end

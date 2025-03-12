@@ -29,7 +29,7 @@ module Kennel
       end
     rescue NameError => e
       message = e.message
-      raise unless klass = message[/uninitialized constant (.*)/, 1]
+      raise unless (klass = message[/uninitialized constant (.*)/, 1])
 
       # inverse of zeitwerk lib/zeitwerk/inflector.rb
       path = klass.gsub("::", "/").gsub(/([a-z])([A-Z])/, "\\1_\\2").downcase + ".rb"

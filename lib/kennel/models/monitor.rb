@@ -95,7 +95,7 @@ module Kennel
 
           # warning, ok, critical_recovery, and warning_recovery are optional
           [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
-            if value = send(key)
+            if (value = send(key))
               thresholds[key] = value
             end
           end
@@ -112,7 +112,7 @@ module Kennel
         end
 
         # set without causing lots of nulls to be stored
-        if notify_by_value = notify_by
+        if (notify_by_value = notify_by)
           options[:notify_by] = notify_by_value
         end
 
@@ -122,11 +122,11 @@ module Kennel
           options.delete :no_data_timeframe
         end
 
-        if windows = threshold_windows
+        if (windows = threshold_windows)
           options[:threshold_windows] = windows
         end
 
-        if schedule = scheduling_options
+        if (schedule = scheduling_options)
           options[:scheduling_options] = schedule
         end
 
@@ -256,7 +256,7 @@ module Kennel
         end
 
         # verify query includes critical value
-        if query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1]
+        if (query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1])
           if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
             invalid! :critical_does_not_match_query, "critical and value used in query must match"
           end
@@ -298,7 +298,7 @@ module Kennel
         # - also match without by
         # - separate parsers for query and service
         # - service must always allow `host`, maybe others
-        return unless match = data.fetch(:query).match(/(?:{([^}]*)}\s*)?by\s*[({]([^})]+)[})]/)
+        return unless (match = data.fetch(:query).match(/(?:{([^}]*)}\s*)?by\s*[({]([^})]+)[})]/))
 
         allowed =
           match[1].to_s.split(/\s*,\s*/).map { |k| k.split(":", 2)[-2] } + # {a:b} -> a TODO: does not work for service check

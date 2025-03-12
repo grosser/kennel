@@ -38,7 +38,7 @@ module Kennel
       class << self
         def parse_any_url(url)
           subclasses.detect do |s|
-            if id = s.parse_url(url)
+            if (id = s.parse_url(url))
               break s.api_resource, id
             end
           end
@@ -188,7 +188,7 @@ module Kennel
           else
             nil # will be re-resolved after the linked object was created
           end
-        elsif id = id_map.get(sought_type.to_s, sought_tracking_id)
+        elsif (id = id_map.get(sought_type.to_s, sought_tracking_id))
           id
         else
           raise UnresolvableIdError, <<~MESSAGE

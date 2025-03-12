@@ -23,9 +23,6 @@ Layout/FirstHashElementIndentation:
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 
-Lint/AssignmentInCondition:
-  Enabled: false
-
 Metrics:
    Enabled: false
 
