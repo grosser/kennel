@@ -4,7 +4,7 @@ module Kennel
     class << self
       def snake_case(string)
         string
-          .gsub(/::/, "_") # Foo::Bar -> foo_bar
+          .gsub("::", "_") # Foo::Bar -> foo_bar
           .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2') # FOOBar -> foo_bar
           .gsub(/([a-z\d])([A-Z])/, '\1_\2') # fooBar -> foo_bar
           .tr("-", "_") # foo-bar -> foo_bar
@@ -26,7 +26,7 @@ module Kennel
       end
 
       def truncate_lines(text, to:, warning:)
-        lines = text.split(/\n/, to + 1)
+        lines = text.split("\n", to + 1)
         lines[-1] = warning if lines.size > to
         lines.join("\n")
       end

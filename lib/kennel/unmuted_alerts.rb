@@ -58,7 +58,7 @@ module Kennel
         monitors.reject! { |m| m[:options][:silenced].key?(:*) }
 
         # only keep groups that are alerting
-        monitors.each { |m| m[:state][:groups].reject! { |_, g| g[:status] == "OK" || g[:status] == "Ignored" } }
+        monitors.each { |m| m[:state][:groups].reject! { |_, g| ["OK", "Ignored"].include?(g[:status]) } }
 
         # only keep alerting groups that are not silenced
         monitors.each do |m|

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "./syncer/matched_expected"
-require_relative "./syncer/plan"
-require_relative "./syncer/plan_printer"
-require_relative "./syncer/resolver"
-require_relative "./syncer/types"
+require_relative "syncer/matched_expected"
+require_relative "syncer/plan"
+require_relative "syncer/plan_printer"
+require_relative "syncer/resolver"
+require_relative "syncer/types"
 
 module Kennel
   class Syncer

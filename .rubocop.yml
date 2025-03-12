@@ -191,3 +191,15 @@ Lint/AmbiguousOperatorPrecedence:
 # TODO: fix
 Style/ClassEqualityComparison:
   Enabled: false
+
+# often makes logic more readable
+Style/RedundantParentheses:
+  Enabled: false
+
+# often more readable
+Style/ArgumentsForwarding:
+  Enabled: false
+
+# sometimes necessary
+Style/SafeNavigationChainLength:
+  Enabled: false
