@@ -23,9 +23,6 @@ Layout/FirstHashElementIndentation:
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 
-Lint/AssignmentInCondition:
-  Enabled: false
-
 Metrics:
    Enabled: false
 
@@ -144,10 +141,6 @@ Style/SoleNestedConditional:
 Lint/FloatComparison:
   Enabled: false
 
-# TODO: fix
-Lint/NoReturnInBeginEndBlocks:
-  Enabled: false
-
 # suggestion breaks the code
 Style/EvalWithLocation:
   Enabled: false
@@ -156,7 +149,7 @@ Style/EvalWithLocation:
 Layout/LineContinuationLeadingSpace:
   Enabled: false
 
-# TODO: fix
+# can be more readalbe by aligning everything to the front
 Layout/LineEndStringConcatenationIndentation:
   Enabled: false
 
@@ -164,30 +157,18 @@ Layout/LineEndStringConcatenationIndentation:
 Style/CombinableLoops:
   Enabled: false
 
-# TODO: fix
-Lint/NonAtomicFileOperation:
-  Enabled: false
-
 # on purpose
 Lint/EmptyBlock:
   Enabled: false
 
-# TODO: fix
-Style/RedundantStringEscape:
+# often makes logic more readable
+Style/RedundantParentheses:
   Enabled: false
 
-# TODO: fix
-Lint/RedundantDirGlobSort:
+# often more readable
+Style/ArgumentsForwarding:
   Enabled: false
 
-# TODO: fix
-Style/SingleArgumentDig:
-  Enabled: false
-
-# TODO: fix
-Lint/AmbiguousOperatorPrecedence:
-  Enabled: false
-
-# TODO: fix
-Style/ClassEqualityComparison:
+# sometimes necessary
+Style/SafeNavigationChainLength:
   Enabled: false

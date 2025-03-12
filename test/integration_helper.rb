@@ -16,7 +16,7 @@ module IntegrationHelper
       yield
     end
   ensure
-    File.unlink(".env") if File.exist?(".env")
+    FileUtils.rm_f(".env")
   end
 
   def with_local_kennel
@@ -85,7 +85,7 @@ module IntegrationHelper
     yield
   ensure
     File.write("Gemfile", old)
-    File.unlink(example) if File.exist?(example)
+    FileUtils.rm_f(example)
   end
 
   # we need something to build our test dashboards on

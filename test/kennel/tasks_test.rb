@@ -118,9 +118,7 @@ describe "tasks" do
             {
               "url": "https://app.datadoghq.com/monitors/123",
               "name": "Foo",
-              "tags": [
-
-              ],
+              "tags": [],
               "days_in_no_data": 10,
               "kennel_tracking_id": "a:b",
               "kennel_source": "a.rb"

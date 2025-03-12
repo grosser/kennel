@@ -81,7 +81,7 @@ namespace :kennel do
 
     bad = []
     Dir["generated/**/*.json"].each do |f|
-      next unless message = JSON.parse(File.read(f))["message"]
+      next unless (message = JSON.parse(File.read(f))["message"])
       used = message
         .scan(/(?:^|\s)(@[^\s{,'"]+)/)
         .flatten(1)
@@ -153,7 +153,7 @@ namespace :kennel do
         end
     end
 
-    if threshold = ENV["THRESHOLD_DAYS"]
+    if (threshold = ENV["THRESHOLD_DAYS"])
       monitors.select! { |m| m[:days_in_no_data] > Integer(threshold) }
     end
 
@@ -196,7 +196,7 @@ namespace :kennel do
   desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
   task dump: :environment do
     resources =
-      if type = ENV["TYPE"]
+      if (type = ENV["TYPE"])
         [type]
       else
         Kennel::Models::Record.api_resource_map.keys

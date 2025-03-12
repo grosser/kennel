@@ -146,7 +146,7 @@ module Kennel
         end
 
         if !response.success? && (response.status != 404 || !ignore_404)
-          message = +"Error #{response.status} during #{method.upcase} #{path}\n"
+          message = "Error #{response.status} during #{method.upcase} #{path}\n"
           message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
           message << response.body.encode(message.encoding, invalid: :replace, undef: :replace)
           raise message

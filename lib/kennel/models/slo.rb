@@ -40,11 +40,11 @@ module Kennel
 
         if type == "time_slice"
           data[:sli_specification] = sli_specification
-        elsif v = query
+        elsif (v = query)
           data[:query] = v
         end
 
-        if v = groups
+        if (v = groups)
           data[:groups] = v
         end
 
@@ -64,7 +64,7 @@ module Kennel
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
-        return unless ids = as_json[:monitor_ids] # ignore_default can remove it
+        return unless (ids = as_json[:monitor_ids]) # ignore_default can remove it
         as_json[:monitor_ids] = ids.map do |id|
           resolve(id, :monitor, id_map, **args) || id
         end

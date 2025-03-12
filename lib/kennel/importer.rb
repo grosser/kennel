@@ -37,7 +37,7 @@ module Kennel
 
       # calculate or reuse kennel_id
       data[:kennel_id] =
-        if tracking_id = model.parse_tracking_id(data)
+        if (tracking_id = model.parse_tracking_id(data))
           model.remove_tracking_id(data)
           tracking_id.split(":").last
         else
@@ -88,7 +88,7 @@ module Kennel
       data.delete(:tags) if data[:tags] == [] # do not create super + [] call
 
       # simplify template_variables to array of string when possible
-      if vars = data[:template_variables]
+      if (vars = data[:template_variables])
         vars.map! { |v| v[:default] == "*" && v[:prefix] == v[:name] ? v[:name] : v }
       end
 
@@ -119,10 +119,10 @@ module Kennel
     def dry_up_widget_metadata!(widget)
       (widget.dig(:definition, :requests) || []).each do |request|
         next unless request.is_a?(Hash)
-        next unless metadata = request[:metadata]
-        next unless query = request[:q]&.dup
+        next unless (metadata = request[:metadata])
+        next unless (query = request[:q]&.dup)
         metadata.each do |m|
-          next unless exp = m[:expression]
+          next unless (exp = m[:expression])
           query.sub!(exp, "")
         end
         request[:q] = :metadata if query.delete(", ") == ""

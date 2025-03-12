@@ -6,7 +6,7 @@ SingleCov.covered!
 describe Kennel::PartsSerializer do
   def write(file, content)
     folder = File.dirname(file)
-    FileUtils.mkdir_p folder unless File.exist?(folder)
+    FileUtils.mkdir_p folder
     File.write file, content
   end
 
@@ -87,7 +87,7 @@ describe Kennel::PartsSerializer do
       parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
       Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-      Dir["generated/**/*"].sort.must_equal [
+      Dir["generated/**/*"].must_equal [
         "generated/temp_project",
         "generated/temp_project/foo.json"
       ]
@@ -112,7 +112,7 @@ describe Kennel::PartsSerializer do
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-        Dir["generated/**/*"].sort.must_equal %w[
+        Dir["generated/**/*"].must_equal %w[
           generated/excluded
           generated/excluded/old_part.json
           generated/included1
@@ -148,7 +148,7 @@ describe Kennel::PartsSerializer do
         ]
         Kennel::PartsSerializer.new(filter: filter).write(parts)
 
-        Dir["generated/**/*"].sort.must_equal %w[
+        Dir["generated/**/*"].must_equal %w[
           generated/excluded
           generated/excluded/old_part.json
           generated/included1

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "./syncer/matched_expected"
-require_relative "./syncer/plan"
-require_relative "./syncer/plan_printer"
-require_relative "./syncer/resolver"
-require_relative "./syncer/types"
+require_relative "syncer/matched_expected"
+require_relative "syncer/plan"
+require_relative "syncer/plan_printer"
+require_relative "syncer/resolver"
+require_relative "syncer/types"
 
 module Kennel
   class Syncer
@@ -122,7 +122,7 @@ module Kennel
 
     def validate_expected_id_not_missing(expected)
       expected.each do |e|
-        next unless id = e.id
+        next unless (id = e.id)
         resource = e.class.api_resource
         if @strict_imports
           raise "Unable to find existing #{resource} with id #{id}\nIf the #{resource} was deleted, remove the `id: -> { #{id} }` line."

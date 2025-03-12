@@ -22,7 +22,7 @@ module Kennel
         # override resources that exist with their id
         actual.each do |a|
           # ignore when not managed by kennel
-          next unless tracking_id = a.fetch(:tracking_id)
+          next unless (tracking_id = a.fetch(:tracking_id))
 
           # ignore when deleted from the codebase
           # (when running with filters we cannot see the other resources in the codebase)

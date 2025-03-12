@@ -35,7 +35,7 @@ describe Kennel::UnmutedAlerts do
   end
 
   it "can display all colors" do
-    Kennel::UnmutedAlerts::COLORS.each do |_, color|
+    Kennel::UnmutedAlerts::COLORS.each_value do |color|
       Kennel::Console::COLORS.fetch(color)
     end
   end
@@ -144,12 +144,12 @@ describe Kennel::UnmutedAlerts do
     end
 
     it "builds for full" do
-      diff = 99 * 60 * 60 + 59 * 60 + 59
+      diff = (99 * 60 * 60) + (59 * 60) + 59
       Kennel::UnmutedAlerts.send(:time_since, Time.now.to_i - diff).must_equal "99:59:59"
     end
 
     it "can overflow" do
-      diff = 100 * 60 * 60 + 123
+      diff = (100 * 60 * 60) + 123
       Kennel::UnmutedAlerts.send(:time_since, Time.now.to_i - diff).must_equal "100:02:03"
     end
   end

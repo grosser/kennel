@@ -50,6 +50,20 @@ describe Kennel::Models::Project do
       EVAL
       project_class.file_location.must_equal("dir/foo.rb")
     end
+
+    it "caches failure" do
+      c = Class.new(Kennel::Models::Project)
+      c.expects(:instance_methods).times(1).returns []
+      2.times { c.file_location.must_be_nil }
+    end
+
+    it "caches success" do
+      c = TestProject
+      c.remove_instance_variable(:@file_location) rescue false # rubocop:disable Style/RescueModifier
+      original = c.instance_methods(false)
+      c.expects(:instance_methods).times(1).returns original
+      2.times { c.file_location.must_equal "test/test_helper.rb" }
+    end
   end
 
   describe "#tags" do
@@ -73,7 +87,7 @@ describe Kennel::Models::Project do
       bad_project = TestProject.new(parts: -> {
         Kennel::Models::Monitor.new(self)
       })
-      assert_raises(RuntimeError) { bad_project.validated_parts } \
+      assert_raises(RuntimeError) { bad_project.validated_parts }
         .message.must_equal "Project test_project #parts must return an array of Records"
     end
   end

@@ -112,7 +112,7 @@ module Kennel
 
         # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
         def sort_conditional_formats(widget)
-          if formats = widget&.dig(:definition, :conditional_formats)
+          if (formats = widget&.dig(:definition, :conditional_formats))
             widget[:definition][:conditional_formats] = formats.sort_by(&:hash)
           end
         end
@@ -120,7 +120,7 @@ module Kennel
         def ignore_widget_defaults(expected, actual)
           types = [expected&.dig(:definition, :type), actual&.dig(:definition, :type)].uniq.compact
           return unless types.size == 1
-          return unless defaults = WIDGET_DEFAULTS[types.first]
+          return unless (defaults = WIDGET_DEFAULTS[types.first])
           ignore_default expected&.[](:definition) || {}, actual&.[](:definition) || {}, defaults
         end
 
@@ -179,21 +179,21 @@ module Kennel
       def resolve_linked_tracking_ids!(id_map, **args)
         widgets = as_json[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
         widgets.each do |widget|
-          next unless definition = widget[:definition]
+          next unless (definition = widget[:definition])
           case definition[:type]
           when "uptime"
-            if ids = definition[:monitor_ids]
+            if (ids = definition[:monitor_ids])
               definition[:monitor_ids] = ids.map do |id|
                 resolve(id, :monitor, id_map, **args) || id
               end
             end
           when "alert_graph"
-            if id = definition[:alert_id]
+            if (id = definition[:alert_id])
               resolved = resolve(id, :monitor, id_map, **args) || id
               definition[:alert_id] = resolved.to_s # even though it's a monitor id
             end
           when "slo"
-            if id = definition[:slo_id]
+            if (id = definition[:slo_id])
               definition[:slo_id] = resolve(id, :slo, id_map, **args) || id
             end
           when "timeseries"

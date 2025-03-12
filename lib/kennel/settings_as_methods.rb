@@ -9,7 +9,7 @@ module Kennel
       file, line, = caller(2..2).first.split(":", 3)
 
       options.transform_values do |v|
-        if v.class == Proc
+        if v.instance_of?(Proc)
           v
         else
           eval "-> { v }", nil, file, line.to_i
@@ -80,7 +80,7 @@ module Kennel
       # need expand_path so it works wih rake and when run individually
       pwd = /^#{Regexp.escape(Dir.pwd)}\//
       @invocation_location = caller.detect do |l|
-        if found = File.expand_path(l).sub!(pwd, "")
+        if (found = File.expand_path(l).sub!(pwd, ""))
           break found
         end
       end

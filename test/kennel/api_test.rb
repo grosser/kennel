@@ -150,10 +150,10 @@ describe Kennel::Api do
         Error 300 during POST /api/v1/monitor
         request:
         {
-          \"foo\": \"bar\"
+          "foo": "bar"
         }
         response:
-        {\"bar\":\"foo\"}
+        {"bar":"foo"}
       TEXT
     end
 

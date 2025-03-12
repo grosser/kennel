@@ -187,7 +187,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "strips query to avoid perma-diff" do
-      valid_monitor_json(query: -> { " avg(last_5m) > 123.0 " }).dig(:query).must_equal "avg(last_5m) > 123.0"
+      valid_monitor_json(query: -> { " avg(last_5m) > 123.0 " })[:query].must_equal "avg(last_5m) > 123.0"
     end
 
     it "can set mention on the project" do
@@ -225,7 +225,7 @@ describe Kennel::Models::Monitor do
     end
 
     it "does not include new_host_delay when new_group_delay is provided" do
-      valid_monitor_json(new_host_delay: -> { 60 }, new_group_delay: -> { 20 }).dig(:options).key?(:new_host_delay).must_equal(false)
+      valid_monitor_json(new_host_delay: -> { 60 }, new_group_delay: -> { 20 })[:options].key?(:new_host_delay).must_equal(false)
     end
 
     it "blocks invalid service check query without .by early" do

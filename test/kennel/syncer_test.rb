@@ -211,10 +211,10 @@ describe Kennel::Syncer do
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
-          -baz \"foo\" -> nil
-          ~foo \"baz\" -> \"bar\"
-          ~nested.foo \"baz\" -> \"bar\"
-          +bar nil -> \"foo\"
+          -baz "foo" -> nil
+          ~foo "baz" -> "bar"
+          ~nested.foo "baz" -> "bar"
+          +bar nil -> "foo"
       TEXT
     end
 
@@ -225,8 +225,8 @@ describe Kennel::Syncer do
         Plan:
         Update monitor a:b
           ~foo
-            \"something shorter but still very long but also different\" ->
-            \"something very long but not too long I do not know\"
+            "something shorter but still very long but also different" ->
+            "something very long but not too long I do not know"
       TEXT
     end
 
@@ -236,7 +236,7 @@ describe Kennel::Syncer do
       output.must_equal <<~TEXT
         Plan:
         Update monitor a:b
-          ~tags[1] \"baz\" -> \"bar\"
+          ~tags[1] "baz" -> "bar"
       TEXT
     end
 
@@ -247,7 +247,7 @@ describe Kennel::Syncer do
         output.must_equal <<~TEXT
           Plan:
           ::group::Update monitor a:b
-            ~tags[1] \"baz\" -> \"bar\"
+            ~tags[1] "baz" -> "bar"
           ::endgroup::
         TEXT
       end
@@ -329,7 +329,7 @@ describe Kennel::Syncer do
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
-            ~message \"old stuff\" -> \"@slack-foo\"
+            ~message "old stuff" -> "@slack-foo"
         TEXT
       end
 
@@ -340,7 +340,7 @@ describe Kennel::Syncer do
         output.must_equal <<~TEXT
           Plan:
           Update monitor a:b
-            ~message \"old stuff\" -> \"@slack-foo\"
+            ~message "old stuff" -> "@slack-foo"
         TEXT
       end
 
@@ -430,7 +430,7 @@ describe Kennel::Syncer do
               - nope
               + @slack-foo
               + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
-            +foo nil -> \"bar\"
+            +foo nil -> "bar"
         TEXT
       end
 
@@ -445,7 +445,7 @@ describe Kennel::Syncer do
               + @slack-foo
               - -- Managed by kennel foo:bar in foo.rb
               + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
-            +foo nil -> \"bar\"
+            +foo nil -> "bar"
         TEXT
       end
 
