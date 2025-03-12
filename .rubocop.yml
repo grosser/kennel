@@ -180,10 +180,6 @@ Style/RedundantStringEscape:
 Lint/RedundantDirGlobSort:
   Enabled: false
 
-# TODO: fix
-Lint/AmbiguousOperatorPrecedence:
-  Enabled: false
-
 # often makes logic more readable
 Style/RedundantParentheses:
   Enabled: false
