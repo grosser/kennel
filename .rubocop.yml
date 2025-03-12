@@ -184,10 +184,6 @@ Lint/RedundantDirGlobSort:
 Lint/AmbiguousOperatorPrecedence:
   Enabled: false
 
-# TODO: fix
-Style/ClassEqualityComparison:
-  Enabled: false
-
 # often makes logic more readable
 Style/RedundantParentheses:
   Enabled: false

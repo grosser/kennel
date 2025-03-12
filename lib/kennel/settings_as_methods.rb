@@ -9,7 +9,7 @@ module Kennel
       file, line, = caller(2..2).first.split(":", 3)
 
       options.transform_values do |v|
-        if v.class == Proc
+        if v.instance_of?(Proc)
           v
         else
           eval "-> { v }", nil, file, line.to_i
