@@ -176,10 +176,6 @@ Lint/EmptyBlock:
 Style/RedundantStringEscape:
   Enabled: false
 
-# TODO: fix
-Lint/RedundantDirGlobSort:
-  Enabled: false
-
 # often makes logic more readable
 Style/RedundantParentheses:
   Enabled: false

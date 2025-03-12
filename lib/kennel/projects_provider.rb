@@ -25,7 +25,7 @@ module Kennel
 
       # TODO: also auto-load projects and update expected path too
       ["projects"].each do |folder|
-        Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" }
+        Dir["#{folder}/**/*.rb"].each { |f| require "./#{f}" }
       end
     rescue NameError => e
       message = e.message
