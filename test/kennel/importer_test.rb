@@ -528,8 +528,8 @@ describe Kennel::Importer do
           name: -> { "hello" },
           id: -> { 123 },
           kennel_id: -> { "hello" },
-          type: -> { \"event alert\" },
-          query: -> { \"foo = \#{critical}\" },
+          type: -> { "event alert" },
+          query: -> { "foo = \#{critical}" },
           critical: -> { 5 },
           require_full_window: -> { false }
         )
@@ -570,7 +570,7 @@ describe Kennel::Importer do
             id: -> { 123 },
             kennel_id: -> { "hello" },
             tags: -> { super() + ["foo"] },
-            locations: -> { [\"abc\"] }
+            locations: -> { ["abc"] }
           )
         RUBY
       end

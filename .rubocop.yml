@@ -172,10 +172,6 @@ Lint/NonAtomicFileOperation:
 Lint/EmptyBlock:
   Enabled: false
 
-# TODO: fix
-Style/RedundantStringEscape:
-  Enabled: false
-
 # often makes logic more readable
 Style/RedundantParentheses:
   Enabled: false
