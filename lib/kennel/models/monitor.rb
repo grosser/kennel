@@ -141,8 +141,9 @@ module Kennel
           options[:renotify_statuses] = statuses
         end
 
-        # for events: on_missing_data cannot be used with notify_no_data or no_data_timeframe
-        if data.fetch(:type) == "event-v2 alert"
+        # on_missing_data cannot be used with notify_no_data or no_data_timeframe
+        # TODO migrate everything to only use on_missing_data
+        if data.fetch(:type) == "event-v2 alert" || on_missing_data != "default"
           options[:on_missing_data] = on_missing_data
           options[:notify_no_data] = false # cannot set nil or it's an endless update loop
           options.delete :no_data_timeframe
