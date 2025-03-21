@@ -15,6 +15,10 @@ module Kennel
     end
 
     class << self
+      def tty?
+        !ENV["CI"] && (Kennel.in.tty? || Kennel.err.tty?)
+      end
+
       def ask?(question)
         Kennel.err.printf color(:red, "#{question} -  press 'y' to continue: ", force: true)
         begin
