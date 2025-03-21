@@ -505,6 +505,7 @@ describe Kennel::Syncer do
 
     it "confirms when automated" do
       Kennel.in.stubs(:tty?).returns(false)
+      Kennel.err.stubs(:tty?).returns(false)
       assert syncer.confirm
     end
 
@@ -646,6 +647,35 @@ describe Kennel::Syncer do
         change(:update, "slo", "a:c", "1"),
         change(:create, "monitor", "a:b", 1)
       ]
+    end
+
+    it "continues when user wants to continue on failure" do
+      expected << monitor("a", "b")
+      expected << monitor("a", "c")
+      api.expects(:create).raises("oh no").times(2)
+      Kennel::Console.expects(:tty?).times(2).returns(true)
+      Kennel::Console.expects(:ask?).times(2).returns(true)
+      output.must_equal <<~TXT
+        Creating monitor a:b
+        Creating monitor a:c
+      TXT
+    end
+
+    it "stops when user does not want to continue on failure" do
+      expected << monitor("a", "b")
+      expected << monitor("a", "c")
+      api.expects(:create).raises("oh no")
+      Kennel::Console.expects(:tty?).returns(true)
+      Kennel::Console.expects(:ask?).returns(false)
+      assert_raises(RuntimeError) { output }.message.must_equal "oh no"
+    end
+
+    it "stops when not on tty and it cannot continue on failure" do
+      expected << monitor("a", "b")
+      expected << monitor("a", "c")
+      api.expects(:create).raises("oh no")
+      Kennel::Console.expects(:tty?).returns(false)
+      assert_raises(RuntimeError) { output }.message.must_equal "oh no"
     end
 
     describe "pre-existing duplicate tracking IDs" do
