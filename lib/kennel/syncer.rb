@@ -29,7 +29,7 @@ module Kennel
 
     def confirm
       return false if plan.empty?
-      return true if ENV["CI"] || !Kennel.in.tty? || !Kennel.err.tty?
+      return true unless Console.tty?
       Console.ask?("Execute Plan ?")
     end
 
@@ -66,6 +66,11 @@ module Kennel
           changes << item.change
           Kennel.out.puts "#{LINE_UP}Updated #{message}"
         end
+      rescue StandardError
+        raise unless Console.tty?
+        Kennel.err.puts $!.message
+        Kennel.err.puts $!.backtrace
+        raise unless Console.ask?("Continue with error ?")
       end
 
       plan.changes = changes

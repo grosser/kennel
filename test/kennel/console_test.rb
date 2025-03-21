@@ -80,4 +80,23 @@ describe Kennel::Console do
       stderr.string.must_equal "\e[31mfoo -  press 'y' to continue: \e[0m\n"
     end
   end
+
+  describe ".tty?" do
+    it "is true in a tty" do
+      Kennel.in.stubs(:tty?).returns(true)
+      Kennel::Console.tty?.must_equal true
+    end
+
+    it "is false in non tty" do
+      Kennel.in.stubs(:tty?).returns(false)
+      Kennel.err.stubs(:tty?).returns(false)
+      Kennel::Console.tty?.must_equal false
+    end
+
+    it "is false in CI" do
+      with_env CI: "1" do
+        Kennel::Console.tty?.must_equal false
+      end
+    end
+  end
 end
