@@ -106,15 +106,17 @@ module Kennel
 
     def generated(**kwargs)
       @generated ||= begin
-        parts = Progress.progress "Finding parts", **kwargs do
+        projects = Progress.progress "Loading projects", **kwargs do
           projects = ProjectsProvider.new.projects
-          projects = filter.filter_projects projects
-
-          parts = Utils.parallel(projects, &:validated_parts).flatten(1)
-          filter.filter_parts parts
+          filter.filter_projects projects
         end
 
-        validate_unique_tracking_ids(parts)
+        parts = Progress.progress "Finding parts", **kwargs do
+          parts = Utils.parallel(projects, &:validated_parts).flatten(1)
+          parts = filter.filter_parts parts
+          validate_unique_tracking_ids(parts)
+          parts
+        end
 
         Progress.progress "Building json" do
           # trigger json caching here so it counts into generating
