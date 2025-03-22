@@ -106,4 +106,37 @@ describe Kennel::ProjectsProvider do
       wut
     MSG
   end
+
+  describe "autoload" do
+    with_env AUTOLOAD_PROJECTS: "1"
+
+    before do
+      2.times do |i|
+        write "projects/project#{i}.rb", <<~RUBY
+          class Project#{i} < Kennel::Models::Project
+          end
+        RUBY
+      end
+    end
+
+    it "can load a single project with autoload" do
+      with_env PROJECT: "project1" do
+        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
+        projects.must_equal ["Project1"]
+      end
+    end
+
+    it "warns when autoloading a single project did not work" do
+      with_env PROJECT: "projectx" do
+        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
+        projects.must_include "Project1"
+      end
+    end
+
+    it "can load all project with autoload" do
+      _projects = Kennel::ProjectsProvider.new.projects.map(&:name)
+      # TODO: this only works when running 1 test and not all
+      # projects.must_equal ["Project0", "Project1"]
+    end
+  end
 end

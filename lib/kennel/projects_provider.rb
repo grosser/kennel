@@ -20,21 +20,46 @@ module Kennel
       loader = Zeitwerk::Loader.new
       Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
       Dir.exist?("parts") && loader.push_dir("parts")
-      loader.setup
-      loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
 
-      # TODO: also auto-load projects and update expected path too
-      ["projects"].each do |folder|
+      # TODO: verify this works by running generate and also running generate for each possible PROJECT
+      # in isolation, then remove AUTOLOAD_PROJECTS
+      if ENV["AUTOLOAD_PROJECTS"]
+        loader.push_dir("projects")
+        loader.setup
+
+        if (project = ENV["PROJECT"]) # TODO: use project filter instead and also support TRACKING_ID
+          # we support PROJECT being used for nested folders, to allow teams to easily group their projects
+          # so when loading a project we need to find anything that could be a project source
+          # sorting by name and nesting level to avoid confusion
+          projects_path = "#{File.expand_path("projects")}/"
+          project_path = loader.all_expected_cpaths.each_key.select do |path|
+            path.start_with?(projects_path) && path.end_with?("/#{project}.rb")
+          end.sort.min_by { |p| p.count("/") }
+          if project_path
+            require project_path
+          else
+            Kennel.err.puts "No file named #{project}.rb, falling back to slow loading of all projects instead"
+            loader.eager_load
+          end
+        else
+          loader.eager_load
+        end
+      else
+        loader.setup
+        loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
+        # TODO: also auto-load projects and update expected path too
+        # but to do that we need to stop the pattern of having a class at the bottom of the project structure
+        # and change to Module::Project + Module::Support
         # we need the extra sort so foo/bar.rb is loaded before foo/bar/baz.rb
-        Dir["#{folder}/**/*.rb"].sort.each { |f| require "./#{f}" } # rubocop:disable Lint/RedundantDirGlobSort
+        Dir["projects/**/*.rb"].sort.each { |f| require "./#{f}" } # rubocop:disable Lint/RedundantDirGlobSort
       end
     rescue NameError => e
       message = e.message
       raise unless (klass = message[/uninitialized constant (.*)/, 1])
 
       # inverse of zeitwerk lib/zeitwerk/inflector.rb
-      path = klass.gsub("::", "/").gsub(/([a-z])([A-Z])/, "\\1_\\2").downcase + ".rb"
-      expected_path = (path.start_with?("teams/") ? path : "parts/#{path}")
+      project_path = klass.gsub("::", "/").gsub(/([a-z])([A-Z])/, "\\1_\\2").downcase + ".rb"
+      expected_path = (project_path.start_with?("teams/") ? project_path : "parts/#{project_path}")
 
       # TODO: prefer to raise a new exception with the old backtrace attacked
       e.define_singleton_method(:message) do
