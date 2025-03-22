@@ -106,20 +106,16 @@ module Kennel
 
     def generated(**kwargs)
       @generated ||= begin
-        parts = Progress.progress "Finding parts", **kwargs do
+        projects = Progress.progress "Loading projects", **kwargs do
           projects = ProjectsProvider.new.projects
-          projects = filter.filter_projects projects
-
-          parts = Utils.parallel(projects, &:validated_parts).flatten(1)
-          filter.filter_parts parts
+          filter.filter_projects projects
         end
 
-        parts.group_by(&:tracking_id).each do |tracking_id, same|
-          next if same.size == 1
-          raise <<~ERROR
-            #{tracking_id} is defined #{same.size} times
-            use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
-          ERROR
+        parts = Progress.progress "Finding parts", **kwargs do
+          parts = Utils.parallel(projects, &:validated_parts).flatten(1)
+          parts = filter.filter_parts parts
+          validate_unique_tracking_ids(parts)
+          parts
         end
 
         Progress.progress "Building json" do
@@ -130,6 +126,17 @@ module Kennel
         OptionalValidations.valid?(parts) || raise(GenerationAbortedError)
 
         parts
+      end
+    end
+
+    # performance: this takes ~100ms on large codebases, tried rewriting with Set or Hash but it was slower
+    def validate_unique_tracking_ids(parts)
+      parts.group_by(&:tracking_id).each do |tracking_id, same|
+        next if same.size == 1
+        raise <<~ERROR
+          #{tracking_id} is defined #{same.size} times
+          use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
+        ERROR
       end
     end
 
