@@ -21,14 +21,38 @@ module Kennel
     def write_changed(parts)
       used = []
 
-      Utils.parallel(parts, max: 2) do |part|
+      r = Array.new(10) do
+        Ractor.new do
+          loop do
+            path, content = Ractor.receive
+
+            # 99% case
+            begin
+              next if File.read(path) == content
+            rescue Errno::ENOENT
+              FileUtils.mkdir_p(File.dirname(path))
+            end
+
+            # slow 1% case
+            File.write(path, content)
+          end
+        end
+      end
+
+      Utils.parallel(parts.each_with_index, max: 2) do |part, i|
         path = path_for_tracking_id(part.tracking_id)
 
         used << File.dirname(path) # we have 1 level of sub folders, so this is enough
         used << path
 
         content = part.as_json.merge(api_resource: part.class.api_resource)
-        write_file_if_necessary(path, content)
+        # write_file_if_necessary(path, content)
+        c = JSON.pretty_generate(content) << "\n"
+        r[i % 10].send([path, c])
+      end
+
+      parts.each_with_index do |_, i|
+        r[i].take
       end
 
       used
