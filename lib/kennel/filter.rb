@@ -3,9 +3,9 @@
 module Kennel
   class Filter
     def initialize
-      # build early so we fail fast on invalid user input
-      @tracking_id_filter = build_tracking_id_filter
-      @project_filter = build_project_filter
+      # read early so we fail fast on invalid user input
+      @tracking_id_filter = read_tracking_id_filter_from_env
+      @project_filter = read_project_filter_from_env
     end
 
     def filter_projects(projects)
@@ -28,30 +28,36 @@ module Kennel
       return true unless filtering?
       return tracking_id_filter.include?(tracking_id) if tracking_id_filter
 
-      project_filter.include?(tracking_id.split(":").first)
+      project_id = tracking_id.split(":").first
+      project_filter.include?(project_id)
+    end
+
+    def tracking_id_for_path(tracking_id)
+      return tracking_id unless tracking_id.end_with?(".json")
+      tracking_id.sub("generated/", "").sub(".json", "").sub("/", ":")
     end
 
     private
 
     attr_reader :project_filter, :tracking_id_filter
 
-    def build_project_filter
+    # needs to be called after read_tracking_id_filter_from_env
+    def read_project_filter_from_env
       project_names = ENV["PROJECT"]&.split(",")&.sort&.uniq
       tracking_project_names = tracking_id_filter&.map { |id| id.split(":", 2).first }&.sort&.uniq
       if project_names && tracking_project_names && project_names != tracking_project_names
-        raise "do not set PROJECT= when using TRACKING_ID="
+        # avoid everything being filtered out
+        raise "do not set a different PROJECT= when using TRACKING_ID="
       end
       (project_names || tracking_project_names)
     end
 
-    def build_tracking_id_filter
-      (tracking_id = ENV["TRACKING_ID"]) && tracking_id.split(",").map { |id| tracking_id_path_conversion(id) }.sort.uniq
-    end
-
-    # allow users to paste the generated path of an objects to update it without manually converting
-    def tracking_id_path_conversion(tracking_id)
-      return tracking_id unless tracking_id.end_with?(".json")
-      tracking_id.sub("generated/", "").sub(".json", "").sub("/", ":")
+    def read_tracking_id_filter_from_env
+      return unless (tracking_id = ENV["TRACKING_ID"])
+      tracking_id.split(",").map do |id|
+        # allow users to paste the generated/ path of an objects to update it without manually converting
+        tracking_id_for_path(id)
+      end.sort.uniq
     end
 
     def filter_resources(resources, by, expected, name, env)
