@@ -33,12 +33,15 @@ module Kennel
           # sorting by name and nesting level to avoid confusion
           projects_path = "#{File.expand_path("projects")}/"
           project_path = loader.all_expected_cpaths.each_key.select do |path|
-            path.start_with?(projects_path) && path.end_with?("/#{project}.rb")
+            path.start_with?(projects_path) && path.end_with?("/#{project}.rb", "/#{project}/project.rb")
           end.sort.min_by { |p| p.count("/") }
           if project_path
             require project_path
           else
-            Kennel.err.puts "No file named #{project}.rb, falling back to slow loading of all projects instead"
+            Kennel.err.puts(
+              "No file named #{project}.rb or #{project}/project.rb" \
+              ", falling back to slow loading of all projects instead"
+            )
             loader.eager_load
           end
         else

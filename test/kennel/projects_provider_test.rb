@@ -18,7 +18,10 @@ describe Kennel::ProjectsProvider do
 
   after do
     Kennel::Models::Project.recursive_subclasses.each do |klass|
-      Object.send(:remove_const, klass.name.to_sym) if defined?(klass.name.to_sym)
+      if defined?(klass.name.to_sym)
+        path = klass.name.split("::")
+        path[0...-1].inject(Object) { |mod, name| mod.const_get(name) }.send(:remove_const, path.last.to_sym)
+      end
     end
     Kennel::Models::Project.subclasses.delete_if { true }
   end
@@ -119,21 +122,36 @@ describe Kennel::ProjectsProvider do
       end
     end
 
-    it "can load a single project with autoload" do
+    it "can load a single project" do
       with_env PROJECT: "project1" do
         projects = Kennel::ProjectsProvider.new.projects.map(&:name)
         projects.must_equal ["Project1"]
       end
     end
 
+    it "can load a single project that has it's own folder" do
+      write "projects/projecta/project.rb", <<~RUBY
+        module Projecta
+          class Project < Kennel::Models::Project
+          end
+        end
+      RUBY
+
+      with_env PROJECT: "project2" do
+        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
+        projects.must_include "Projecta::Project"
+      end
+    end
+
     it "warns when autoloading a single project did not work" do
       with_env PROJECT: "projectx" do
+        Kennel.err.expects(:puts)
         projects = Kennel::ProjectsProvider.new.projects.map(&:name)
         projects.must_include "Project1"
       end
     end
 
-    it "can load all project with autoload" do
+    it "can load all project" do
       _projects = Kennel::ProjectsProvider.new.projects.map(&:name)
       # TODO: this only works when running 1 test and not all
       # projects.must_equal ["Project0", "Project1"]
