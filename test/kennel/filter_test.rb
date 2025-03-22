@@ -59,7 +59,7 @@ describe Kennel::Filter do
             Kennel::Filter.new
           end
         end
-        e.message.must_include("do not set PROJECT= when using TRACKING_ID=")
+        e.message.must_include("do not set a different PROJECT= when using TRACKING_ID=")
       end
     end
 

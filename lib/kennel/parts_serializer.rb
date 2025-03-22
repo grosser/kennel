@@ -37,9 +37,10 @@ module Kennel
     def existing_files_and_folders
       paths = Dir["generated/**/*"]
 
+      # when filtering we only need the files we are going to write
       if filter.filtering?
         paths.select! do |path|
-          tracking_id = path.split("/")[1..2].to_a.join(":")
+          tracking_id = filter.tracking_id_for_path(path)
           filter.matches_tracking_id?(tracking_id)
         end
       end
