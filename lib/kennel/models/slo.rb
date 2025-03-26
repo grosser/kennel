@@ -6,7 +6,7 @@ module Kennel
 
       READONLY_ATTRIBUTES = [
         *superclass::READONLY_ATTRIBUTES,
-        :type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold
+        :type_id, :monitor_tags, :target_threshold, :warning_threshold
       ].freeze
       TRACKING_FIELD = :description
       DEFAULTS = {
@@ -14,10 +14,10 @@ module Kennel
         query: nil,
         groups: nil,
         monitor_ids: [],
-        thresholds: []
+        thresholds: [],
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :timeframe
 
       defaults(
         tags: -> { @project.tags },
@@ -35,7 +35,8 @@ module Kennel
           thresholds: thresholds,
           monitor_ids: monitor_ids,
           tags: tags,
-          type: type
+          type: type,
+          timeframe: timeframe
         )
 
         if type == "time_slice"
