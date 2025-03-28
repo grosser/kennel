@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
+require "parallel"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 15 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)
@@ -111,6 +112,10 @@ describe Kennel::ProjectsProvider do
   end
 
   describe "autoload" do
+    def in_isolated_process(&block)
+      Parallel.flat_map([0], in_processes: 1, &block)
+    end
+
     with_env AUTOLOAD_PROJECTS: "1"
 
     before do
@@ -123,38 +128,58 @@ describe Kennel::ProjectsProvider do
     end
 
     it "can load a single project" do
-      with_env PROJECT: "project1" do
-        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
-        projects.must_equal ["Project1"]
-      end
+      in_isolated_process do
+        with_env PROJECT: "project1" do
+          Kennel::ProjectsProvider.new.projects.map(&:name)
+        end
+      end.must_equal ["Project1"]
     end
 
     it "can load a single project that has it's own folder" do
-      write "projects/projecta/project.rb", <<~RUBY
-        module Projecta
-          class Project < Kennel::Models::Project
+      in_isolated_process do
+        write "projects/projecta/project.rb", <<~RUBY
+          module Projecta
+            class Project < Kennel::Models::Project
+            end
           end
-        end
-      RUBY
+        RUBY
 
-      with_env PROJECT: "project2" do
-        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
-        projects.must_include "Projecta::Project"
-      end
+        with_env PROJECT: "project2" do
+          Kennel::ProjectsProvider.new.projects.map(&:name)
+        end
+      end.must_include "Projecta::Project"
+    end
+
+    it "can load a arbitrary nesting" do
+      in_isolated_process do
+        write "projects/projecta/b/c.rb", <<~RUBY
+          module Projecta
+            module B
+              class C < Kennel::Models::Project
+              end
+            end
+          end
+        RUBY
+
+        with_env PROJECT: "projecta_b_c" do
+          Kennel::ProjectsProvider.new.projects.map(&:name)
+        end
+      end.must_include "Projecta::B::C"
     end
 
     it "warns when autoloading a single project did not work" do
-      with_env PROJECT: "projectx" do
-        Kennel.err.expects(:puts)
-        projects = Kennel::ProjectsProvider.new.projects.map(&:name)
-        projects.must_include "Project1"
-      end
+      in_isolated_process do
+        with_env PROJECT: "projectx" do
+          Kennel.err.expects(:puts)
+          Kennel::ProjectsProvider.new.projects.map(&:name)
+        end
+      end.must_include "Project1"
     end
 
     it "can load all project" do
-      _projects = Kennel::ProjectsProvider.new.projects.map(&:name)
-      # TODO: this only works when running 1 test and not all
-      # projects.must_equal ["Project0", "Project1"]
+      in_isolated_process do
+        Kennel::ProjectsProvider.new.projects.map(&:name)
+      end.must_equal ["Project0", "Project1"]
     end
   end
 end

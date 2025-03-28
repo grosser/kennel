@@ -31,15 +31,19 @@ module Kennel
           # we support PROJECT being used for nested folders, to allow teams to easily group their projects
           # so when loading a project we need to find anything that could be a project source
           # sorting by name and nesting level to avoid confusion
+          segments = project.split("_")
+          search = /#{segments[0...-1].map { |p| "#{p}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb)/
+
           projects_path = "#{File.expand_path("projects")}/"
-          project_path = loader.all_expected_cpaths.each_key.select do |path|
-            path.start_with?(projects_path) && path.end_with?("/#{project}.rb", "/#{project}/project.rb")
+          known_paths = loader.all_expected_cpaths.keys
+          project_path = known_paths.select do |path|
+            path.start_with?(projects_path) && path.match?(search)
           end.sort.min_by { |p| p.count("/") }
           if project_path
             require project_path
           else
             Kennel.err.puts(
-              "No file named #{project}.rb or #{project}/project.rb" \
+              "No projects/ file matching #{search} found" \
               ", falling back to slow loading of all projects instead"
             )
             loader.eager_load
