@@ -26,6 +26,7 @@ module Kennel
         :deleted, :id, :created, :created_at, :creator, :org_id, :modified, :modified_at,
         :klass, :tracking_id # added by syncer.rb
       ].freeze
+      TITLE_FIELDS = [:name, :title].freeze # possible fields that could have the title
       ALLOWED_KENNEL_ID_CHARS = "a-zA-Z_\\d.-"
       ALLOWED_KENNEL_ID_SEGMENT = /[#{ALLOWED_KENNEL_ID_CHARS}]+/
       ALLOWED_KENNEL_ID_FULL = "#{ALLOWED_KENNEL_ID_SEGMENT}:#{ALLOWED_KENNEL_ID_SEGMENT}".freeze

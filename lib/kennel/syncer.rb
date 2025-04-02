@@ -89,6 +89,22 @@ module Kennel
 
         # see which expected match the actual
         matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(expected, actual)
+
+        # if there is a new item that has the same name/title as a to be deleted item, we should just update it
+        unmatched_expected.reject! do |e|
+          actual = unmatched_actual.detect do |a|
+            a[:tracking_id] && a[:klass] == e.class &&
+              Kennel::Models::Record::TITLE_FIELDS.any? do |f|
+                (set = a[f]) && set == "#{e.public_send(f)}#{Models::Record::LOCK}"
+              end
+          end
+          next unless actual
+
+          unmatched_actual.delete(actual)
+          actual[:tracking_id] = e.tracking_id
+          matching << [e, actual]
+        end
+
         validate_expected_id_not_missing unmatched_expected
         fill_details! matching # need details to diff later
 
@@ -105,7 +121,7 @@ module Kennel
         end.compact
 
         # delete previously managed
-        deletes = unmatched_actual.map { |a| Types::PlannedDelete.new(a) if a.fetch(:tracking_id) }.compact
+        deletes = unmatched_actual.select { |a| a.fetch(:tracking_id) }.map { |a| Types::PlannedDelete.new(a) }
 
         # unmatched expected need to be created
         unmatched_expected.each(&:add_tracking_id)

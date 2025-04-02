@@ -22,6 +22,7 @@ describe Kennel::Syncer do
     Kennel::Api.tag(api_resource, hash)
   end
 
+  # TODO: something similar for dashboards
   def monitor_api_response(pid, cid, extra = {})
     tagged("monitor", {
       id: 1,
@@ -39,6 +40,7 @@ describe Kennel::Syncer do
     }.merge(extra))
   end
 
+  # TODO: split extra into kwargs and json and don't delete them at the end
   def monitor(pid, cid, extra = {})
     monitor = Kennel::Models::Monitor.new(
       project(pid),
@@ -46,7 +48,8 @@ describe Kennel::Syncer do
       kennel_id: -> { cid },
       type: -> { "query alert" },
       critical: -> { 1.0 },
-      id: -> { extra[:id] }
+      id: -> { extra[:id] },
+      name: -> { extra[:name] }
     )
     monitor.build
 
@@ -56,7 +59,7 @@ describe Kennel::Syncer do
       evaluation_delay: nil
     }
     monitor.as_json.delete_if { |k, _| ![:tags, :message, :options].include?(k) }
-    monitor.as_json.merge!(extra)
+    monitor.as_json.merge!(extra.except(:id, :name))
 
     monitor
   end
@@ -78,7 +81,7 @@ describe Kennel::Syncer do
 
     synthetic.build
     synthetic.as_json.delete_if { |k, _| ![:tags, :message].include?(k) }
-    synthetic.as_json.merge!(extra)
+    synthetic.as_json.merge!(extra.except(:id))
 
     synthetic
   end
@@ -86,7 +89,7 @@ describe Kennel::Syncer do
   def dashboard(pid, cid, extra = {})
     dash = Kennel::Models::Dashboard.new(
       project(pid),
-      title: -> { "x" },
+      title: -> { extra[:title] || "x" },
       description: -> { "x" },
       layout_type: -> { "ordered" },
       kennel_id: -> { cid },
@@ -94,7 +97,7 @@ describe Kennel::Syncer do
     )
     dash.build
     dash.as_json.delete_if { |k, _| ![:description, :options, :widgets, :template_variables].include?(k) }
-    dash.as_json.merge!(extra)
+    dash.as_json.merge!(extra.except(:id, :title))
     dash
   end
 
@@ -480,6 +483,49 @@ describe Kennel::Syncer do
           e = assert_raises(RuntimeError) { output }
           e.message.must_equal "Unable to find existing monitor with id 234\nIf the monitor was deleted, remove the `id: -> { 234 }` line."
         end
+      end
+    end
+
+    describe "changing tracking id" do
+      it "updates tracking id for monitors" do
+        m = monitor("a", "b", name: "a")
+        m.as_json[:name] = "a🔒" # monitor helper needs a refactor
+        expected << m
+        monitors << monitor_api_response("c", "d", id: 234, name: "a🔒")
+        output.must_equal <<~TEXT
+          Plan:
+          Update monitor a:b
+            ~message
+                @slack-foo
+              - -- Managed by kennel c:d in test/test_helper.rb, do not modify manually
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
+        TEXT
+      end
+
+      it "updates tracking id for dashboards" do
+        # dashboard tracking id was changed
+        d = dashboard("a", "b", title: "a")
+        d.as_json[:title] = "a🔒" # dashboard helper needs a refactor
+
+        # in the api it exists with the old tracking id but still has the same title
+        expected << d
+        dashboards << tagged("dashboard", {
+          id: "abc2",
+          description: "x\n-- Managed by kennel c:d in test/test_helper.rb, do not modify manually",
+          title: "a🔒",
+          widgets: [],
+          template_variables: []
+        })
+
+        # so we should update it and not delete+create
+        output.must_equal <<~TEXT
+          Plan:
+          Update dashboard a:b
+            ~description
+                x
+              - -- Managed by kennel c:d in test/test_helper.rb, do not modify manually
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
+        TEXT
       end
     end
   end

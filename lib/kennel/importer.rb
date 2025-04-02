@@ -2,12 +2,9 @@
 
 module Kennel
   class Importer
-    # title will have the lock symbol we need to remove when re-importing
-    TITLES = [:name, :title].freeze
-
     # bring important fields to the top
     SORT_ORDER = [
-      *TITLES, :id, :kennel_id, :type, :tags, :query, :sli_specification,
+      *Kennel::Models::Record::TITLE_FIELDS, :id, :kennel_id, :type, :tags, :query, :sli_specification,
       *Models::Record.subclasses.flat_map { |k| k::TRACKING_FIELDS },
       :template_variables
     ].freeze
@@ -31,9 +28,10 @@ module Kennel
       model.normalize({}, data) # removes id
       data[:id] = id
 
-      title_field = TITLES.detect { |f| data[f] }
+      # title will have the lock symbol we need to remove when re-importing
+      title_field = Kennel::Models::Record::TITLE_FIELDS.detect { |f| data[f] }
       title = data.fetch(title_field)
-      title.tr!(Kennel::Models::Record::LOCK, "") # avoid double lock icon
+      title.tr!(Kennel::Models::Record::LOCK, "")
 
       # calculate or reuse kennel_id
       data[:kennel_id] =
