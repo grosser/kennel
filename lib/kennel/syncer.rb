@@ -89,20 +89,22 @@ module Kennel
 
         # see which expected match the actual
         matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(expected, actual)
+        unmatched_actual.select! { |a| a.fetch(:tracking_id) } # ignore items that were never managed by kennel
 
         # if there is a new item that has the same name/title as a to be deleted item, we should just update it
+        # careful with unmatched_expected being huge since it has all api resources
         unmatched_expected.reject! do |e|
           actual = unmatched_actual.detect do |a|
-            a[:tracking_id] && a[:klass] == e.class &&
-              Kennel::Models::Record::TITLE_FIELDS.any? do |f|
-                (set = a[f]) && set == "#{e.public_send(f)}#{Models::Record::LOCK}"
-              end
+            a[:klass] == e.class &&
+              Kennel::Models::Record::TITLE_FIELDS.any? { |f| (set = a[f]) && set == e.as_json.fetch(f) }
           end
-          next unless actual
+          next false unless actual # keep in unmatched
 
           unmatched_actual.delete(actual)
           actual[:tracking_id] = e.tracking_id
           matching << [e, actual]
+
+          true # remove from unmatched
         end
 
         validate_expected_id_not_missing unmatched_expected
@@ -121,7 +123,7 @@ module Kennel
         end.compact
 
         # delete previously managed
-        deletes = unmatched_actual.select { |a| a.fetch(:tracking_id) }.map { |a| Types::PlannedDelete.new(a) }
+        deletes = unmatched_actual.map { |a| Types::PlannedDelete.new(a) }
 
         # unmatched expected need to be created
         unmatched_expected.each(&:add_tracking_id)
