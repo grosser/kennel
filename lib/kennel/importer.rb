@@ -14,10 +14,6 @@ module Kennel
     end
 
     def import(resource, id)
-      if ["screen", "dash"].include?(resource)
-        raise ArgumentError, "resource 'screen' and 'dash' are deprecated, use 'dashboard'"
-      end
-
       model =
         Kennel::Models::Record.subclasses.detect { |c| c.api_resource == resource } ||
         raise(ArgumentError, "#{resource} is not supported")
