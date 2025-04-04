@@ -21,7 +21,7 @@ describe Kennel::TagsValidation do
 
     def call
       tags = dashboard.build[:tags]
-      [tags, dashboard.validation_errors.map(&:tag)]
+      [tags, dashboard.validation_errors.map(&:with_tracking)]
     end
 
     it "is valid" do

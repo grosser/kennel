@@ -30,7 +30,7 @@ describe Kennel::TemplateVariables do
 
   describe "#validate_json" do
     let(:errors) { item.validation_errors }
-    let(:error_tags) { errors.map(&:tag) }
+    let(:error_tags) { errors.map(&:with_tracking) }
     let(:item) { Kennel::Models::Dashboard.new(TestProject.new) }
 
     def validate(variable_names, widgets)
