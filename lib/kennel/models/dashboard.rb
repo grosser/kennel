@@ -34,7 +34,8 @@ module Kennel
           },
           time: {},
           title_align: "left",
-          title_size: "16"
+          title_size: "16",
+          show_legend: true
         },
         "note" => {
           show_tick: false,
