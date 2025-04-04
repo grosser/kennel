@@ -7,7 +7,7 @@ module Kennel
 
     RateLimitParams = Data.define(:limit, :period, :remaining, :reset, :name)
 
-    def self.tag(api_resource, reply)
+    def self.with_tracking(api_resource, reply)
       klass = Models::Record.api_resource_map[api_resource]
       return reply unless klass # do not blow up on unknown models
 
@@ -28,7 +28,7 @@ module Kennel
       response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
       response = response.fetch(:data) if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      self.class.tag(api_resource, response)
+      self.class.with_tracking(api_resource, response)
     end
 
     def list(api_resource, params = {})
@@ -44,7 +44,7 @@ module Kennel
         # ignore monitor synthetics create and that inherit the kennel_id, we do not directly manage them
         response.reject! { |m| m[:type] == "synthetics alert" } if api_resource == "monitor"
 
-        response.map { |r| self.class.tag(api_resource, r) }
+        response.map { |r| self.class.with_tracking(api_resource, r) }
       end
     end
 
@@ -52,13 +52,13 @@ module Kennel
       response = request :post, "/api/v1/#{api_resource}", body: attributes
       response = response.fetch(:data).first if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      self.class.tag(api_resource, response)
+      self.class.with_tracking(api_resource, response)
     end
 
     def update(api_resource, id, attributes)
       response = request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
-      self.class.tag(api_resource, response)
+      self.class.with_tracking(api_resource, response)
     end
 
     # - force=true to not dead-lock on dependent monitors+slos
