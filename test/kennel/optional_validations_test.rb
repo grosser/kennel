@@ -135,7 +135,7 @@ describe Kennel::OptionalValidations do
           item.build
           errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 1
-          errs[0].with_tracking.must_equal :unused_ignores
+          errs[0].tag.must_equal :unused_ignores
           errs[0].text.must_include "there are no errors to ignore"
         end
 
@@ -160,8 +160,8 @@ describe Kennel::OptionalValidations do
         item.build
         errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 2
-        errs[0].with_tracking.must_equal :x
-        errs[1].with_tracking.must_equal :y
+        errs[0].tag.must_equal :x
+        errs[1].tag.must_equal :y
       end
 
       it "can ignore errors" do
@@ -181,7 +181,7 @@ describe Kennel::OptionalValidations do
         item.build
         errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 1
-        errs[0].with_tracking.must_equal :unignorable
+        errs[0].tag.must_equal :unignorable
       end
 
       it "reports non-ignored errors" do
@@ -189,7 +189,7 @@ describe Kennel::OptionalValidations do
         item.build
         errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
         errs.length.must_equal 1
-        errs[0].with_tracking.must_equal :y
+        errs[0].tag.must_equal :y
       end
 
       context "when an ignored error didn't happen" do
@@ -203,7 +203,7 @@ describe Kennel::OptionalValidations do
           item.build
           errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 1
-          errs[0].with_tracking.must_equal :unused_ignores
+          errs[0].tag.must_equal :unused_ignores
           errs[0].text.must_include ":zzz"
         end
 
@@ -222,8 +222,8 @@ describe Kennel::OptionalValidations do
           item.build
           errs = Kennel::OptionalValidations.send(:filter_validation_errors, item)
           errs.length.must_equal 2
-          errs[0].with_tracking.must_equal :x
-          errs[1].with_tracking.must_equal :y
+          errs[0].tag.must_equal :x
+          errs[1].tag.must_equal :y
         end
       end
     end

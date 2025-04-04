@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 module Kennel
   module OptionalValidations
-    ValidationMessage = Struct.new(:with_tracking, :text)
+    ValidationMessage = Struct.new(:tag, :text)
 
     UNIGNORABLE = :unignorable
     UNUSED_IGNORES = :unused_ignores
@@ -31,8 +31,8 @@ module Kennel
       parts_with_errors.sort_by! { |p, _| p.safe_tracking_id }
       parts_with_errors.each do |part, errors|
         errors.each do |err|
-          Kennel.err.puts "#{part.safe_tracking_id} [#{err.with_tracking.inspect}] #{err.text.gsub("\n", " ")}"
-          example_tag = err.with_tracking unless err.with_tracking == :unignorable
+          Kennel.err.puts "#{part.safe_tracking_id} [#{err.tag.inspect}] #{err.text.gsub("\n", " ")}"
+          example_tag = err.tag unless err.tag == :unignorable
         end
       end
       Kennel.err.puts
@@ -72,12 +72,12 @@ module Kennel
           if ENV["NO_IGNORED_ERRORS"] # let users see what errors are suppressed
             errors
           else
-            errors.select { |err| err.with_tracking == UNIGNORABLE || !ignored_tags.include?(err.with_tracking) }
+            errors.select { |err| err.tag == UNIGNORABLE || !ignored_tags.include?(err.tag) }
           end
 
         # let users know when they can remove an ignore ... unless they don't care (for example for a generic monitor)
         unless ignored_tags.include?(UNUSED_IGNORES)
-          unused_ignored_tags = ignored_tags - errors.map(&:with_tracking)
+          unused_ignored_tags = ignored_tags - errors.map(&:tag)
           if unused_ignored_tags.any?
             reported_errors << ValidationMessage.new(
               UNUSED_IGNORES,
