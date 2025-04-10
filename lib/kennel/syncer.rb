@@ -91,21 +91,7 @@ module Kennel
         matching, unmatched_expected, unmatched_actual = MatchedExpected.partition(expected, actual)
         unmatched_actual.select! { |a| a.fetch(:tracking_id) } # ignore items that were never managed by kennel
 
-        # if there is a new item that has the same name/title as a to be deleted item, we should just update it
-        # careful with unmatched_expected being huge since it has all api resources
-        unmatched_expected.reject! do |e|
-          actual = unmatched_actual.detect do |a|
-            a[:klass] == e.class &&
-              Kennel::Models::Record::TITLE_FIELDS.any? { |f| (set = a[f]) && set == e.as_json.fetch(f) }
-          end
-          next false unless actual # keep in unmatched
-
-          unmatched_actual.delete(actual)
-          actual[:tracking_id] = e.tracking_id
-          matching << [e, actual]
-
-          true # remove from unmatched
-        end
+        convert_replace_into_update!(matching, unmatched_actual, unmatched_expected)
 
         validate_expected_id_not_missing unmatched_expected
         fill_details! matching # need details to diff later
@@ -134,6 +120,32 @@ module Kennel
         updates.sort_by! { |item| DELETE_ORDER.index item.api_resource } # slo needs to come before slo alert
 
         [creates, updates, deletes]
+      end
+    end
+
+    # if there is a new item that has the same name or title as an "to be deleted" item,
+    # update it instead to avoid old urls from becoming invalid
+    # - careful with unmatched_actual being huge since it has all api resources
+    # - don't do it when a monitor type is changing since that would block the update
+    def convert_replace_into_update!(matching, unmatched_actual, unmatched_expected)
+      unmatched_expected.reject! do |e|
+        e_field, e_value = Kennel::Models::Record::TITLE_FIELDS.detect do |field|
+          next unless (value = e.as_json[field])
+          break [field, value]
+        end
+        raise unless e_field #  uncovered: should never happen ...
+        e_monitor_type = e.as_json[:type]
+
+        actual = unmatched_actual.detect do |a|
+          a[:klass] == e.class && a[e_field] == e_value && a[:type] == e_monitor_type
+        end
+        next false unless actual # keep in unmatched
+
+        # add as update and remove from unmatched
+        unmatched_actual.delete(actual)
+        actual[:tracking_id] = e.tracking_id
+        matching << [e, actual]
+        true
       end
     end
 

@@ -525,6 +525,18 @@ describe Kennel::Syncer do
         TEXT
       end
 
+      it "does not update tracking id for monitor when their type has changed and would crash on update" do
+        m = monitor("a", "b", name: "a", type: "foo")
+        m.as_json[:name] = "a🔒" # monitor helper needs a refactor
+        expected << m
+        monitors << monitor_api_response("c", "d", id: 234, name: "a🔒")
+        output.must_equal <<~TEXT
+          Plan:
+          Create monitor a:b
+          Delete monitor c:d
+        TEXT
+      end
+
       it "updates tracking id for dashboards" do
         # dashboard tracking id was changed
         d = dashboard("a", "b", title: "a")
