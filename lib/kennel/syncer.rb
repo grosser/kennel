@@ -134,8 +134,10 @@ module Kennel
           break [field, value]
         end
         raise unless e_field #  uncovered: should never happen ...
+        e_monitor_type = e.as_json[:type]
+
         actual = unmatched_actual.detect do |a|
-          a[:klass] == e.class && a[e_field] == e_value
+          a[:klass] == e.class && a[e_field] == e_value && a[:type] == e_monitor_type
         end
         next false unless actual # keep in unmatched
 
