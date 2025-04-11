@@ -87,6 +87,7 @@ describe Kennel do
       e = assert_raises(RuntimeError) { kennel.generate }
       e.message.must_equal <<~ERROR
         test_project2:bar is defined 2 times
+
         use a different `kennel_id` when defining multiple projects/monitors/dashboards to avoid this conflict
       ERROR
     end
