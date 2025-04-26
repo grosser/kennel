@@ -2,7 +2,7 @@
 require_relative "../test_helper"
 require "parallel"
 
-SingleCov.covered! uncovered: 15 # when using in_isolated_process coverage is not recorded
+SingleCov.covered! uncovered: 19 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)

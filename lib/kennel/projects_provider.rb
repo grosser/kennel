@@ -1,6 +1,20 @@
 # frozen_string_literal: true
 module Kennel
   class ProjectsProvider
+    class AutoloadFailed < StandardError
+    end
+
+    # @return [Array<Models::Project>]
+    #   All projects in the system. This is a slow operation.
+    #   Use `projects` to get all projects in the system.
+    def all_projects
+      load_all
+      Models::Project.recursive_subclasses.map(&:new)
+    end
+
+    # @return [Array<Models::Project>]
+    #   All projects in the system. This is a slow operation.
+
     def projects
       load_all
       Models::Project.recursive_subclasses.map(&:new)
@@ -21,9 +35,7 @@ module Kennel
       Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
       Dir.exist?("parts") && loader.push_dir("parts")
 
-      # TODO: verify this works by running generate and also running generate for each possible PROJECT
-      # in isolation, then remove AUTOLOAD_PROJECTS
-      if ENV["AUTOLOAD_PROJECTS"]
+      if (autoload = ENV["AUTOLOAD_PROJECTS"]) && autoload != "false"
         loader.push_dir("projects")
         loader.setup
 
@@ -32,7 +44,7 @@ module Kennel
           # so when loading a project we need to find anything that could be a project source
           # sorting by name and nesting level to avoid confusion
           segments = project.split("_")
-          search = /#{segments[0...-1].map { |p| "#{p}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb)/
+          search = /#{segments[0...-1].map { |p| "#{p}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
 
           projects_path = "#{File.expand_path("projects")}/"
           known_paths = loader.all_expected_cpaths.keys
@@ -41,17 +53,19 @@ module Kennel
           end.sort.min_by { |p| p.count("/") }
           if project_path
             require project_path
-          else
+          elsif autoload != "abort"
             Kennel.err.puts(
               "No projects/ file matching #{search} found" \
               ", falling back to slow loading of all projects instead"
             )
             loader.eager_load
+          else
+            raise AutoloadFailed, "No projects/ file matching #{search} found"
           end
-        else
+        else # all projects needed
           loader.eager_load
         end
-      else
+      else # old style without autoload
         loader.setup
         loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
         # TODO: also auto-load projects and update expected path too
