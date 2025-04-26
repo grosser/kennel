@@ -272,6 +272,21 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "keeps uncommon notify_no_data for log monitors" do
+      response = { id: 123, type: "log alert", name: "hello", options: { notify_audit: false, notify_no_data: false } }
+      stub_datadog_request(:get, "monitor/123").to_return(body: response.to_json)
+      code = importer.import("monitor", "123")
+      code.must_equal <<~RUBY
+        Kennel::Models::Monitor.new(
+          self,
+          name: -> { "hello" },
+          id: -> { 123 },
+          kennel_id: -> { "hello" },
+          type: -> { "log alert" }
+        )
+      RUBY
+    end
+
     it "flattens monitor options" do
       response = {
         id: 123,

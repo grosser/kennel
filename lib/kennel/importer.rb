@@ -47,7 +47,9 @@ module Kennel
         data.merge!(data.delete(:thresholds) || {})
 
         # clean up values that are the default
-        data.delete(:notify_no_data) if data[:notify_no_data] # Monitor uses true by default
+        if !!data[:notify_no_data] == !Models::Monitor::SKIP_NOTIFY_NO_DATA_TYPES.include?(data[:type])
+          data.delete(:notify_no_data)
+        end
         data.delete(:notify_audit) unless data[:notify_audit] # Monitor uses false by default
 
         # keep all values that are settable

@@ -256,6 +256,11 @@ describe Kennel::Models::Monitor do
         .build_json.dig(:options, :notification_preset_name).must_equal "hide_query"
     end
 
+    it "defaults to allowing no-data for log alerts" do
+      monitor(type: -> { "log alert" })
+        .build_json.dig(:options, :notify_no_data).must_equal false
+    end
+
     describe "on_missing_data" do
       it "defaults" do
         monitor(
@@ -569,7 +574,8 @@ describe Kennel::Models::Monitor do
       diff_resource(
         {
           type: -> { "event alert" },
-          critical: -> { 0 }
+          critical: -> { 0 },
+          notify_no_data: -> { true }
         },
         type: "event alert",
         multi: true

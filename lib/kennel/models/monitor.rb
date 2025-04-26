@@ -30,6 +30,7 @@ module Kennel
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
+      SKIP_NOTIFY_NO_DATA_TYPES = ["event alert", "event-v2 alert", "log alert"].freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -44,7 +45,9 @@ module Kennel
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
-        notify_no_data: -> { true }, # datadog UI sets this to false by default, but true is safer
+        # datadog UI sets this to false by default, but true is safer
+        # except for log alerts which will always have "no error" gaps and should default to false
+        notify_no_data: -> { !SKIP_NOTIFY_NO_DATA_TYPES.include?(type) },
         no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
