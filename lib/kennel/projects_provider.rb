@@ -43,7 +43,7 @@ module Kennel
           # we support PROJECT being used for nested folders, to allow teams to easily group their projects
           # so when loading a project we need to find anything that could be a project source
           # sorting by name and nesting level to avoid confusion
-          segments = project.split("_")
+          segments = project.tr("-", "_").split("_")
           search = /#{segments[0...-1].map { |p| "#{p}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
 
           projects_path = "#{File.expand_path("projects")}/"

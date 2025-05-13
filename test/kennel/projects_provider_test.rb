@@ -167,6 +167,21 @@ describe Kennel::ProjectsProvider do
       end.must_include "Projecta::B::C"
     end
 
+    it "can load with -" do
+      in_isolated_process do
+        write "projects/projecta/c.rb", <<~RUBY
+          module Projecta
+            class C < Kennel::Models::Project
+            end
+          end
+        RUBY
+
+        with_env PROJECT: "projecta-c" do
+          Kennel::ProjectsProvider.new.projects.map(&:name)
+        end
+      end.must_include "Projecta::C"
+    end
+
     it "warns when autoloading a single project did not work" do
       in_isolated_process do
         with_env PROJECT: "projectx" do
