@@ -2,6 +2,8 @@
 
 module Kennel
   class Filter
+    attr_reader :project_filter
+
     def initialize
       # read early so we fail fast on invalid user input
       @tracking_id_filter = read_tracking_id_filter_from_env
@@ -39,7 +41,7 @@ module Kennel
 
     private
 
-    attr_reader :project_filter, :tracking_id_filter
+    attr_reader :tracking_id_filter
 
     # needs to be called after read_tracking_id_filter_from_env
     def read_project_filter_from_env

@@ -4,6 +4,10 @@ module Kennel
     class AutoloadFailed < StandardError
     end
 
+    def initialize(filter:)
+      @filter = filter
+    end
+
     # @return [Array<Models::Project>]
     #   All projects in the system. This is a slow operation.
     #   Use `projects` to get all projects in the system.
@@ -39,33 +43,34 @@ module Kennel
         loader.push_dir("projects")
         loader.setup
 
-        if (project = ENV["PROJECT"]) # TODO: use project filter instead and also support TRACKING_ID
-          # we support PROJECT being used for nested folders, to allow teams to easily group their projects
-          # so when loading a project we need to find anything that could be a project source
-          # sorting by name and nesting level to avoid confusion
-          segments = project.tr("-", "_").split("_")
-          search = /#{segments[0...-1].map { |p| "#{p}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
-
+        if (projects = @filter.project_filter)
           projects_path = "#{File.expand_path("projects")}/"
-          known_paths = loader.all_expected_cpaths.keys
-          project_path = known_paths.select do |path|
-            path.start_with?(projects_path) && path.match?(search)
-          end.sort.min_by { |p| p.count("/") }
-          if project_path
-            require project_path
-          elsif autoload != "abort"
-            Kennel.err.puts(
-              "No projects/ file matching #{search} found" \
-              ", falling back to slow loading of all projects instead"
-            )
-            loader.eager_load
-          else
-            raise AutoloadFailed, "No projects/ file matching #{search} found"
+          known_paths = loader.all_expected_cpaths.keys.select! { |path| path.start_with?(projects_path) }
+
+          # - we support PROJECT being used for nested folders, to allow teams to easily group their projects
+          # - when loading a project we need to find anything that could be a project source
+          #   sorting by name and nesting level to avoid confusion
+          projects.each do |project|
+            segments = project.tr("-", "_").split("_")
+            search = /#{segments[0...-1].map { |part| "#{part}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
+
+            if (project_path = known_paths.grep(search).sort.min_by { |path| path.count("/") })
+              require project_path
+            elsif autoload != "abort"
+              Kennel.err.puts(
+                "No projects/ file matching #{search} found" \
+                  ", falling back to slow loading of all projects instead"
+              )
+              loader.eager_load
+              break
+            else
+              raise AutoloadFailed, "No projects/ file matching #{search} found"
+            end
           end
         else # all projects needed
           loader.eager_load
         end
-      else # old style without autoload
+      else # old style without autoload to be removed eventually
         loader.setup
         loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
         # TODO: also auto-load projects and update expected path too
