@@ -2,13 +2,17 @@
 require_relative "../test_helper"
 require "parallel"
 
-SingleCov.covered! uncovered: 19 # when using in_isolated_process coverage is not recorded
+SingleCov.covered! uncovered: 18 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)
     folder = File.dirname(file)
     FileUtils.mkdir_p folder
     File.write file, content
+  end
+
+  def projects
+    Kennel::ProjectsProvider.new(filter: Kennel::Filter.new).projects
   end
 
   in_temp_dir
@@ -46,8 +50,7 @@ describe Kennel::ProjectsProvider do
       end
     RUBY
 
-    projects = Kennel::ProjectsProvider.new.projects.map(&:name)
-    projects.must_equal ["Project1"]
+    projects.map(&:name).must_equal ["Project1"]
   end
 
   it "avoids loading twice" do
@@ -65,7 +68,7 @@ describe Kennel::ProjectsProvider do
     Zeitwerk::Loader.any_instance.expects(:eager_load).times(1)
 
     2.times do
-      Kennel::ProjectsProvider.new.projects.map(&:name).must_equal ["Project1"]
+      projects.map(&:name).must_equal ["Project1"]
     end
   end
 
@@ -130,7 +133,15 @@ describe Kennel::ProjectsProvider do
     it "can load a single project" do
       in_isolated_process do
         with_env PROJECT: "project1" do
-          Kennel::ProjectsProvider.new.projects.map(&:name)
+          projects.map(&:name)
+        end
+      end.must_equal ["Project1"]
+    end
+
+    it "can load a single tracking id" do
+      in_isolated_process do
+        with_env TRACKING_ID: "project1:foo" do
+          projects.map(&:name)
         end
       end.must_equal ["Project1"]
     end
@@ -145,7 +156,7 @@ describe Kennel::ProjectsProvider do
         RUBY
 
         with_env PROJECT: "project2" do
-          Kennel::ProjectsProvider.new.projects.map(&:name)
+          projects.map(&:name)
         end
       end.must_include "Projecta::Project"
     end
@@ -162,24 +173,67 @@ describe Kennel::ProjectsProvider do
         RUBY
 
         with_env PROJECT: "projecta_b_c" do
-          Kennel::ProjectsProvider.new.projects.map(&:name)
+          projects.map(&:name)
         end
       end.must_include "Projecta::B::C"
+    end
+
+    it "can load with -" do
+      in_isolated_process do
+        write "projects/projecta/c.rb", <<~RUBY
+          module Projecta
+            class C < Kennel::Models::Project
+            end
+          end
+        RUBY
+
+        with_env PROJECT: "projecta-c" do
+          projects.map(&:name)
+        end
+      end.must_include "Projecta::C"
     end
 
     it "warns when autoloading a single project did not work" do
       in_isolated_process do
         with_env PROJECT: "projectx" do
           Kennel.err.expects(:puts)
-          Kennel::ProjectsProvider.new.projects.map(&:name)
+          projects.map(&:name)
         end
       end.must_include "Project1"
     end
 
     it "can load all project" do
       in_isolated_process do
-        Kennel::ProjectsProvider.new.projects.map(&:name)
+        projects.map(&:name)
       end.must_equal ["Project0", "Project1"]
+    end
+
+    it "can load multiple projects nesting" do
+      loaded = in_isolated_process do
+        write "projects/projecta/b/c.rb", <<~RUBY
+          module Projecta
+            module B
+              class C < Kennel::Models::Project
+              end
+            end
+          end
+        RUBY
+
+        write "projects/projecta/b/d.rb", <<~RUBY
+          module Projecta
+            module B
+              class D < Kennel::Models::Project
+              end
+            end
+          end
+        RUBY
+
+        with_env PROJECT: "projecta_b_c,projecta_b_d" do
+          projects.map(&:name)
+        end
+      end
+      loaded.must_include "Projecta::B::C"
+      loaded.must_include "Projecta::B::D"
     end
   end
 end

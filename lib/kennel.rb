@@ -107,7 +107,7 @@ module Kennel
     def generated(**kwargs)
       @generated ||= begin
         projects = Progress.progress "Loading projects", **kwargs do
-          projects = ProjectsProvider.new.projects
+          projects = ProjectsProvider.new(filter: filter).projects
           filter.filter_projects projects
         end
 
