@@ -13,7 +13,7 @@ module Kennel
     #   Use `projects` to get all projects in the system.
     def all_projects
       load_all
-      Models::Project.recursive_subclasses.map(&:new)
+      loaded_projects.map(&:new)
     end
 
     # @return [Array<Models::Project>]
@@ -21,10 +21,14 @@ module Kennel
 
     def projects
       load_all
-      Models::Project.recursive_subclasses.map(&:new)
+      loaded_projects.map(&:new)
     end
 
     private
+
+    def loaded_projects
+      Models::Project.recursive_subclasses
+    end
 
     # load_all's purpose is to "require" all the .rb files under './projects',
     # while allowing them to resolve reference to ./teams and ./parts via autoload
@@ -53,9 +57,27 @@ module Kennel
           projects.each do |project|
             segments = project.tr("-", "_").split("_")
             search = /#{segments[0...-1].map { |part| "#{part}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
+            found = known_paths.grep(search).sort.sort_by { |path| path.count("/") }
+            if found.any?
+              require found.first
+              if loaded_projects.empty?
+                found.map! { |path| path.sub("#{Dir.pwd}/", "") }
+                raise(
+                  AutoloadFailed,
+                  <<~MSG
+                    No project found in loaded files!
+                    Ensure the project file you want to load is first in the list,
+                    list is sorted alphabetically and by nesting level.
 
-            if (project_path = known_paths.grep(search).sort.min_by { |path| path.count("/") })
-              require project_path
+                    Loaded:
+                    #{found.first}
+                    After finding:
+                    #{found.join("\n")}
+                    With regex:
+                    #{search}
+                  MSG
+                )
+              end
             elsif autoload != "abort"
               Kennel.err.puts(
                 "No projects/ file matching #{search} found" \
