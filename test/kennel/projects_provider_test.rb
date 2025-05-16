@@ -2,7 +2,7 @@
 require_relative "../test_helper"
 require "parallel"
 
-SingleCov.covered! uncovered: 18 # when using in_isolated_process coverage is not recorded
+SingleCov.covered! uncovered: 23 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)
@@ -178,7 +178,7 @@ describe Kennel::ProjectsProvider do
       end.must_include "Projecta::B::C"
     end
 
-    it "can load with -" do
+    it "can load with - in name that is not in the filesystem" do
       in_isolated_process do
         write "projects/projecta/c.rb", <<~RUBY
           module Projecta
@@ -200,6 +200,21 @@ describe Kennel::ProjectsProvider do
           projects.map(&:name)
         end
       end.must_include "Project1"
+    end
+
+    it "explains when not finding a project after autoloading" do
+      in_isolated_process do
+        write "projects/projecta/b/c.rb", <<~RUBY
+          module Projecta
+          end
+        RUBY
+
+        with_env PROJECT: "projecta_b_c" do
+          assert_raises Kennel::ProjectsProvider::AutoloadFailed do
+            projects
+          end.message.must_include "No project found"
+        end
+      end
     end
 
     it "can load all project" do
