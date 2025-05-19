@@ -51,37 +51,18 @@ module Kennel
           projects_path = "#{File.expand_path("projects")}/"
           known_paths = loader.all_expected_cpaths.keys.select! { |path| path.start_with?(projects_path) }
 
-          # - we support PROJECT being used for nested folders, to allow teams to easily group their projects
-          # - when loading a project we need to find anything that could be a project source
-          #   sorting by name and nesting level to avoid confusion
           projects.each do |project|
-            segments = project.tr("-", "_").split("_")
-            search = /#{segments[0...-1].map { |part| "#{part}[_/]" }.join}#{segments[-1]}(\.rb|\/project\.rb|\/base\.rb)/
+            search = project_search project
+
+            # sort by name and nesting level to pick the best candidate
             found = known_paths.grep(search).sort.sort_by { |path| path.count("/") }
+
             if found.any?
               require found.first
-              if loaded_projects.empty?
-                found.map! { |path| path.sub("#{Dir.pwd}/", "") }
-                raise(
-                  AutoloadFailed,
-                  <<~MSG
-                    No project found in loaded files!
-                    Ensure the project file you want to load is first in the list,
-                    list is sorted alphabetically and by nesting level.
-
-                    Loaded:
-                    #{found.first}
-                    After finding:
-                    #{found.join("\n")}
-                    With regex:
-                    #{search}
-                  MSG
-                )
-              end
+              assert_project_loaded search, found
             elsif autoload != "abort"
               Kennel.err.puts(
-                "No projects/ file matching #{search} found" \
-                  ", falling back to slow loading of all projects instead"
+                "No projects/ file matching #{search} found, falling back to slow loading of all projects instead"
               )
               loader.eager_load
               break
@@ -89,10 +70,12 @@ module Kennel
               raise AutoloadFailed, "No projects/ file matching #{search} found"
             end
           end
-        else # all projects needed
+        else
+          # all projects needed
           loader.eager_load
         end
-      else # old style without autoload to be removed eventually
+      else
+        # old style without autoload to be removed eventually
         loader.setup
         loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
         # TODO: also auto-load projects and update expected path too
@@ -120,6 +103,34 @@ module Kennel
       end
 
       raise
+    end
+
+    # - support PROJECT being used for nested folders, to allow teams to easily group their projects
+    # - support PROJECT.rb but also PROJECT/base.rb or PROJECT/project.rb
+    def project_search(project)
+      suffixes = ["base.rb", "project.rb"]
+      project_match = Regexp.escape(project.tr("-", "_")).gsub("_", "[-_/]")
+      /\/#{project_match}(\.rb|#{suffixes.map { |s| Regexp.escape "/#{s}" }.join("|")})$/
+    end
+
+    def assert_project_loaded(search, paths)
+      return if loaded_projects.any?
+      paths = paths.map { |path| path.sub("#{Dir.pwd}/", "") }
+      raise(
+        AutoloadFailed,
+        <<~MSG
+          No project found in loaded files!
+          Ensure the project file you want to load is first in the list,
+          list is sorted alphabetically and by nesting level.
+
+          Loaded:
+          #{paths.first}
+          After finding:
+          #{paths.join("\n")}
+          With regex:
+          #{search}
+        MSG
+      )
     end
   end
 end
