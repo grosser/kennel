@@ -2,7 +2,7 @@
 require_relative "../test_helper"
 require "parallel"
 
-SingleCov.covered! uncovered: 23 # when using in_isolated_process coverage is not recorded
+SingleCov.covered! uncovered: 26 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)
@@ -119,7 +119,7 @@ describe Kennel::ProjectsProvider do
       Parallel.flat_map([0], in_processes: 1, &block)
     end
 
-    with_env AUTOLOAD_PROJECTS: "1"
+    with_env AUTOLOAD_PROJECTS: "abort"
 
     before do
       2.times do |i|
@@ -155,7 +155,7 @@ describe Kennel::ProjectsProvider do
           end
         RUBY
 
-        with_env PROJECT: "project2" do
+        with_env PROJECT: "projecta" do
           projects.map(&:name)
         end
       end.must_include "Projecta::Project"
@@ -193,9 +193,26 @@ describe Kennel::ProjectsProvider do
       end.must_include "Projecta::C"
     end
 
-    it "warns when autoloading a single project did not work" do
+    it "refuses to autoload a too specific file to not shadow other files" do
       in_isolated_process do
-        with_env PROJECT: "projectx" do
+        write "projects/projecta/b_c.rb", <<~RUBY
+          module Projecta
+            class BC < Kennel::Models::Project
+            end
+          end
+        RUBY
+
+        with_env PROJECT: "c" do
+          assert_raises Kennel::ProjectsProvider::AutoloadFailed do
+            projects.map(&:name)
+          end
+        end
+      end
+    end
+
+    it "warns when autoloading a single project did not work and it fell back to loading all" do
+      in_isolated_process do
+        with_env PROJECT: "projectx", AUTOLOAD_PROJECTS: "1" do
           Kennel.err.expects(:puts)
           projects.map(&:name)
         end
@@ -212,7 +229,7 @@ describe Kennel::ProjectsProvider do
         with_env PROJECT: "projecta_b_c" do
           assert_raises Kennel::ProjectsProvider::AutoloadFailed do
             projects
-          end.message.must_include "No project found"
+          end
         end
       end
     end
