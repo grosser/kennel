@@ -22,8 +22,8 @@ describe Kennel::Syncer do
     Kennel::Api.with_tracking(api_resource, hash)
   end
 
-  def monitor(pid, cid, json: {}, **extra)
-    monitor = Kennel::Models::Monitor.new(
+  def monitor(pid, cid, klass: Kennel::Models::Monitor, json: {}, **extra)
+    monitor = klass.new(
       project(pid),
       query: -> { "avg(last_5m) > #{critical}" },
       kennel_id: -> { cid },
@@ -512,6 +512,22 @@ describe Kennel::Syncer do
     describe "changing tracking id" do
       it "updates tracking id for monitors" do
         m = monitor("a", "b", name: "a")
+        m.as_json[:name] = "a🔒" # monitor helper needs a refactor
+        expected << m
+        monitors << monitor_api_response("c", "d", id: 234, name: "a🔒")
+        output.must_equal <<~TEXT
+          Plan:
+          Update monitor a:b
+            ~message
+                @slack-foo
+              - -- Managed by kennel c:d in test/test_helper.rb, do not modify manually
+              + -- Managed by kennel a:b in test/test_helper.rb, do not modify manually
+        TEXT
+      end
+
+      it "updates tracking id for subclass resources" do
+        subclass = Class.new(Kennel::Models::Monitor)
+        m = monitor("a", "b", name: "a", klass: subclass)
         m.as_json[:name] = "a🔒" # monitor helper needs a refactor
         expected << m
         monitors << monitor_api_response("c", "d", id: 234, name: "a🔒")
