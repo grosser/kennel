@@ -2,7 +2,7 @@
 require_relative "../test_helper"
 require "parallel"
 
-SingleCov.covered! uncovered: 26 # when using in_isolated_process coverage is not recorded
+SingleCov.covered! uncovered: 18 # when using in_isolated_process coverage is not recorded
 
 describe Kennel::ProjectsProvider do
   def write(file, content)
@@ -22,13 +22,8 @@ describe Kennel::ProjectsProvider do
   let(:kennel) { Kennel::Engine.new }
 
   after do
-    Kennel::Models::Project.recursive_subclasses.each do |klass|
-      if defined?(klass.name.to_sym)
-        path = klass.name.split("::")
-        path[0...-1].inject(Object) { |mod, name| mod.const_get(name) }.send(:remove_const, path.last.to_sym)
-      end
-    end
-    Kennel::Models::Project.subclasses.delete_if { true }
+    Kennel::Models::Project.recursive_subclasses.each { |c| remove_nested_const c }
+    Kennel::Models::Project.subclasses.clear
   end
 
   it "loads projects" do
@@ -63,13 +58,11 @@ describe Kennel::ProjectsProvider do
         )
       end
     RUBY
+    projects.map(&:name).must_equal ["Project1"]
 
-    Zeitwerk::Loader.any_instance.expects(:setup).times(1)
-    Zeitwerk::Loader.any_instance.expects(:eager_load).times(1)
-
-    2.times do
-      projects.map(&:name).must_equal ["Project1"]
-    end
+    Zeitwerk::Loader.any_instance.expects(:setup).never
+    Zeitwerk::Loader.any_instance.expects(:eager_load).never
+    projects
   end
 
   it "shows helpful autoload errors for parts" do
@@ -88,7 +81,7 @@ describe Kennel::ProjectsProvider do
   end
 
   it "shows helpful autoload errors for teams" do
-    write "projects/a.rb", <<~RUBY
+    write "projects/for_teams.rb", <<~RUBY
       class TestProject4 < Kennel::Models::Project
         Teams::BazFoo
       end
@@ -103,7 +96,7 @@ describe Kennel::ProjectsProvider do
   end
 
   it "shows unparseable NameError" do
-    write "projects/a.rb", <<~RUBY
+    write "projects/unparsable.rb", <<~RUBY
       class TestProject5 < Kennel::Models::Project
         raise NameError, "wut"
       end
@@ -208,15 +201,6 @@ describe Kennel::ProjectsProvider do
           end
         end
       end
-    end
-
-    it "warns when autoloading a single project did not work and it fell back to loading all" do
-      in_isolated_process do
-        with_env PROJECT: "projectx", AUTOLOAD_PROJECTS: "1" do
-          Kennel.err.expects(:puts)
-          projects.map(&:name)
-        end
-      end.must_include "Project1"
     end
 
     it "explains when not finding a project after autoloading" do

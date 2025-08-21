@@ -9,18 +9,9 @@ module Kennel
     end
 
     # @return [Array<Models::Project>]
-    #   All projects in the system. This is a slow operation.
-    #   Use `projects` to get all projects in the system.
-    def all_projects
-      load_all
-      loaded_projects.map(&:new)
-    end
-
-    # @return [Array<Models::Project>]
-    #   All projects in the system. This is a slow operation.
-
+    #   All requested projects. This is a slow operation when loading all projects.
     def projects
-      load_all
+      load_requested
       loaded_projects.map(&:new)
     end
 
@@ -30,61 +21,27 @@ module Kennel
       Models::Project.recursive_subclasses
     end
 
-    # load_all's purpose is to "require" all the .rb files under './projects',
+    # "require" requested .rb files under './projects',
     # while allowing them to resolve reference to ./teams and ./parts via autoload
-    def load_all
-      # Zeitwerk rejects second and subsequent calls.
-      # Even if we skip over the Zeitwerk part, the nature of 'require' is
-      # one-way: ruby does not provide a mechanism to *un*require things.
-      return if defined?(@@load_all) && @@load_all
-      @@load_all = true
-
-      loader = Zeitwerk::Loader.new
-      Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
-      Dir.exist?("parts") && loader.push_dir("parts")
-
-      if (autoload = ENV["AUTOLOAD_PROJECTS"]) && autoload != "false"
-        loader.push_dir("projects")
-        loader.setup
-
-        if (projects = @filter.project_filter)
-          projects_path = "#{File.expand_path("projects")}/"
-          known_paths = loader.all_expected_cpaths.keys.select! { |path| path.start_with?(projects_path) }
-
-          projects.each do |project|
-            search = project_search project
-
-            # sort by name and nesting level to pick the best candidate
-            found = known_paths.grep(search).sort.sort_by { |path| path.count("/") }
-
-            if found.any?
-              require found.first
-              assert_project_loaded search, found
-            elsif autoload != "abort"
-              Kennel.err.puts(
-                "No projects/ file matching #{search} found, falling back to slow loading of all projects instead"
-              )
-              loader.eager_load
-              break
-            else
-              raise AutoloadFailed, "No projects/ file matching #{search} found"
-            end
+    def load_requested
+      return if ensure_load_once!
+      loader = setup_zeitwerk_loader
+      if (projects = @filter.project_filter)
+        known_paths = zeitwerk_known_paths(loader)
+        projects.each do |project|
+          search = project_search project
+          found = sort_paths(known_paths.grep(search))
+          if found.any?
+            require found.first
+            assert_project_loaded search, found
+          else
+            raise AutoloadFailed, "Unable to load #{project} since there are no projects/ files matching #{search}"
           end
-        else
-          # all projects needed
-          loader.eager_load
         end
-      else
-        # old style without autoload to be removed eventually
-        loader.setup
-        loader.eager_load # TODO: this should not be needed but we see hanging CI processes when it's not added
-        # TODO: also auto-load projects and update expected path too
-        # but to do that we need to stop the pattern of having a class at the bottom of the project structure
-        # and change to Module::Project + Module::Support
-        # we need the extra sort so foo/bar.rb is loaded before foo/bar/baz.rb
-        Dir["projects/**/*.rb"].sort.each { |f| require "./#{f}" } # rubocop:disable Lint/RedundantDirGlobSort
+      else # load everything
+        loader.eager_load force: true
       end
-    rescue NameError => e
+    rescue NameError => e # improve error message when file does not match constant
       message = e.message
       raise unless (klass = message[/uninitialized constant (.*)/, 1])
 
@@ -105,6 +62,29 @@ module Kennel
       raise
     end
 
+    def setup_zeitwerk_loader
+      loader = Zeitwerk::Loader.new
+      Dir.exist?("teams") && loader.push_dir("teams", namespace: Teams)
+      Dir.exist?("parts") && loader.push_dir("parts")
+      loader.push_dir("projects")
+      loader.setup
+      loader
+    end
+
+    # Zeitwerk rejects subsequent calls.
+    # Even if we skip over the Zeitwerk part, the nature of 'require' is
+    # one-way: ruby does not provide a mechanism to *un*require things.
+    def ensure_load_once!
+      return true if defined?(@@loaded) && @@loaded
+      @@loaded = true
+      false
+    end
+
+    def zeitwerk_known_paths(loader)
+      projects_path = "#{File.expand_path("projects")}/"
+      loader.all_expected_cpaths.keys.select! { |path| path.start_with?(projects_path) }
+    end
+
     # - support PROJECT being used for nested folders, to allow teams to easily group their projects
     # - support PROJECT.rb but also PROJECT/base.rb or PROJECT/project.rb
     def project_search(project)
@@ -113,13 +93,14 @@ module Kennel
       /\/#{project_match}(\.rb|#{suffixes.map { |s| Regexp.escape "/#{s}" }.join("|")})$/
     end
 
+    # keep message in sync with logic in sort_paths
     def assert_project_loaded(search, paths)
       return if loaded_projects.any?
       paths = paths.map { |path| path.sub("#{Dir.pwd}/", "") }
       raise(
         AutoloadFailed,
         <<~MSG
-          No project found in loaded files!
+          No project found in loaded files! (no class inheriting from Kennel::Models::Project)
           Ensure the project file you want to load is first in the list,
           list is sorted alphabetically and by nesting level.
 
@@ -131,6 +112,12 @@ module Kennel
           #{search}
         MSG
       )
+    end
+
+    # sort by name and nesting level to pick the best candidate
+    # keep logic in sync with message in assert_project_loaded
+    def sort_paths(paths)
+      paths.sort.sort_by { |path| path.count("/") }
     end
   end
 end
