@@ -22,7 +22,7 @@ describe Kennel do
   enable_api
 
   before do
-    write "projects/simple.rb", <<~RUBY
+    write "projects/temp_project.rb", <<~RUBY
       class TempProject < Kennel::Models::Project
         defaults(
           team: -> { TestTeam.new },
@@ -79,7 +79,7 @@ describe Kennel do
     end
 
     it "complains when duplicates would be written" do
-      write "projects/a.rb", <<~RUBY
+      write "projects/test_project_2.rb", <<~RUBY
         class TestProject2 < Kennel::Models::Project
           defaults(parts: -> { Array.new(2).map { Kennel::Models::Monitor.new(self, kennel_id: -> {"bar"}) } })
         end

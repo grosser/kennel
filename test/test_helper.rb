@@ -45,7 +45,9 @@ Minitest::Test.class_eval do
 
   def self.without_cached_projects
     after do
-      Kennel::ProjectsProvider.remove_class_variable(:@@load_all) if Kennel::ProjectsProvider.class_variable_defined?(:@@load_all)
+      if Kennel::ProjectsProvider.class_variable_defined?(:@@loaded)
+        Kennel::ProjectsProvider.remove_class_variable(:@@loaded)
+      end
     end
   end
 
@@ -132,5 +134,10 @@ Minitest::Test.class_eval do
     errors = validation_errors_from(part)
     errors.length.must_equal(1, "Expected 1 error, got #{errors.inspect}")
     errors.first
+  end
+
+  def remove_nested_const(klass)
+    path = klass.name.split("::")
+    path[0...-1].inject(Object) { |mod, name| mod.const_get(name) }.send(:remove_const, path.last.to_sym)
   end
 end

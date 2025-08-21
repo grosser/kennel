@@ -33,9 +33,10 @@ module IntegrationHelper
         end
       end
 
-      class MyProject < Kennel::Models::Project
+      class Example < Kennel::Models::Project
         defaults(
           team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/
+          kennel_id: -> { "my_project" },
           parts: -> {
             [
               Kennel::Models::Monitor.new(
