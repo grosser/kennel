@@ -261,6 +261,11 @@ describe Kennel::Models::Monitor do
         .build_json.dig(:options, :notify_no_data).must_equal false
     end
 
+    it "can set group_retention_duration" do
+      monitor(group_retention_duration: -> { "1h" })
+        .build_json.dig(:options, :group_retention_duration).must_equal "1h"
+    end
+
     describe "on_missing_data" do
       it "defaults" do
         monitor(
