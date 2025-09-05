@@ -22,6 +22,7 @@ module Kennel
         renotify_interval: 0,
         notify_audit: false,
         no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
+        group_retention_duration: nil,
         groupby_simple_monitor: false,
         variables: nil,
         on_missing_data: "default", # "default" is "evaluate as zero"
@@ -35,8 +36,8 @@ module Kennel
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
-        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :priority, :variables, :on_missing_data,
-        :notification_preset_name, :notify_by
+        :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :group_retention_duration, :priority,
+        :variables, :on_missing_data, :notification_preset_name, :notify_by
       )
 
       defaults(
@@ -52,6 +53,7 @@ module Kennel
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         new_group_delay: -> { nil },
+        group_retention_duration: -> { MONITOR_OPTION_DEFAULTS.fetch(:group_retention_duration) },
         tags: -> { @project.tags },
         timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
@@ -135,6 +137,10 @@ module Kennel
 
         # Datadog requires only either new_group_delay or new_host_delay, never both
         options.delete(options[:new_group_delay] ? :new_host_delay : :new_group_delay)
+
+        if (duration = group_retention_duration)
+          options[:group_retention_duration] = duration
+        end
 
         # Add in statuses where we would re notify on. Possible values: alert, no data, warn
         if options[:renotify_interval] != 0
