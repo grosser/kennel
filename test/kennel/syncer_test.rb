@@ -751,8 +751,9 @@ describe Kennel::Syncer do
       expected << monitor("a", "c")
       api.expects(:create).raises("oh no").times(2)
       Kennel::Console.expects(:tty?).times(2).returns(true)
-      Kennel::Console.expects(:ask?).times(2).returns(true)
-      output.must_equal <<~TXT
+      Kennel::Console.expects(:ask?).times(1).returns(true) # no need to ask on the second failure since it is the last
+      assert_raises(RuntimeError) { output }.message.must_equal "oh no"
+      stdout.string.must_equal <<~TXT
         Creating monitor a:b
         Creating monitor a:c
       TXT
