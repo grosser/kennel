@@ -48,9 +48,13 @@ module Kennel
         list = list.dup
         loop do
           return if list.empty?
+          size = list.size
+          resolved = 0
           list.reject! do |item|
             if resolved?(item.expected)
-              yield item
+              last_item = (resolved + 1 == size)
+              yield item, last_item
+              resolved += 1
               true
             else
               false

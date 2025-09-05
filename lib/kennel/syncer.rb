@@ -50,7 +50,7 @@ module Kennel
       # because datadog validates that update+create of slo alerts match an existing timeframe
       planned_actions.sort_by! { |item| item.expected.is_a?(Models::Slo) ? 0 : 1 }
 
-      resolver.each_resolved(planned_actions) do |item|
+      resolver.each_resolved(planned_actions) do |item, last_item|
         if item.is_a?(Types::PlannedCreate)
           message = "#{item.api_resource} #{item.tracking_id}"
           Kennel.out.puts "Creating #{message}"
@@ -67,7 +67,7 @@ module Kennel
           Kennel.out.puts "#{LINE_UP}Updated #{message}"
         end
       rescue StandardError
-        raise unless Console.tty?
+        raise if !Console.tty? || last_item
         Kennel.err.puts $!.message
         Kennel.err.puts $!.backtrace
         raise unless Console.ask?("Continue with error ?")
