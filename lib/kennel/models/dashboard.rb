@@ -34,8 +34,7 @@ module Kennel
           },
           time: {},
           title_align: "left",
-          title_size: "16",
-          show_legend: true
+          title_size: "16"
         },
         "note" => {
           show_tick: false,
@@ -105,7 +104,7 @@ module Kennel
             pair.each { |w| sort_conditional_formats w }
             ignore_widget_defaults(*pair)
             ignore_request_defaults(*pair)
-            pair.each { |widget| widget&.delete(:id) } # ids are kinda random so we always discard them
+            pair.each { |widget| widget&.delete(:id) } # ids change on every update so we always discard them
           end
         end
 
