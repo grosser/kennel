@@ -74,6 +74,9 @@ module Kennel
           convert_widget_to_compact_format!(widget)
           dry_up_widget_metadata!(widget)
           (widget.dig(:definition, :markers) || []).each { |m| m[:label]&.delete! " " }
+
+          # show_legend only does something when layout is not set to "auto" or left out, which is rare
+          widget[:definition].delete :show_legend if (widget.dig(:definition, :legend_layout) || "auto") == "auto"
         end
       when "synthetics/tests"
         data[:locations] = :all if data[:locations].sort == Kennel::Models::SyntheticTest::LOCATIONS.sort
