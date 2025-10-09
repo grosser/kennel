@@ -14,10 +14,11 @@ module Kennel
         query: nil,
         groups: nil,
         monitor_ids: [],
-        thresholds: []
+        thresholds: [],
+        primary: nil
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :primary
 
       defaults(
         tags: -> { @project.tags },
@@ -25,7 +26,8 @@ module Kennel
         description: -> { DEFAULTS.fetch(:description) },
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
         thresholds: -> { DEFAULTS.fetch(:thresholds) },
-        groups: -> { DEFAULTS.fetch(:groups) }
+        groups: -> { DEFAULTS.fetch(:groups) },
+        primary: -> { DEFAULTS.fetch(:primary) }
       )
 
       def build_json
@@ -37,6 +39,19 @@ module Kennel
           tags: tags,
           type: type
         )
+
+        # Add timeframe and thresholds based on primary setting
+        if primary && ["7d", "30d", "90d"].include?(primary)
+          data[:timeframe] = primary
+
+          # Find warning and target thresholds in the thresholds array
+          if thresholds.is_a?(Array) && thresholds.any?
+            # Use the first threshold entry for warning and target
+            threshold = thresholds.first
+            data[:warning_threshold] = threshold[:warning] if threshold[:warning]
+            data[:target_threshold] = threshold[:target] if threshold[:target]
+          end
+        end
 
         if type == "time_slice"
           data[:sli_specification] = sli_specification

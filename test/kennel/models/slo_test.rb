@@ -67,6 +67,69 @@ describe Kennel::Models::Slo do
       )
     end
 
+    it "sets timeframe and threshold values based on primary setting" do
+      thresholds = [{ warning: 99.5, target: 99.9 }]
+      expected_json = expected_basic_json.merge(
+        timeframe: "7d",
+        warning_threshold: 99.5,
+        target_threshold: 99.9,
+        thresholds: thresholds
+      )
+
+      assert_json_equal(
+        slo(
+          primary: -> { "7d" },
+          thresholds: -> { thresholds }
+        ).build_json,
+        expected_json
+      )
+    end
+
+    it "ignores primary if not valid timeframe" do
+      thresholds = [{ warning: 99.5, target: 99.9 }]
+      expected_json = expected_basic_json.merge(
+        thresholds: thresholds
+      )
+
+      assert_json_equal(
+        slo(
+          primary: -> { "invalid" },
+          thresholds: -> { thresholds }
+        ).build_json,
+        expected_json
+      )
+    end
+
+    it "only adds timeframe if thresholds is empty" do
+      expected_json = expected_basic_json.merge(
+        timeframe: "7d"
+      )
+
+      assert_json_equal(
+        slo(
+          primary: -> { "7d" }
+        ).build_json,
+        expected_json
+      )
+    end
+
+    it "handles threshold with partial properties" do
+      # Test for the case where the threshold object doesn't have warning or target
+      thresholds = [{ critical: 90 }] # No warning or target properties
+      expected_json = expected_basic_json.merge(
+        timeframe: "7d",
+        thresholds: thresholds
+      )
+
+      assert_json_equal(
+        slo(
+          primary: -> { "7d" },
+          thresholds: -> { thresholds }
+        ).build_json,
+        expected_json
+      )
+    end
+
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
