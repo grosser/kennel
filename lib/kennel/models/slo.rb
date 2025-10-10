@@ -41,7 +41,7 @@ module Kennel
         )
 
         # Add timeframe and thresholds based on primary setting
-        if primary && ["7d", "30d", "90d"].include?(primary)
+        if primary
           data[:timeframe] = primary
 
           # Find warning and target thresholds in the thresholds array
