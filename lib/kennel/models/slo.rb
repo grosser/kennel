@@ -14,10 +14,11 @@ module Kennel
         query: nil,
         groups: nil,
         monitor_ids: [],
-        thresholds: []
+        thresholds: [],
+        primary: nil
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :primary
 
       defaults(
         tags: -> { @project.tags },
@@ -25,7 +26,8 @@ module Kennel
         description: -> { DEFAULTS.fetch(:description) },
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
         thresholds: -> { DEFAULTS.fetch(:thresholds) },
-        groups: -> { DEFAULTS.fetch(:groups) }
+        groups: -> { DEFAULTS.fetch(:groups) },
+        primary: -> { DEFAULTS.fetch(:primary) }
       )
 
       def build_json
@@ -37,6 +39,22 @@ module Kennel
           tags: tags,
           type: type
         )
+
+        # Add timeframe and thresholds based on primary setting
+        if primary
+          data[:timeframe] = primary
+
+          threshold = thresholds.detect { |t| t[:timeframe] == primary } ||
+            raise("unable to find threshold with timeframe #{primary}")
+
+          # Only add warning_threshold if it exists
+          if threshold[:warning]
+            data[:warning_threshold] = threshold[:warning]
+          end
+
+          # target is required
+          data[:target_threshold] = threshold[:target]
+        end
 
         if type == "time_slice"
           data[:sli_specification] = sli_specification
@@ -95,6 +113,11 @@ module Kennel
         bad_tags = data[:tags].grep(/[A-Z]/)
         if bad_tags.any?
           invalid! :tags_are_upper_case, "Tags must not be upper case (bad tags: #{bad_tags.sort.inspect})"
+        end
+
+        # Check that thresholds are not empty
+        if !data[:thresholds] || data[:thresholds].empty?
+          invalid! :thresholds_empty, "SLO must have at least one threshold defined"
         end
 
         # prevent "Invalid payload: The target is incorrect: target must be a positive number between (0.0, 100.0)"

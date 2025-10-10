@@ -67,6 +67,73 @@ describe Kennel::Models::Slo do
       )
     end
 
+    it "sets timeframe and threshold values based on primary setting" do
+      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }]
+      expected_json = expected_basic_json.merge(
+        timeframe: "7d",
+        warning_threshold: 99.5,
+        target_threshold: 99.9,
+        thresholds: thresholds
+      )
+
+      assert_json_equal(
+        slo(
+          primary: -> { "7d" },
+          thresholds: -> { thresholds }
+        ).build_json,
+        expected_json
+      )
+    end
+
+    it "raises an error when primary has no matching threshold timeframe" do
+      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "30d" }]
+
+      error = assert_raises RuntimeError do
+        slo(
+          primary: -> { "7d" },
+          thresholds: -> { thresholds }
+        ).build_json
+      end
+
+      assert_equal "unable to find threshold with timeframe 7d", error.message
+    end
+
+    it "does not set primary related fields when primary is not set" do
+      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }]
+      expected_json = expected_basic_json.merge(
+        thresholds: thresholds
+      )
+
+      # No primary, so no primary-specific fields should be set
+      result = slo(thresholds: -> { thresholds }).build_json
+      assert_json_equal(result, expected_json)
+
+      # Specifically verify these fields are not present
+      refute_includes result.keys, :target_threshold
+      refute_includes result.keys, :warning_threshold
+      refute_includes result.keys, :timeframe
+    end
+
+    it "sets only timeframe and target_threshold when threshold has only target" do
+      # Test for threshold with only target (no warning) when primary is set
+      thresholds = [{ target: 99.9, timeframe: "7d" }]
+      expected_json = expected_basic_json.merge(
+        timeframe: "7d",
+        target_threshold: 99.9,
+        thresholds: thresholds
+      )
+
+      result = slo(
+        primary: -> { "7d" },
+        thresholds: -> { thresholds }
+      ).build_json
+
+      assert_json_equal(result, expected_json)
+
+      # Verify warning_threshold is not present
+      refute_includes result.keys, :warning_threshold
+    end
+
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
@@ -145,8 +212,8 @@ describe Kennel::Models::Slo do
   end
 
   describe "#validate_json" do
-    it "is valid with no thresholds" do
-      validation_errors_from(slo).must_equal []
+    it "is invalid with empty thresholds" do
+      validation_errors_from(slo).must_equal ["SLO must have at least one threshold defined"]
     end
 
     describe :threshold_target_invalid do
@@ -177,11 +244,11 @@ describe Kennel::Models::Slo do
 
     describe :tags_are_upper_case do
       it "is valid with regular tags" do
-        validation_errors_from(slo(tags: ["foo:bar"])).must_equal []
+        validation_errors_from(slo(tags: ["foo:bar"], thresholds: [{ timeframe: "7d", target: 99 }])).must_equal []
       end
 
       it "is invalid with upcase tags" do
-        validation_errors_from(slo(tags: ["foo:BAR"]))
+        validation_errors_from(slo(tags: ["foo:BAR"], thresholds: [{ timeframe: "7d", target: 99 }]))
           .must_equal ["Tags must not be upper case (bad tags: [\"foo:BAR\"])"]
       end
     end
