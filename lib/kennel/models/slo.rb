@@ -44,7 +44,8 @@ module Kennel
         if primary
           data[:timeframe] = primary
 
-          threshold = thresholds.detect { |t| t[:timeframe] == primary } ||
+          threshold =
+            thresholds.detect { |t| t[:timeframe] == primary } ||
             raise("unable to find threshold with timeframe #{primary}")
 
           # Only add warning_threshold if it exists
