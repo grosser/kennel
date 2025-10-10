@@ -44,13 +44,10 @@ module Kennel
         if primary
           data[:timeframe] = primary
 
-          # Find warning and target thresholds in the thresholds array
-          if thresholds.is_a?(Array) && thresholds.any?
-            # Use the first threshold entry for warning and target
-            threshold = thresholds.first
-            data[:warning_threshold] = threshold[:warning] if threshold[:warning]
-            data[:target_threshold] = threshold[:target] if threshold[:target]
-          end
+          threshold = thresholds.detect { |t| t[:timeframe] == primary } || 
+            raise("unable to find threshold with timeframe #{primary}")
+          data[:warning_threshold] = threshold[:warning]
+          data[:target_threshold] = threshold[:target]
         end
 
         if type == "time_slice"
