@@ -115,6 +115,11 @@ module Kennel
           invalid! :tags_are_upper_case, "Tags must not be upper case (bad tags: #{bad_tags.sort.inspect})"
         end
 
+        # Check that thresholds are not empty
+        if !data[:thresholds] || data[:thresholds].empty?
+          invalid! :thresholds_empty, "SLO must have at least one threshold defined"
+        end
+
         # prevent "Invalid payload: The target is incorrect: target must be a positive number between (0.0, 100.0)"
         data[:thresholds]&.each do |threshold|
           target = threshold.fetch(:target)

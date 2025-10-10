@@ -212,8 +212,8 @@ describe Kennel::Models::Slo do
   end
 
   describe "#validate_json" do
-    it "is valid with no thresholds" do
-      validation_errors_from(slo).must_equal []
+    it "is invalid with empty thresholds" do
+      validation_errors_from(slo).must_equal ["SLO must have at least one threshold defined"]
     end
 
     describe :threshold_target_invalid do
@@ -244,11 +244,11 @@ describe Kennel::Models::Slo do
 
     describe :tags_are_upper_case do
       it "is valid with regular tags" do
-        validation_errors_from(slo(tags: ["foo:bar"])).must_equal []
+        validation_errors_from(slo(tags: ["foo:bar"], thresholds: [{ timeframe: "7d", target: 99 }])).must_equal []
       end
 
       it "is invalid with upcase tags" do
-        validation_errors_from(slo(tags: ["foo:BAR"]))
+        validation_errors_from(slo(tags: ["foo:BAR"], thresholds: [{ timeframe: "7d", target: 99 }]))
           .must_equal ["Tags must not be upper case (bad tags: [\"foo:BAR\"])"]
       end
     end
