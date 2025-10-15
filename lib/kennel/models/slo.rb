@@ -6,7 +6,7 @@ module Kennel
 
       READONLY_ATTRIBUTES = [
         *superclass::READONLY_ATTRIBUTES,
-        :type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold
+        :type_id, :monitor_tags
       ].freeze
       TRACKING_FIELD = :description
       DEFAULTS = {
@@ -14,8 +14,7 @@ module Kennel
         query: nil,
         groups: nil,
         monitor_ids: [],
-        thresholds: [],
-        primary: nil
+        thresholds: []
       }.freeze
 
       settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :primary
@@ -27,7 +26,10 @@ module Kennel
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
         thresholds: -> { DEFAULTS.fetch(:thresholds) },
         groups: -> { DEFAULTS.fetch(:groups) },
-        primary: -> { DEFAULTS.fetch(:primary) }
+        primary: -> do
+          primary_threshold = thresholds.first || raise("no thresholds set")
+          primary_threshold.fetch(:timeframe)
+        end
       )
 
       def build_json
@@ -40,22 +42,13 @@ module Kennel
           type: type
         )
 
-        # Add timeframe and thresholds based on primary setting
-        if primary
-          data[:timeframe] = primary
-
-          threshold =
-            thresholds.detect { |t| t[:timeframe] == primary } ||
-            raise("unable to find threshold with timeframe #{primary}")
-
-          # Only add warning_threshold if it exists
-          if threshold[:warning]
-            data[:warning_threshold] = threshold[:warning]
-          end
-
-          # target is required
-          data[:target_threshold] = threshold[:target]
-        end
+        # Add timeframe and thresholds based on primary setting so users do not have to duplicate thresholds
+        data[:timeframe] = primary
+        threshold =
+          thresholds.detect { |t| t[:timeframe] == primary } ||
+          raise("unable to find threshold with timeframe #{primary}")
+        data[:warning_threshold] = threshold[:warning]
+        data[:target_threshold] = threshold[:target]
 
         if type == "time_slice"
           data[:sli_specification] = sli_specification
