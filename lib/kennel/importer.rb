@@ -21,6 +21,13 @@ module Kennel
       data = @api.show(model.api_resource, id)
 
       id = data.fetch(:id) # keep native value
+
+      if resource == "slo"
+        # we ignore the 3 copy-pasted fields that track the primary threshold, so we need to sort imported thresholds
+        # or the primary information is lost
+        data[:thresholds].sort! { |t| t[:timeframe] == data[:timeframe] ? 0 : 1 }
+      end
+
       model.normalize({}, data) # removes id
       data[:id] = id
 

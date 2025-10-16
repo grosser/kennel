@@ -6,7 +6,7 @@ module Kennel
 
       READONLY_ATTRIBUTES = [
         *superclass::READONLY_ATTRIBUTES,
-        :type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold
+        :type_id, :monitor_tags
       ].freeze
       TRACKING_FIELD = :description
       DEFAULTS = {
@@ -43,19 +43,16 @@ module Kennel
         # Add timeframe and thresholds based on primary setting
         if primary
           data[:timeframe] = primary
-
           threshold =
             thresholds.detect { |t| t[:timeframe] == primary } ||
             raise("unable to find threshold with timeframe #{primary}")
-
-          # Only add warning_threshold if it exists
-          if threshold[:warning]
-            data[:warning_threshold] = threshold[:warning]
-          end
-
-          # target is required
-          data[:target_threshold] = threshold[:target]
+        else
+          # Primary isn't set: add timeframe and thresholds based on "primary" threshold
+          threshold = thresholds.first || raise("not thresholds set")
         end
+        data[:timeframe] = threshold[:timeframe]
+        data[:warning_threshold] = threshold[:warning]
+        data[:target_threshold] = threshold[:target]
 
         if type == "time_slice"
           data[:sli_specification] = sli_specification
@@ -97,6 +94,9 @@ module Kennel
           threshold.delete(:warning_display)
           threshold.delete(:target_display)
         end
+
+        # remove copy-pasted values, if thresholds change these will also change
+        [:warning_threshold, :target_threshold].each { |a| actual[a] = expected[a] }
 
         # tags come in a semi-random order and order is never updated
         expected[:tags]&.sort!
