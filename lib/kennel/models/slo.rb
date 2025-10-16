@@ -14,11 +14,10 @@ module Kennel
         query: nil,
         groups: nil,
         monitor_ids: [],
-        thresholds: [],
-        primary: nil
+        thresholds: []
       }.freeze
 
-      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :primary
+      settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :timeframe
 
       defaults(
         tags: -> { @project.tags },
@@ -27,7 +26,7 @@ module Kennel
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
         thresholds: -> { DEFAULTS.fetch(:thresholds) },
         groups: -> { DEFAULTS.fetch(:groups) },
-        primary: -> { DEFAULTS.fetch(:primary) }
+        timeframe: -> { (thresholds || raise("no thresholds set")).dig(0, :timeframe) }
       )
 
       def build_json
@@ -35,22 +34,16 @@ module Kennel
           name: "#{name}#{LOCK}",
           description: description,
           thresholds: thresholds,
+          timeframe: timeframe,
           monitor_ids: monitor_ids,
           tags: tags,
           type: type
         )
 
-        # Add timeframe and thresholds based on primary setting
-        if primary
-          data[:timeframe] = primary
-          threshold =
-            thresholds.detect { |t| t[:timeframe] == primary } ||
-            raise("unable to find threshold with timeframe #{primary}")
-        else
-          # Primary isn't set: add timeframe and thresholds based on "primary" threshold
-          threshold = thresholds.first || raise("not thresholds set")
-        end
-        data[:timeframe] = threshold[:timeframe]
+        # we do not store the copy-pasted fields for warning_threshold and target_threshold, so insert them
+        threshold =
+          thresholds.detect { |t| t[:timeframe] == data[:timeframe] } ||
+          raise("unable to find threshold with timeframe #{data[:timeframe]}")
         data[:warning_threshold] = threshold[:warning]
         data[:target_threshold] = threshold[:target]
 
@@ -95,7 +88,7 @@ module Kennel
           threshold.delete(:target_display)
         end
 
-        # remove copy-pasted values, if thresholds change these will also change
+        # remove copy-pasted value diff, if threshold changes these will also change
         [:warning_threshold, :target_threshold].each { |a| actual[a] = expected[a] }
 
         # tags come in a semi-random order and order is never updated

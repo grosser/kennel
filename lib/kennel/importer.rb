@@ -21,13 +21,6 @@ module Kennel
       data = @api.show(model.api_resource, id)
 
       id = data.fetch(:id) # keep native value
-
-      if resource == "slo"
-        # we ignore the 3 copy-pasted fields that track the primary threshold, so we need to sort imported thresholds
-        # or the primary information is lost
-        data[:thresholds].sort! { |t| t[:timeframe] == data[:timeframe] ? 0 : 1 }
-      end
-
       model.normalize({}, data) # removes id
       data[:id] = id
 
@@ -87,6 +80,13 @@ module Kennel
         end
       when "synthetics/tests"
         data[:locations] = :all if data[:locations].sort == Kennel::Models::SyntheticTest::LOCATIONS.sort
+      when "slo"
+        # remove generated values that are not supported settings
+        data.delete :warning_threshold
+        data.delete :target_threshold
+
+        # remove timeframe if it is what the generation logic sets anyway
+        data.delete :timeframe if data.dig(:thresholds, 0, :timeframe) == data[:timeframe]
       else
         # noop
       end
