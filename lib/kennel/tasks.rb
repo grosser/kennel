@@ -66,18 +66,26 @@ namespace :kennel do
     Kennel::Tasks.abort "Error during diffing" unless $CHILD_STATUS.success?
   end
 
-  # ideally do this on every run, but it's slow (~1.5s) and brittle (might not find all + might find false-positives)
+  # ideally do this on every run, but it's slow (~1.5s) and brittle
+  # (might not find all via the matcher + might find false-positives because random emails can also be sent to)
   # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
+  # /monitor/notifications has users+slack+sns so there is lots of overlap and we don't really need sns
+  # got a support ticket open to get sns into api/v2 too
   desc "Verify that all used monitor  mentions are valid"
   task validate_mentions: :environment do
-    known = Kennel::Api.new
-      .send(:request, :get, "/monitor/notifications")
-      .fetch(:handles)
-      .values
-      .flatten(1)
+    known = []
+
+    # @slack- @team- @webhook- user-emails
+    known += Kennel::Api.new.send(:request, :get, "/api/v2/notifications/handles?group_limit=99999")
+      .fetch(:data)
+      .flat_map { |d| d.dig(:attributes, :handles) }
       .map { |v| v.fetch(:value) }
 
-    known += ENV["KNOWN"].to_s.split(",")
+    # group emails or other 1-off things to ignore
+    manual = ENV["KNOWN"].to_s.split(",")
+    dupes = (manual & known)
+    Kennel::Tasks.abort "KNOWN=#{dupes.join(",")} values are already known and should be removed" if dupes.any?
+    known += manual
 
     bad = []
     Dir["generated/**/*.json"].each do |f|
