@@ -6,7 +6,7 @@ module Kennel
 
       READONLY_ATTRIBUTES = [
         *superclass::READONLY_ATTRIBUTES,
-        :type_id, :monitor_tags, :target_threshold, :timeframe, :warning_threshold
+        :type_id, :monitor_tags
       ].freeze
       TRACKING_FIELD = :description
       DEFAULTS = {
@@ -40,20 +40,13 @@ module Kennel
           type: type
         )
 
-        # Add timeframe and thresholds based on primary setting
-        if primary
-          data[:timeframe] = primary
-
+        # add top level timeframe and threshold settings based on `primary`
+        if (p = primary)
+          data[:timeframe] = p
           threshold =
-            thresholds.detect { |t| t[:timeframe] == primary } ||
-            raise("unable to find threshold with timeframe #{primary}")
-
-          # Only add warning_threshold if it exists
-          if threshold[:warning]
-            data[:warning_threshold] = threshold[:warning]
-          end
-
-          # target is required
+            thresholds.detect { |t| t[:timeframe] == p } ||
+            raise(ArgumentError, "#{tracking_id} unable to find threshold with timeframe #{p}")
+          data[:warning_threshold] = threshold[:warning]
           data[:target_threshold] = threshold[:target]
         end
 
@@ -101,6 +94,12 @@ module Kennel
         # tags come in a semi-random order and order is never updated
         expected[:tags]&.sort!
         actual[:tags].sort!
+
+        # do not show these in the diff if we automatically pick the primary timeframe,
+        # or we will have a permanent `something -> nil` diff
+        unless expected[:timeframe]
+          [:timeframe, :warning_threshold, :target_threshold].each { |k| actual.delete k }
+        end
 
         ignore_default(expected, actual, DEFAULTS)
       end

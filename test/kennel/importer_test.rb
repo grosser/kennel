@@ -127,21 +127,6 @@ describe Kennel::Importer do
       RUBY
     end
 
-    it "can import a slo" do
-      response = { data: { id: 123, name: "hello", tags: ["foo"] } }
-      stub_datadog_request(:get, "slo/123").to_return(body: response.to_json)
-      dash = importer.import("slo", 123)
-      dash.must_equal <<~RUBY
-        Kennel::Models::Slo.new(
-          self,
-          name: -> { "hello" },
-          id: -> { 123 },
-          kennel_id: -> { "hello" },
-          tags: -> { super() + ["foo"] }
-        )
-      RUBY
-    end
-
     # request to automate this that got ignored https://help.datadoghq.com/hc/en-us/requests/256724
     it "converts deprecated metric alert monitor type" do
       response = { id: 123, name: "hello", type: "metric alert", options: {} }
@@ -598,6 +583,68 @@ describe Kennel::Importer do
       assert_requested from_kennel
     end
 
+    describe "slo" do
+      def call
+        stub_datadog_request(:get, "slo/123").to_return(body: { data: response }.to_json)
+        importer.import("slo", 123)
+      end
+
+      let(:response) do
+        { id: 123, name: "hello", tags: ["foo"], thresholds: [{ timeframe: "7d" }, { timeframe: "30d" }], timeframe: "7d" }
+      end
+
+      it "can import" do
+        call.must_equal <<~RUBY
+          Kennel::Models::Slo.new(
+            self,
+            name: -> { "hello" },
+            id: -> { 123 },
+            kennel_id: -> { "hello" },
+            tags: -> { super() + ["foo"] },
+            thresholds: -> {
+              [
+                {
+                  timeframe: "7d"
+                },
+                {
+                  timeframe: "30d"
+                }
+              ]
+            }
+          )
+        RUBY
+      end
+
+      it "sets primary if needed" do
+        response[:timeframe] = "30d"
+        call.must_equal <<~RUBY
+          Kennel::Models::Slo.new(
+            self,
+            name: -> { "hello" },
+            id: -> { 123 },
+            kennel_id: -> { "hello" },
+            tags: -> { super() + ["foo"] },
+            primary: -> { "30d" },
+            thresholds: -> {
+              [
+                {
+                  timeframe: "7d"
+                },
+                {
+                  timeframe: "30d"
+                }
+              ]
+            }
+          )
+        RUBY
+      end
+
+      it "does not crash without thresholds" do
+        response.delete(:thresholds)
+        call
+      end
+    end
+
     describe "synthetic test" do
       it "import basic" do
         response = { public_id: 123, name: "hello", tags: ["foo"], locations: ["abc"] }
@@ -699,7 +746,7 @@ describe Kennel::Importer do
                   }
                 ]
               }
-          CODE
+            CODE
           )
         end
       end

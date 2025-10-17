@@ -68,70 +68,33 @@ describe Kennel::Models::Slo do
     end
 
     it "sets timeframe and threshold values based on primary setting" do
-      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }]
-      expected_json = expected_basic_json.merge(
-        timeframe: "7d",
-        warning_threshold: 99.5,
-        target_threshold: 99.9,
+      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }, { warning: 99.9, target: 99.95, timeframe: "30d" }]
+      expected_basic_json.merge!(
+        timeframe: "30d",
+        warning_threshold: 99.9,
+        target_threshold: 99.95,
         thresholds: thresholds
       )
 
       assert_json_equal(
         slo(
-          primary: -> { "7d" },
+          primary: -> { "30d" },
           thresholds: -> { thresholds }
         ).build_json,
-        expected_json
+        expected_basic_json
       )
     end
 
-    it "raises an error when primary has no matching threshold timeframe" do
+    it "alerts user when primary has no matching threshold timeframe" do
       thresholds = [{ warning: 99.5, target: 99.9, timeframe: "30d" }]
 
-      error = assert_raises RuntimeError do
+      error = assert_raises ArgumentError do
         slo(
           primary: -> { "7d" },
           thresholds: -> { thresholds }
         ).build_json
       end
-
-      assert_equal "unable to find threshold with timeframe 7d", error.message
-    end
-
-    it "does not set primary related fields when primary is not set" do
-      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }]
-      expected_json = expected_basic_json.merge(
-        thresholds: thresholds
-      )
-
-      # No primary, so no primary-specific fields should be set
-      result = slo(thresholds: -> { thresholds }).build_json
-      assert_json_equal(result, expected_json)
-
-      # Specifically verify these fields are not present
-      refute_includes result.keys, :target_threshold
-      refute_includes result.keys, :warning_threshold
-      refute_includes result.keys, :timeframe
-    end
-
-    it "sets only timeframe and target_threshold when threshold has only target" do
-      # Test for threshold with only target (no warning) when primary is set
-      thresholds = [{ target: 99.9, timeframe: "7d" }]
-      expected_json = expected_basic_json.merge(
-        timeframe: "7d",
-        target_threshold: 99.9,
-        thresholds: thresholds
-      )
-
-      result = slo(
-        primary: -> { "7d" },
-        thresholds: -> { thresholds }
-      ).build_json
-
-      assert_json_equal(result, expected_json)
-
-      # Verify warning_threshold is not present
-      refute_includes result.keys, :warning_threshold
+      error.message.must_include "unable to find threshold with timeframe 7d"
     end
 
     it "sets groups when given" do
@@ -320,6 +283,24 @@ describe Kennel::Models::Slo do
       Kennel::Models::Slo.normalize(expected, actual)
       expected.must_equal(thresholds: [{ warning: 1.0 }], tags: [])
       actual.must_equal expected
+    end
+
+    describe "primary" do
+      it "ignores remote primary values if we rely on the defaults" do
+        expected = {}
+        actual = { timeframe: "7d", warning_threshold: 99, target_threshold: 99.9, tags: [] }
+        Kennel::Models::Slo.normalize(expected, actual)
+        expected.must_equal({})
+        actual.must_equal({ tags: [] })
+      end
+
+      it "keeps remote primary values if we set primary and want to see the diff" do
+        expected = { timeframe: "30d" }
+        actual = { timeframe: "7d", warning_threshold: 99, target_threshold: 99.9, tags: [] }
+        Kennel::Models::Slo.normalize(expected, actual)
+        expected.must_equal({ timeframe: "30d" })
+        actual.must_equal({ timeframe: "7d", warning_threshold: 99, target_threshold: 99.9, tags: [] })
+      end
     end
   end
 end

@@ -21,6 +21,12 @@ module Kennel
       data = @api.show(model.api_resource, id)
 
       id = data.fetch(:id) # keep native value
+      if resource == "slo"
+        # only set primary if needed to reduce clutter
+        if data[:thresholds] && data[:thresholds].min_by { |t| t[:timeframe].to_i }[:timeframe] != data[:timeframe]
+          data[:primary] = data[:timeframe]
+        end
+      end
       model.normalize({}, data) # removes id
       data[:id] = id
 
