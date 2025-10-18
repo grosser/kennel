@@ -270,13 +270,15 @@ describe "tasks" do
       Tempfile.create do |f|
         f.write(content.to_json)
         f.flush
-        Dir.expects(:[]).returns([f.path])
+        Dir.stubs(:[]).returns([f.path])
         super
       end
     end
 
     before do
-      Kennel::Api.any_instance.expects(:request).returns({ handles: { foo: [{ value: "bar" }, { value: "baz" }] } })
+      Kennel::Api.any_instance.expects(:request)
+        .with(:get, "/api/v2/notifications/handles?group_limit=99999")
+        .returns({ data: [{ attributes: { handles: [{ value: "bar" }, { value: "baz" }] } }] })
     end
 
     it "passes" do
@@ -302,6 +304,10 @@ describe "tasks" do
       content[:message] = "@oo@ps"
       assert_raises { execute }.message.must_equal "Aborted SystemExit"
       stderr.string.must_include "Invalid mentions"
+    end
+
+    it "fails when known knowns are ignored" do
+      assert_raises { execute KNOWN: "bar" }.message.must_equal "Aborted KNOWN=bar values are already known and should be removed"
     end
   end
 
