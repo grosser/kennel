@@ -127,6 +127,7 @@ module Kennel
     # update it instead to avoid old urls from becoming invalid
     # - careful with unmatched_actual being huge since it has all api resources
     # - don't do it when a monitor type is changing since that would block the update
+    # - don't do it when a dashboard layout_type is changing since that would block the update
     # - when using a filter and updating the kennel_id of an existing item, old and new must be in the filter
     def convert_replace_into_update!(matching, unmatched_actual, unmatched_expected)
       unmatched_expected.reject! do |e|
@@ -135,10 +136,15 @@ module Kennel
           break [field, value]
         end
         raise unless e_field #  uncovered: should never happen ...
+        # TODO: ideally reuse invalid_update! logic and just put the fields somewhere
         e_monitor_type = e.as_json[:type]
+        e_dashboard_layout_type = e.as_json[:layout_type]
 
         actual = unmatched_actual.detect do |a|
-          a[:klass].api_resource == e.class.api_resource && a[e_field] == e_value && a[:type] == e_monitor_type
+          a[:klass].api_resource == e.class.api_resource &&
+            a[e_field] == e_value &&
+            a[:type] == e_monitor_type &&
+            a[:layout_type] == e_dashboard_layout_type
         end
         next false unless actual # keep in unmatched
 

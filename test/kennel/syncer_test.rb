@@ -553,6 +553,18 @@ describe Kennel::Syncer do
         TEXT
       end
 
+      it "does not update tracking id for dashboard when their layout_type has changed and would crash on update" do
+        m = dashboard("a", "b", title: "a", layout_type: "foo")
+        m.as_json[:title] = "a🔒" # dashboard helper needs a refactor
+        expected << m
+        monitors << dashboard_api_response("c", "d", id: 234, title: "a🔒")
+        output.must_equal <<~TEXT
+          Plan:
+          Create dashboard a:b
+          Delete dashboard c:d
+        TEXT
+      end
+
       it "updates tracking id for dashboards" do
         # dashboard tracking id was changed
         d = dashboard("a", "b", title: "a")
