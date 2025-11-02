@@ -180,12 +180,11 @@ module Kennel
         end
       end
 
-      def validate_update!(diffs)
-        # ensure type does not change, but not if it's metric->query which is supported and used by importer.rb
-        _, path, from, to = diffs.detect { |_, path, _, _| path == "type" }
-        if path && !(from == "metric alert" && to == "query alert")
-          invalid_update!(path, from, to)
-        end
+      # ensure type does not change, but not if it's metric->query which is supported and used by importer.rb
+      def allowed_update_error(actual)
+        actual_type = actual[:type]
+        return if actual_type == type || (actual_type == "metric alert" && type == "query alert")
+        "cannot update type from #{actual_type} to #{type}"
       end
 
       def self.api_resource

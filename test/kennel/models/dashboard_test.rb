@@ -347,9 +347,11 @@ describe Kennel::Models::Dashboard do
           tick_pos: "50%"
         }
       }
-      call(dashboard(
-             widgets: -> { [{ definition: { type: "note", content: "C" } }] }
-           ), json).must_equal []
+      call(
+        dashboard(
+          widgets: -> { [{ definition: { type: "note", content: "C" } }] }
+        ), json
+      ).must_equal []
     end
 
     describe "reflow" do
@@ -400,16 +402,13 @@ describe Kennel::Models::Dashboard do
     end
   end
 
-  describe "#validate_update!" do
-    it "allows update of title" do
-      dashboard.validate_update!([["~", "title", "foo", "bar"]])
+  describe "#allowed_update_error" do
+    it "allows update of other fields" do
+      dashboard.allowed_update_error({ title: "foo", layout_type: dashboard.layout_type }).must_be_nil
     end
 
     it "disallows update of layout_type" do
-      e = assert_raises Kennel::DisallowedUpdateError do
-        dashboard.validate_update!([["~", "layout_type", "foo", "bar"]])
-      end
-      e.message.must_match(/datadog.*allow.*layout_type/i)
+      dashboard.allowed_update_error({ layout_type: "foo" }).must_equal "cannot update layout_type from foo to ordered"
     end
   end
 
