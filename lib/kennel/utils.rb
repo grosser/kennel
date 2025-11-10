@@ -24,13 +24,14 @@ module Kennel
         workers = Array.new(threads).map do
           Thread.new do
             loop do
-              item, i = work.pop
+              item, i = work.shift
               break unless i
               done[i] =
                 begin
                   yield item
                 rescue Exception => e # rubocop:disable Lint/RescueException
-                  work.clear
+                  work.clear # prevent new work
+                  (workers - [Thread.current]).each(&:kill) # stop ongoing work
                   e
                 end
             end

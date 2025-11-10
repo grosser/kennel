@@ -63,7 +63,7 @@ describe Kennel::Utils do
       end
     end
 
-    it "finishes fast when exception happens" do
+    it "does not start new items when exception happens" do
       called = []
       all = [1, 2, 3, 4, 5]
       assert_raises ArgumentError do
@@ -73,6 +73,28 @@ describe Kennel::Utils do
         end
       end
       called.size.must_be :<, all.size
+    end
+
+    # important because we don't want to wait for download to finish
+    # when generate instantly failed on a missing proejct for example
+    it "stops existing items when exception happens" do
+      called = []
+      all = [1, 2, 3, 4, 5]
+      duration = Benchmark.realtime do
+        assert_raises ArgumentError do
+          Kennel::Utils.parallel(all, max: 2) do |i|
+            called << i
+            if i == 1
+              sleep 1
+            else
+              sleep 0.05 # make sure other thread started
+              raise ArgumentError
+            end
+          end
+        end
+      end
+      called.must_equal [1, 2]
+      duration.must_be :<, 0.1
     end
   end
 
