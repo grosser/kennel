@@ -142,12 +142,8 @@ module Kennel
         @as_json
       end
 
-      # Can raise DisallowedUpdateError
-      def validate_update!(_diffs)
-      end
-
-      def invalid_update!(field, old_value, new_value)
-        raise DisallowedUpdateError, "#{safe_tracking_id} Datadog does not allow update of #{field} (#{old_value.inspect} -> #{new_value.inspect})"
+      def allowed_update_error(_a)
+        nil
       end
 
       # For use during error handling

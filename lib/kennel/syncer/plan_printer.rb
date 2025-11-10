@@ -12,9 +12,9 @@ module Kennel
         if plan.empty?
           Kennel.out.puts Console.color(:green, "Nothing to do")
         else
+          print_changes "Delete", plan.deletes, :red
           print_changes "Create", plan.creates, :green
           print_changes "Update", plan.updates, :yellow
-          print_changes "Delete", plan.deletes, :red
         end
       end
 

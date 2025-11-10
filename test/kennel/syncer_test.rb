@@ -548,8 +548,8 @@ describe Kennel::Syncer do
         monitors << monitor_api_response("c", "d", id: 234, name: "a🔒")
         output.must_equal <<~TEXT
           Plan:
-          Create monitor a:b
           Delete monitor c:d
+          Create monitor a:b
         TEXT
       end
 
@@ -560,8 +560,8 @@ describe Kennel::Syncer do
         monitors << dashboard_api_response("c", "d", id: 234, title: "a🔒")
         output.must_equal <<~TEXT
           Plan:
-          Create dashboard a:b
           Delete dashboard c:d
+          Create dashboard a:b
         TEXT
       end
 

@@ -208,9 +208,10 @@ module Kennel
         end
       end
 
-      def validate_update!(diffs)
-        _, path, from, to = diffs.find { |diff| diff[1] == "layout_type" }
-        invalid_update!(path, from, to) if path
+      def allowed_update_error(actual)
+        actual_type = actual[:layout_type]
+        return if actual_type == layout_type
+        "cannot update layout_type from #{actual_type} to #{layout_type}"
       end
 
       private

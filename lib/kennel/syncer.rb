@@ -20,7 +20,6 @@ module Kennel
 
       @resolver = Resolver.new(expected: expected, filter: filter)
       @plan = Plan.new(*calculate_changes(expected: expected, actual: actual))
-      validate_changes
     end
 
     def print_plan
@@ -126,27 +125,19 @@ module Kennel
     # if there is a new item that has the same name or title as an "to be deleted" item,
     # update it instead to avoid old urls from becoming invalid
     # - careful with unmatched_actual being huge since it has all api resources
-    # - don't do it when a monitor type is changing since that would block the update
-    # - don't do it when a dashboard layout_type is changing since that would block the update
-    # - when using a filter and updating the kennel_id of an existing item, old and new must be in the filter
+    # - don't do it when update is not allowed
+    # - when using a filter and updating the kennel_id of an existing item, old and new must be in the filter (PROJECT= works, but not TRACKING_ID)
     def convert_replace_into_update!(matching, unmatched_actual, unmatched_expected)
       unmatched_expected.reject! do |e|
-        e_field, e_value = Kennel::Models::Record::TITLE_FIELDS.detect do |field|
-          next unless (value = e.as_json[field])
-          break [field, value]
-        end
-        raise unless e_field #  uncovered: should never happen ...
-        # TODO: ideally reuse invalid_update! logic and just put the fields somewhere
-        e_monitor_type = e.as_json[:type]
-        e_dashboard_layout_type = e.as_json[:layout_type]
-
+        # find actual by title
+        e_field, e_value = title_field_and_value(e)
         actual = unmatched_actual.detect do |a|
           a[:klass].api_resource == e.class.api_resource &&
-            a[e_field] == e_value &&
-            a[:type] == e_monitor_type &&
-            a[:layout_type] == e_dashboard_layout_type
+            a[e_field] == e_value
         end
-        next false unless actual # keep in unmatched
+
+        # keep unmatched if we could not find or can't update
+        next false if !actual || e.allowed_update_error(actual)
 
         # add as update and remove from unmatched
         unmatched_actual.delete(actual)
@@ -154,6 +145,14 @@ module Kennel
         matching << [e, actual]
         true
       end
+    end
+
+    def title_field_and_value(e)
+      Kennel::Models::Record::TITLE_FIELDS.detect do |field|
+        next unless (value = e.as_json[field])
+        return [field, value]
+      end
+      raise # uncovered: should never happen ...
     end
 
     # fill details of things we need to compare
@@ -172,14 +171,6 @@ module Kennel
           message = "Warning: #{resource} #{e.tracking_id} specifies id #{id}, but no such #{resource} exists. 'id' will be ignored. Remove the `id: -> { #{id} }` line."
           Kennel.err.puts Console.color(:yellow, message)
         end
-      end
-    end
-
-    # We've already validated the desired objects ('generated') in isolation.
-    # Now that we have made the plan, we can perform some more validation.
-    def validate_changes
-      @plan.updates.each do |item|
-        item.expected.validate_update!(item.diff)
       end
     end
 

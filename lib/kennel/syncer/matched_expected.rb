@@ -36,7 +36,13 @@ module Kennel
 
         def matching_expected(a, map)
           klass = a.fetch(:klass)
-          map["#{klass.api_resource}:#{a.fetch(:id)}"] || map[a.fetch(:tracking_id)]
+          full_id = "#{klass.api_resource}:#{a.fetch(:id)}"
+          if (e = map[full_id]) # we try to update and the user has set the id
+            return e unless (error = e.allowed_update_error(a))
+            raise DisallowedUpdateError, "#{full_id} Datadog does not allow update: #{error}"
+          elsif (e = map[a.fetch(:tracking_id)])
+            e.allowed_update_error(a) ? nil : e # force a re-create if we can't update
+          end
         end
       end
     end
