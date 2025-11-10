@@ -109,7 +109,7 @@ namespace :kennel do
     end
   end
 
-  desc "generate local definitions"
+  desc "store definitions in generated/"
   task generate: :environment do
     Kennel::Tasks.kennel.generate
   end

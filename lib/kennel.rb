@@ -56,7 +56,7 @@ module Kennel
   self.err = $stderr
 
   class Engine
-    attr_accessor :strict_imports
+    attr_accessor :strict_imports # TODO: rename to :enforce_expected_ids_exist
 
     def initialize
       @strict_imports = true
@@ -93,7 +93,9 @@ module Kennel
       @syncer ||= begin
         preload
         Syncer.new(
-          api, generated, definitions,
+          api,
+          expected: generated,
+          actual: definitions,
           filter: filter,
           strict_imports: strict_imports
         )
@@ -129,7 +131,7 @@ module Kennel
       end
     end
 
-    # performance: this takes ~100ms on large codebases, tried rewriting with Set or Hash but it was slower
+    # performance: this takes ~100ms on large codebases, tried rewriting with Set or Hash, but it was slower
     def validate_unique_tracking_ids(parts)
       bad = parts.group_by(&:tracking_id).select { |_, same| same.size > 1 }
       return if bad.empty?

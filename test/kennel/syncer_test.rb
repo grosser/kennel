@@ -178,7 +178,9 @@ describe Kennel::Syncer do
     end
 
     Kennel::Syncer.new(
-      api, expected, actual,
+      api,
+      expected: expected,
+      actual: actual,
       filter: filter,
       strict_imports: strict_imports[0]
     )

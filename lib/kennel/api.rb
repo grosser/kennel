@@ -73,6 +73,7 @@ module Kennel
       end
     end
 
+    # fill the resource with the full response from the `show` if `list` does not return it
     def fill_details!(api_resource, list)
       details_cache do |cache|
         Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }

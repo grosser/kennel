@@ -13,7 +13,7 @@ module Kennel
 
     attr_reader :plan
 
-    def initialize(api, expected, actual, filter:, strict_imports: true)
+    def initialize(api, expected:, actual:, filter:, strict_imports: true)
       @api = api
       @strict_imports = strict_imports
       @filter = filter
@@ -155,10 +155,10 @@ module Kennel
       raise # uncovered: should never happen ...
     end
 
-    # fill details of things we need to compare
-    def fill_details!(details_needed)
-      details_needed = details_needed.map { |e, a| a if e && e.class.api_resource == "dashboard" }.compact
-      @api.fill_details! "dashboard", details_needed
+    # fill details of things we need to compare, so diff works even though we cannot mass-fetch definitions
+    def fill_details!(matching)
+      dashboards = matching.filter_map { |e, a| a if e && e.class.api_resource == "dashboard" }
+      @api.fill_details! "dashboard", dashboards
     end
 
     def validate_expected_id_not_missing(expected)
