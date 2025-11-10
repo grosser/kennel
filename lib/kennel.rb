@@ -143,7 +143,10 @@ module Kennel
     def definitions(**kwargs)
       @definitions ||= Progress.progress("Downloading definitions", **kwargs) do
         Utils.parallel(Models::Record.subclasses) do |klass|
-          api.list(klass.api_resource, with_downtimes: false) # lookup monitors without adding unnecessary downtime information
+          # lookup monitors without adding unnecessary downtime information
+          params = (klass.api_resource == "monitor" ? { with_downtimes: false } : {})
+
+          api.list(klass.api_resource, params)
         end.flatten(1)
       end
     end
