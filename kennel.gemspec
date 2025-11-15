@@ -15,5 +15,6 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.add_dependency "faraday", "~> 1.8"
   s.add_dependency "hashdiff", "~> 1.0"
   s.add_dependency "net-http-persistent", "~> 4.0"
+  s.add_dependency "parallel", "~> 1.3"
   s.add_dependency "zeitwerk", "~> 2.4"
 end
