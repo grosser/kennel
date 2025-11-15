@@ -18,7 +18,7 @@ module Kennel
       end
 
       def validated_parts
-        all = parts
+        all = filter_parts(parts)
         unless all.is_a?(Array) && all.all? { |part| part.is_a?(Record) }
           raise "Project #{kennel_id} #parts must return an array of Records"
         end
@@ -28,6 +28,11 @@ module Kennel
       end
 
       private
+
+      # hook for users to add custom filtering via `prepend`
+      def filter_parts(parts)
+        parts
+      end
 
       # hook for users to add custom validations via `prepend`
       def validate_parts(parts)
