@@ -3,6 +3,7 @@ require "faraday"
 require "json"
 require "zeitwerk"
 require "English"
+require "parallel"
 
 require "kennel/version"
 require "kennel/console"
@@ -121,8 +122,21 @@ module Kennel
         end
 
         Progress.progress "Building json" do
-          # trigger json caching here so it counts into generating
-          Utils.parallel(parts, &:build)
+          # trigger json caching here so it counts into generating and not into storing
+          # ideally return the full part, but we get "singleton cannot be dumped" error
+          slice_size = [1, parts.size / 100].max # doing 1 at a time slows things down
+          transfer = [:@as_json, :@validation_errors]
+          transferred = Parallel.flat_map(parts.each_slice(slice_size), in_processes: Etc.nprocessors) do |slice|
+            slice.map do |part|
+              part.build
+              transfer.map { |v| part.instance_variable_get(v) }
+            end
+          end
+          transferred.each_with_index do |values, i|
+            transfer.each_with_index do |v, j|
+              parts[i].instance_variable_set(v, values[j])
+            end
+          end
         end
 
         OptionalValidations.valid?(parts) || raise(GenerationAbortedError)
