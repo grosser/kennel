@@ -63,7 +63,7 @@ module Kennel
         scheduling_options: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
-        on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
+        on_missing_data: -> { nil },
         notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) },
         notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) },
         require_full_window: -> { false }
@@ -152,9 +152,12 @@ module Kennel
 
         # on_missing_data cannot be used with notify_no_data or no_data_timeframe
         # TODO migrate everything to only use on_missing_data
-        if data.fetch(:type) == "event-v2 alert" || on_missing_data != "default"
-          options[:on_missing_data] = on_missing_data
-          options[:notify_no_data] = false # cannot set nil or it's an endless update loop
+        if data.fetch(:type) == "event-v2 alert" || on_missing_data
+          requested = on_missing_data || "default"
+          options[:on_missing_data] = requested
+          expected_no_data = (requested == "show_and_notify_no_data")
+          warn "HEY" if expected_no_data != notify_no_data
+          options[:notify_no_data] = expected_no_data
           options.delete :no_data_timeframe
         end
 
