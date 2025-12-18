@@ -6,7 +6,7 @@ module Kennel
 
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles, :draft_status
+        :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles, :draft_status, :assets
       ]
       TRACKING_FIELD = :message
 
