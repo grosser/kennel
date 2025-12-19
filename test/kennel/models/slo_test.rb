@@ -302,5 +302,23 @@ describe Kennel::Models::Slo do
         actual.must_equal({ timeframe: "7d", warning_threshold: 99, target_threshold: 99.9, tags: [] })
       end
     end
+
+    describe "sli_specification" do
+      it "diffs remote for time_slice" do
+        expected = { type: "time_slice", tags: [], sli_specification: 1 }
+        actual = { type: "time_slice", tags: [], sli_specification: 2 }
+        Kennel::Models::Slo.normalize(expected, actual)
+        expected.must_equal(type: "time_slice", tags: [], sli_specification: 1)
+        actual.must_equal(type: "time_slice", tags: [], sli_specification: 2)
+      end
+
+      it "ignores remote for non time_slice" do
+        expected = { tags: [] }
+        actual = { sli_specification: 1, tags: [] }
+        Kennel::Models::Slo.normalize(expected, actual)
+        expected.must_equal(tags: [])
+        actual.must_equal(tags: [])
+      end
+    end
   end
 end

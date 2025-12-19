@@ -50,6 +50,7 @@ module Kennel
           data[:target_threshold] = threshold[:target]
         end
 
+        # TODO: if user set sli_specification but we don't use it we should raise, but sadly we can't detect that easily
         if type == "time_slice"
           data[:sli_specification] = sli_specification
         elsif (v = query)
@@ -99,6 +100,11 @@ module Kennel
         # or we will have a permanent `something -> nil` diff
         unless expected[:timeframe]
           [:timeframe, :warning_threshold, :target_threshold].each { |k| actual.delete k }
+        end
+
+        # datadog always sets this, but we only set it for time_slice, so discard it for everything else to avoid diff
+        if expected[:type] != "time_slice"
+          actual.delete :sli_specification
         end
 
         ignore_default(expected, actual, DEFAULTS)
