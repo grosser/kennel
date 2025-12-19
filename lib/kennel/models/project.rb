@@ -11,7 +11,7 @@ module Kennel
       def self.file_location
         return @file_location if defined?(@file_location)
         if (location = instance_methods(false).first)
-          @file_location = instance_method(location).source_location.first.sub("#{Bundler.root}/", "")
+          @file_location = force_relative_path(instance_method(location).source_location.first)
         else
           @file_location = nil
         end
@@ -28,6 +28,13 @@ module Kennel
       end
 
       private
+
+      private_class_method def self.force_relative_path(path)
+        return path unless File.absolute_path?(path)
+        path.dup.sub!("#{Bundler.root}/", "") ||
+        path.dup.sub!("#{Dir.pwd}/", "") ||
+        raise("Unable to make path #{path} relative with bundler root #{Bundler.root} or pwd #{Dir.pwd}")
+      end
 
       # hook for users to add custom filtering via `prepend`
       def filter_parts(parts)

@@ -24,31 +24,52 @@ describe Kennel::Models::Project do
     end
 
     it "detects the file location when defaults-plain is used" do
-      project_class = plain_project_class
       eval <<~EVAL, nil, "dir/foo.rb", 1
-        project_class.instance_eval do
+        plain_project_class.instance_eval do
           defaults(name: 'bar')
         end
       EVAL
-      project_class.file_location.must_equal("dir/foo.rb")
+      plain_project_class.file_location.must_equal("dir/foo.rb")
     end
 
     it "detects the file location when defaults-proc is used" do
-      project_class = plain_project_class
       eval <<~EVAL, nil, "dir/foo.rb", 1
-        project_class.instance_eval do
+        plain_project_class.instance_eval do
           defaults(name: -> { 'bar' })
         end
       EVAL
-      project_class.file_location.must_equal("dir/foo.rb")
+      plain_project_class.file_location.must_equal("dir/foo.rb")
     end
 
     it "detects the file location when a custom method is used" do
-      project_class = plain_project_class
       eval <<~EVAL, nil, "dir/foo.rb", 1
-        project_class.define_method(:my_method) { }
+        plain_project_class.define_method(:my_method) { }
       EVAL
-      project_class.file_location.must_equal("dir/foo.rb")
+      plain_project_class.file_location.must_equal("dir/foo.rb")
+    end
+
+    it "removes bundler root if absolute" do
+      eval <<~EVAL, nil, "#{Bundler.root}/dir/foo.rb", 1
+        plain_project_class.define_method(:my_method) { }
+      EVAL
+      plain_project_class.file_location.must_equal "dir/foo.rb"
+    end
+
+    it "removes Dir.pwd root if absolute" do
+      Bundler.expects(:root).returns("/other")
+      eval <<~EVAL, nil, "#{Dir.pwd}/dir/foo.rb", 1
+        plain_project_class.define_method(:my_method) { }
+      EVAL
+      plain_project_class.file_location.must_equal "dir/foo.rb"
+    end
+
+    it "fails if no relative root can be found and the resource would have no trace of where it came from" do
+      assert_raises(RuntimeError) do
+        eval <<~EVAL, nil, "/nix/will/break/you/dir/foo.rb", 1
+          plain_project_class.define_method(:my_method) { }
+        EVAL
+        plain_project_class.file_location
+      end
     end
 
     it "caches failure" do
