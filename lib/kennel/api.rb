@@ -125,20 +125,8 @@ module Kennel
             end
           end
 
-          rate_limit = RateLimitParams.new(
-            limit: response.headers["x-ratelimit-limit"],
-            period: response.headers["x-ratelimit-period"],
-            remaining: response.headers["x-ratelimit-remaining"],
-            reset: response.headers["x-ratelimit-reset"],
-            name: response.headers["x-ratelimit-name"]
-          )
-
           if response.status == 429
-            message = "Datadog rate limit #{rate_limit.name.inspect} hit"
-            message += " (#{rate_limit.limit} requests per #{rate_limit.period} seconds)"
-            message += "; sleeping #{rate_limit.reset} seconds before trying again"
-            Kennel.err.puts message
-            sleep rate_limit.reset.to_f
+            sleep_until_rate_limit_resets(response)
             redo
           end
 
@@ -159,6 +147,20 @@ module Kennel
           JSON.parse(response.body, symbolize_names: true)
         end
       end
+    end
+
+    def sleep_until_rate_limit_resets(response)
+      limit = response.headers["x-ratelimit-limit"]
+      period = response.headers["x-ratelimit-period"]
+      reset = response.headers["x-ratelimit-reset"]
+      name = response.headers["x-ratelimit-name"]
+
+      message = "Datadog rate limit #{name.inspect} hit"
+      message += " (#{limit} requests per #{period} seconds)"
+      message += "; sleeping #{reset} seconds before trying again"
+
+      Kennel.err.puts message
+      sleep reset.to_f
     end
 
     # allow caching all requests to speedup/benchmark logic that includes repeated requests
