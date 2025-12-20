@@ -5,8 +5,6 @@ module Kennel
   class Api
     CACHE_FILE = ENV.fetch("KENNEL_API_CACHE_FILE", "tmp/cache/details")
 
-    RateLimitParams = Data.define(:limit, :period, :remaining, :reset, :name)
-
     def self.with_tracking(api_resource, reply)
       klass = Models::Record.api_resource_map[api_resource]
       return reply unless klass # do not blow up on unknown models
