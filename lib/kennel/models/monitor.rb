@@ -32,6 +32,12 @@ module Kennel
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
       SKIP_NOTIFY_NO_DATA_TYPES = ["event alert", "event-v2 alert", "log alert"].freeze
+      MINUTES_PER_UNIT = {
+        "m" => 1,
+        "h" => 60,
+        "d" => 60 * 24,
+        "w" => 60 * 24 * 7
+      }.freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -49,7 +55,6 @@ module Kennel
         # datadog UI sets this to false by default, but true is safer
         # except for log alerts which will always have "no error" gaps and should default to false
         notify_no_data: -> { !SKIP_NOTIFY_NO_DATA_TYPES.include?(type) },
-        no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         new_group_delay: -> { nil },
@@ -370,6 +375,23 @@ module Kennel
             )
           end
         else # do nothing
+        end
+      end
+
+      def query_window_minutes
+        return unless (match = query.match(/^\s*\w+\(last_(?<count>\d+)(?<unit>[mhdw])\):/))
+        Integer(match["count"]) * MINUTES_PER_UNIT.fetch(match["unit"])
+      end
+
+      # deprecated this setting is no longer returned by dd for new monitors
+      # datadog UI warns when setting no data timeframe to less than 2x the query window
+      # limited to 24h because `no_data_timeframe must not exceed group retention` and max group retention is 24h
+      def no_data_timeframe
+        default = 60
+        if type == "query alert" && (minutes = query_window_minutes)
+          (minutes * 2).clamp(default, 24 * 60)
+        else
+          default
         end
       end
     end

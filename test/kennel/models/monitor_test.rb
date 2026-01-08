@@ -324,6 +324,28 @@ describe Kennel::Models::Monitor do
         ).build_json[:options][:renotify_statuses].must_be_nil
       end
     end
+
+    describe "no_data_timeframe" do
+      it "sets 60 for non-query monitors" do
+        valid_monitor_json(type: "foo alert").dig(:options, :no_data_timeframe).must_equal 60
+      end
+
+      it "sets 60 for query monitors with short queries" do
+        valid_monitor_json.dig(:options, :no_data_timeframe).must_equal 60
+      end
+
+      it "sets 60 when unable to parse query" do
+        valid_monitor_json(query: "oops").dig(:options, :no_data_timeframe).must_equal 60
+      end
+
+      it "sets 2x the query window" do
+        valid_monitor_json(query: "avg(last_2h):foo").dig(:options, :no_data_timeframe).must_equal 4 * 60
+      end
+
+      it "does not set over the allowed max" do
+        valid_monitor_json(query: "avg(last_14h):foo").dig(:options, :no_data_timeframe).must_equal 24 * 60
+      end
+    end
   end
 
   describe "#validate_message_variables" do
