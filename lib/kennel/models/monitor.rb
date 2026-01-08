@@ -30,6 +30,13 @@ module Kennel
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
       SKIP_NOTIFY_NO_DATA_TYPES = ["event alert", "event-v2 alert", "log alert"].freeze
+      MINUTES_PER_UNIT = {
+        "m" => 1,
+        "h" => 60,
+        "d" => 60 * 24,
+        "w" => 60 * 24 * 7,
+        "mo" => 60 * 24 * 30 # maybe
+      }.freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -154,7 +161,6 @@ module Kennel
       def configure_no_data(data)
         action = on_missing_data
         notify = notify_no_data
-        default_no_data_timeframe = 60
         options = data[:options]
 
         if !action.nil? && !notify.nil?
@@ -187,6 +193,21 @@ module Kennel
           else
             raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false" if no_data_timeframe
           end
+        end
+      end
+
+      def query_window_minutes
+        return unless (match = query.match(/^\s*\w+\(last_(?<count>\d+)(?<unit>[mhdw]|mo)\):/))
+        Integer(match["count"]) * MINUTES_PER_UNIT.fetch(match["unit"])
+      end
+
+      # called by kennel internally
+      def default_no_data_timeframe
+        default = 60 # minutes
+        if type == "query alert" && (minutes = query_window_minutes)
+          [minutes * 2, default].max
+        else
+          default
         end
       end
 
