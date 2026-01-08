@@ -21,11 +21,9 @@ module Kennel
         timeout_h: 0,
         renotify_interval: 0,
         notify_audit: false,
-        no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         group_retention_duration: nil,
         groupby_simple_monitor: false,
         variables: nil,
-        on_missing_data: "default", # "default" is "evaluate as zero"
         notification_preset_name: nil,
         notify_by: nil
       }.freeze
@@ -46,10 +44,8 @@ module Kennel
         renotify_interval: -> { project.team.renotify_interval },
         warning: -> { nil },
         ok: -> { nil },
-        # datadog UI sets this to false by default, but true is safer
-        # except for log alerts which will always have "no error" gaps and should default to false
-        notify_no_data: -> { !SKIP_NOTIFY_NO_DATA_TYPES.include?(type) },
-        no_data_timeframe: -> { 60 },
+        notify_no_data: -> { nil }, # no default since we need to know if the user set it
+        no_data_timeframe: -> { nil }, # no default since we need to know if the user set it
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         new_group_delay: -> { nil },
@@ -63,7 +59,7 @@ module Kennel
         scheduling_options: -> { nil },
         priority: -> { MONITOR_DEFAULTS.fetch(:priority) },
         variables: -> { MONITOR_OPTION_DEFAULTS.fetch(:variables) },
-        on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
+        on_missing_data: -> { nil }, # no default since we need to know if the user set it
         notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) },
         notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) },
         require_full_window: -> { false }
@@ -79,8 +75,6 @@ module Kennel
           priority: priority,
           options: {
             timeout_h: timeout_h,
-            notify_no_data: notify_no_data,
-            no_data_timeframe: notify_no_data ? no_data_timeframe : nil,
             notify_audit: notify_audit,
             require_full_window: require_full_window,
             new_host_delay: new_host_delay,
@@ -121,12 +115,6 @@ module Kennel
           options[:notify_by] = notify_by_value
         end
 
-        # setting this via the api breaks the UI with
-        # "The no_data_timeframe option is not allowed for log alert monitors"
-        if data.fetch(:type) == "log alert"
-          options.delete :no_data_timeframe
-        end
-
         if (windows = threshold_windows)
           options[:threshold_windows] = windows
         end
@@ -142,20 +130,14 @@ module Kennel
           options[:group_retention_duration] = duration
         end
 
+        configure_no_data(data)
+
         # Add in statuses where we would re notify on. Possible values: alert, no data, warn
         if options[:renotify_interval] != 0
           statuses = ["alert"]
-          statuses << "no data" if options[:notify_no_data]
+          statuses << "no data" if options[:notify_no_data] || options[:on_missing_data]&.start_with?("show_no_data")
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
-        end
-
-        # on_missing_data cannot be used with notify_no_data or no_data_timeframe
-        # TODO migrate everything to only use on_missing_data
-        if data.fetch(:type) == "event-v2 alert" || on_missing_data != "default"
-          options[:on_missing_data] = on_missing_data
-          options[:notify_no_data] = false # cannot set nil or it's an endless update loop
-          options.delete :no_data_timeframe
         end
 
         # only set when needed to avoid big diff
@@ -167,6 +149,45 @@ module Kennel
         options.delete :locked
 
         data
+      end
+
+      def configure_no_data(data)
+        action = on_missing_data
+        notify = notify_no_data
+        default_no_data_timeframe = 60
+        options = data[:options]
+
+        if !action.nil? && !notify.nil?
+          raise "#{safe_tracking_id}: configure either on_missing_data or notify_no_data"
+        end
+
+        if action.nil? && notify.nil? # 90% case: user did not configure anything
+          # TODO: this should be converted to on_missing_data, but that will be a lot of diff and work
+          # datadog UI sets this to false by default, but true is safer
+          # except for log alerts which will always have "no error" gaps and should default to false
+          default = SKIP_NOTIFY_NO_DATA_TYPES.include?(data[:type])
+          options[:notify_no_data] = default
+          if default
+            options[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
+          else
+            raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data defaulted to false" if no_data_timeframe
+          end
+        elsif action # user set on_missing_data
+          raise "#{safe_tracking_id}: no_data_timeframe should not be set since on_missing_data is set" if no_data_timeframe
+          options[:on_missing_data] = action
+          options[:notify_no_data] = false # dd always returns false
+        else # user set notify_no_data
+          options[:notify_no_data] = notify
+          if notify
+            if data.fetch(:type) == "log alert"
+              raise "#{safe_tracking_id}: type `log alert` does not support no_data_timeframe" if no_data_timeframe
+            else
+              options[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
+            end
+          else
+            raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false" if no_data_timeframe
+          end
+        end
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
