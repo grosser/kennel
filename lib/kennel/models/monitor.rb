@@ -161,17 +161,20 @@ module Kennel
       # timeout_h: monitors that alert on no data need to also send resolve notifications so external systems are cleared
       # by using timeout_h, it sends a notification when the no data group is removed from the monitor, which datadog does automatically after 24h
       # TODO: reuse the start_with?("show_no_data") in a helper
+      # TODO: notify_no_data needs to be true when on_missing_data is show_and_notify_no_data
       def configure_no_data(type)
         action = on_missing_data
         notify = notify_no_data
         result = {}
 
-        if !action.nil? && !notify.nil?
+        # TODO: also fail when notify_no_data is set at all by fixing all offenders
+        if action && action != "default" && notify
           raise "#{safe_tracking_id}: configure either on_missing_data or notify_no_data"
         end
 
-        if action # user set on_missing_data
-          raise "#{safe_tracking_id}: no_data_timeframe should not be set since on_missing_data is set" if no_data_timeframe
+        if action && (notify.nil? || (notify == false && action != "default")) # user set on_missing_data
+          # TODO: enforce this
+          # raise "#{safe_tracking_id}: no_data_timeframe should not be set since on_missing_data is set" if no_data_timeframe
           result[:timeout_h] = timeout_h || (action.start_with?("show_no_data") ? 24 : 0)
           result[:on_missing_data] = action
           result[:notify_no_data] = false # dd always returns false
@@ -186,15 +189,20 @@ module Kennel
 
           result[:timeout_h] = timeout_h || (notify ? 24 : 0)
           result[:notify_no_data] = notify
+          result[:no_data_timeframe] = notify ? no_data_timeframe || default_no_data_timeframe : nil
+
 
           if notify
             if type == "log alert"
-              raise "#{safe_tracking_id}: type `log alert` does not support no_data_timeframe" if no_data_timeframe
+              # TODO: enforce this instead of setting to nil
+              # raise "#{safe_tracking_id}: type `log alert` does not support no_data_timeframe" if no_data_timeframe
+              result[:no_data_timeframe] = nil
             end
-          elsif no_data_timeframe
-            raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false"
+          # elsif no_data_timeframe
+            # TODO: hunt down all offenders and then enabled this
+            # raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false"
           end
-          result[:no_data_timeframe] = notify ? no_data_timeframe || default_no_data_timeframe : nil
+
         end
 
         result
