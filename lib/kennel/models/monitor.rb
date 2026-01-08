@@ -60,7 +60,7 @@ module Kennel
         new_group_delay: -> { nil },
         group_retention_duration: -> { MONITOR_OPTION_DEFAULTS.fetch(:group_retention_duration) },
         tags: -> { @project.tags },
-        timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
+        timeout_h: -> { nil },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
@@ -83,7 +83,6 @@ module Kennel
           tags: tags,
           priority: priority,
           options: {
-            timeout_h: timeout_h,
             **configure_no_data(type),
             notify_audit: notify_audit,
             require_full_window: require_full_window,
@@ -159,6 +158,10 @@ module Kennel
         data
       end
 
+      # timeout_h: monitors that alert on no data need to also send resolve notifications so external systems are cleared
+      # by using timeout_h, it sends a notification when the no data group is removed from the monitor, which datadog does automatically after 24h
+      # TODO: remove the no_data_timeframe=nil in a clean PR since it will have tons of diff but not cause updates
+      # TODO: reuse the start_with?("show_no_data") in a helper
       def configure_no_data(type)
         action = on_missing_data
         notify = notify_no_data
@@ -173,6 +176,7 @@ module Kennel
           # datadog UI sets this to false by default, but true is safer
           # except for log alerts which will always have "no error" gaps and should default to false
           default = !SKIP_NOTIFY_NO_DATA_TYPES.include?(type)
+          result[:timeout_h] = timeout_h || (default ? 24 : 0)
           result[:notify_no_data] = default
           if default
             result[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
@@ -185,23 +189,23 @@ module Kennel
           end
         elsif action # user set on_missing_data
           raise "#{safe_tracking_id}: no_data_timeframe should not be set since on_missing_data is set" if no_data_timeframe
+          result[:timeout_h] = timeout_h || (action.start_with?("show_no_data") ? 24 : 0)
           result[:on_missing_data] = action
           result[:notify_no_data] = false # dd always returns false
           result[:no_data_timeframe] = nil # to reduce json diff
         else # user set notify_no_data
+          result[:timeout_h] = timeout_h || (notify ? 24 : 0)
           result[:notify_no_data] = notify
           if notify
             if data.fetch(:type) == "log alert"
               raise "#{safe_tracking_id}: type `log alert` does not support no_data_timeframe" if no_data_timeframe
-            else
-              result[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
             end
+            result[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
           else
             if no_data_timeframe
               raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false"
-            else
-              result[:no_data_timeframe] = nil # to reduce json diff
             end
+            result[:no_data_timeframe] = nil # to reduce json diff
           end
         end
         result
