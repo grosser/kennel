@@ -60,7 +60,6 @@ module Kennel
         new_group_delay: -> { nil },
         group_retention_duration: -> { MONITOR_OPTION_DEFAULTS.fetch(:group_retention_duration) },
         tags: -> { @project.tags },
-        timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
@@ -190,6 +189,24 @@ module Kennel
         actual_type = actual[:type]
         return if actual_type == type || (actual_type == "metric alert" && type == "query alert")
         "cannot update type from #{actual_type} to #{type}"
+      end
+
+      # deprecated this setting is no longer returned by dd for new monitors
+      # datadog UI warns when setting no data timeframe to less than 2x the query window
+      # limited to 24h because `no_data_timeframe must not exceed group retention` and max group retention is 24h
+      def no_data_timeframe
+        default = 60
+        if type == "query alert" && (minutes = query_window_minutes)
+          (minutes * 2).clamp(default, 24 * 60)
+        else
+          default
+        end
+      end
+
+      # validate that monitors that alert on no data resolve in external services by using timeout_h, so it sends a
+      # notification when the no data group is removed from the monitor, which datadog does automatically after 24h
+      def timeout_h
+        notify_no_data && on_missing_data != "resolve" ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
       end
 
       def self.api_resource
@@ -381,18 +398,6 @@ module Kennel
       def query_window_minutes
         return unless (match = query.match(/^\s*\w+\(last_(?<count>\d+)(?<unit>[mhdw])\):/))
         Integer(match["count"]) * MINUTES_PER_UNIT.fetch(match["unit"])
-      end
-
-      # deprecated this setting is no longer returned by dd for new monitors
-      # datadog UI warns when setting no data timeframe to less than 2x the query window
-      # limited to 24h because `no_data_timeframe must not exceed group retention` and max group retention is 24h
-      def no_data_timeframe
-        default = 60
-        if type == "query alert" && (minutes = query_window_minutes)
-          (minutes * 2).clamp(default, 24 * 60)
-        else
-          default
-        end
       end
     end
   end

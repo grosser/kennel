@@ -32,7 +32,7 @@ describe Kennel::Models::Monitor do
       tags: ["team:test-team"],
       priority: nil,
       options: {
-        timeout_h: 0,
+        timeout_h: 24,
         notify_no_data: true,
         no_data_timeframe: 60,
         notify_audit: false,
@@ -74,10 +74,6 @@ describe Kennel::Models::Monitor do
 
     it "can set warning" do
       valid_monitor_json(warning: -> { 1.2 }).dig(:options, :thresholds, :warning).must_equal 1.2
-    end
-
-    it "can set timeout_h" do
-      valid_monitor_json(timeout_h: -> { 1 }).dig(:options, :timeout_h).must_equal 1
     end
 
     it "does not call optional methods twice" do
@@ -238,11 +234,6 @@ describe Kennel::Models::Monitor do
         .must_equal ["name cannot start with a space"]
     end
 
-    it "blocks invalid timeout_h" do
-      validation_errors_from(monitor(timeout_h: -> { 200 }))
-        .must_equal ["timeout_h must be <= 24"]
-    end
-
     it "does not set no_data_timeframe for log alert to not break the UI" do
       json = monitor(
         type: -> { "log alert" },
@@ -264,6 +255,21 @@ describe Kennel::Models::Monitor do
     it "can set group_retention_duration" do
       monitor(group_retention_duration: -> { "1h" })
         .build_json.dig(:options, :group_retention_duration).must_equal "1h"
+    end
+
+    describe "timeout_h" do
+      it "can set" do
+        valid_monitor_json(timeout_h: -> { 1 }).dig(:options, :timeout_h).must_equal 1
+      end
+
+      it "blocks invalid" do
+        validation_errors_from(monitor(timeout_h: -> { 200 }))
+          .must_equal ["timeout_h must be <= 24"]
+      end
+
+      it "sets 0 when not notifying on no-data" do
+        valid_monitor_json(notify_no_data: false).dig(:options, :timeout_h).must_equal 0
+      end
     end
 
     describe "on_missing_data" do
