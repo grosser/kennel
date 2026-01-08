@@ -32,6 +32,12 @@ module Kennel
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
       SKIP_NOTIFY_NO_DATA_TYPES = ["event alert", "event-v2 alert", "log alert"].freeze
+      MINUTES_PER_UNIT = {
+        "m" => 1,
+        "h" => 60,
+        "d" => 60 * 24,
+        "w" => 60 * 24 * 7
+      }.freeze
 
       settings(
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
@@ -49,13 +55,11 @@ module Kennel
         # datadog UI sets this to false by default, but true is safer
         # except for log alerts which will always have "no error" gaps and should default to false
         notify_no_data: -> { !SKIP_NOTIFY_NO_DATA_TYPES.include?(type) },
-        no_data_timeframe: -> { 60 },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         new_group_delay: -> { nil },
         group_retention_duration: -> { MONITOR_OPTION_DEFAULTS.fetch(:group_retention_duration) },
         tags: -> { @project.tags },
-        timeout_h: -> { MONITOR_OPTION_DEFAULTS.fetch(:timeout_h) },
         evaluation_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:evaluation_delay) },
         critical_recovery: -> { nil },
         warning_recovery: -> { nil },
@@ -185,6 +189,24 @@ module Kennel
         actual_type = actual[:type]
         return if actual_type == type || (actual_type == "metric alert" && type == "query alert")
         "cannot update type from #{actual_type} to #{type}"
+      end
+
+      # deprecated this setting is no longer returned by dd for new monitors
+      # datadog UI warns when setting no data timeframe to less than 2x the query window
+      # limited to 24h because `no_data_timeframe must not exceed group retention` and max group retention is 24h
+      def no_data_timeframe
+        default = 60
+        if type == "query alert" && (minutes = query_window_minutes)
+          (minutes * 2).clamp(default, 24 * 60)
+        else
+          default
+        end
+      end
+
+      # validate that monitors that alert on no data resolve in external services by using timeout_h, so it sends a
+      # notification when the no data group is removed from the monitor, which datadog does automatically after 24h
+      def timeout_h
+        notify_no_data && on_missing_data != "resolve" ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
       end
 
       def self.api_resource
@@ -371,6 +393,11 @@ module Kennel
           end
         else # do nothing
         end
+      end
+
+      def query_window_minutes
+        return unless (match = query.match(/^\s*\w+\(last_(?<count>\d+)(?<unit>[mhdw])\):/))
+        Integer(match["count"]) * MINUTES_PER_UNIT.fetch(match["unit"])
       end
     end
   end
