@@ -37,9 +37,9 @@ describe "Integration" do
   end
 
   it "has an empty diff" do
-    # result = sh "echo y | bundle exec rake kennel:update_datadog" # Uncomment this to apply know good diff
+    sh "echo y | bundle exec rake kennel:update_datadog" if ENV["FORCE_APPLY_CHANGE"]
     result = sh "bundle exec rake plan 2>&1"
-    result.gsub!(/\d\.\d+s/, "0.00s")
+    result.gsub!(/\d+\.\d+s/, "0.00s")
     progress, plan = result.split("Plan:\n")
     progress.split("\n").sort.join("\n").must_equal <<~TXT.rstrip
       Building json ...
@@ -55,6 +55,6 @@ describe "Integration" do
       Storing ...
       Storing ... 0.00s
     TXT
-    plan.must_equal "Nothing to do\n"
+    plan.must_equal "Nothing to do\n", "rerun with FORCE_APPLY_CHANGE=true if this is intentional"
   end
 end
