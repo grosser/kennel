@@ -21,9 +21,11 @@ module Kennel
         timeout_h: 0,
         renotify_interval: 0,
         notify_audit: false,
+        no_data_timeframe: nil, # this works out ok since if notify_no_data is on, it would never be nil
         group_retention_duration: nil,
         groupby_simple_monitor: false,
         variables: nil,
+        on_missing_data: "default", # "default" is "evaluate as zero"
         notification_preset_name: nil,
         notify_by: nil
       }.freeze
@@ -82,6 +84,7 @@ module Kennel
           priority: priority,
           options: {
             timeout_h: timeout_h,
+            **configure_no_data(type),
             notify_audit: notify_audit,
             require_full_window: require_full_window,
             new_host_delay: new_host_delay,
@@ -137,8 +140,6 @@ module Kennel
           options[:group_retention_duration] = duration
         end
 
-        configure_no_data(data)
-
         # Add in statuses where we would re notify on. Possible values: alert, no data, warn
         if options[:renotify_interval] != 0
           statuses = ["alert"]
@@ -158,10 +159,10 @@ module Kennel
         data
       end
 
-      def configure_no_data(data)
+      def configure_no_data(type)
         action = on_missing_data
         notify = notify_no_data
-        options = data[:options]
+        result = {}
 
         if !action.nil? && !notify.nil?
           raise "#{safe_tracking_id}: configure either on_missing_data or notify_no_data"
@@ -171,29 +172,39 @@ module Kennel
           # TODO: this should be converted to on_missing_data, but that will be a lot of diff and work
           # datadog UI sets this to false by default, but true is safer
           # except for log alerts which will always have "no error" gaps and should default to false
-          default = SKIP_NOTIFY_NO_DATA_TYPES.include?(data[:type])
-          options[:notify_no_data] = default
+          default = !SKIP_NOTIFY_NO_DATA_TYPES.include?(type)
+          result[:notify_no_data] = default
           if default
-            options[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
+            result[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
           else
-            raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data defaulted to false" if no_data_timeframe
+            if no_data_timeframe
+              raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data defaulted to false"
+            else
+              result[:no_data_timeframe] = nil # to reduce json diff
+            end
           end
         elsif action # user set on_missing_data
           raise "#{safe_tracking_id}: no_data_timeframe should not be set since on_missing_data is set" if no_data_timeframe
-          options[:on_missing_data] = action
-          options[:notify_no_data] = false # dd always returns false
+          result[:on_missing_data] = action
+          result[:notify_no_data] = false # dd always returns false
+          result[:no_data_timeframe] = nil # to reduce json diff
         else # user set notify_no_data
-          options[:notify_no_data] = notify
+          result[:notify_no_data] = notify
           if notify
             if data.fetch(:type) == "log alert"
               raise "#{safe_tracking_id}: type `log alert` does not support no_data_timeframe" if no_data_timeframe
             else
-              options[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
+              result[:no_data_timeframe] = no_data_timeframe || default_no_data_timeframe
             end
           else
-            raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false" if no_data_timeframe
+            if no_data_timeframe
+              raise "#{safe_tracking_id}: no_data_timeframe should not be set since notify_no_data=false"
+            else
+              result[:no_data_timeframe] = nil # to reduce json diff
+            end
           end
         end
+        result
       end
 
       def query_window_minutes
