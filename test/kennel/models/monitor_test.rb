@@ -273,17 +273,31 @@ describe Kennel::Models::Monitor do
     end
 
     describe "on_missing_data" do
-      it "defaults" do
-        monitor(
+      def call(config)
+        monitor(config).build_json[:options].slice(:notify_no_data, :no_data_timeframe, :on_missing_data)
+      end
+
+      it "does not set on_missing_data by default" do
+        call({}).must_equal({ :notify_no_data => true, :no_data_timeframe => 60 })
+      end
+
+      it "defaults for event-v2" do
+        call(
           type: -> { "event-v2 alert" }
-        ).build_json.dig(:options, :on_missing_data).must_equal "default"
+        ).must_equal({ on_missing_data: "default" })
       end
 
       it "sets" do
-        monitor(
+        call(
+          on_missing_data: -> { "resolve" }
+        ).must_equal({ on_missing_data: "resolve" })
+      end
+
+      it "sets for events-v2" do
+        call(
           type: -> { "event-v2 alert" },
           on_missing_data: -> { "resolve" }
-        ).build_json.dig(:options, :on_missing_data).must_equal "resolve"
+        ).must_equal({ on_missing_data: "resolve" })
       end
     end
 
@@ -298,36 +312,47 @@ describe Kennel::Models::Monitor do
     end
 
     describe "renotify_statuses" do
+      def call(config)
+        monitor(config).build_json[:options][:renotify_statuses]
+      end
+
       it "sets alert and no-data when renotify_interval is set" do
-        monitor(
+        call(
           renotify_interval: -> { 10 }
-        ).build_json[:options][:renotify_statuses].must_equal ["alert", "no data"]
+        ).must_equal ["alert", "no data"]
+      end
+
+      it "sets alert and no-data when renotify_interval is set and on_missing_data" do
+        call(
+          on_missing_data: "show_and_notify_no_data",
+          renotify_interval: -> { 10 }
+        ).must_equal ["alert", "no data"]
       end
 
       it "sets warn when warning is defined" do
-        monitor(
+        call(
           renotify_interval: -> { 10 },
           warning: -> { 10 }
-        ).build_json[:options][:renotify_statuses].must_equal ["alert", "no data", "warn"]
+        ).must_equal ["alert", "no data", "warn"]
       end
 
       it "does not set no-data when no-data is disabled" do
-        monitor(
+        call(
           renotify_interval: -> { 10 },
           notify_no_data: -> { false }
-        ).build_json[:options][:renotify_statuses].must_equal ["alert"]
+        ).must_equal ["alert"]
       end
 
       it "do not set renotify_statuses when renotify_interval is 0" do
-        monitor(
+        call(
           renotify_interval: -> { 0 }
-        ).build_json[:options][:renotify_statuses].must_be_nil
+        ).must_be_nil
       end
 
       it "do not set renotify_statuses when renotify_interval is not defined" do
-        monitor(
+        call(
           renotify_interval: -> {}
-        ).build_json[:options][:renotify_statuses].must_be_nil
+        ).must_be_nil
       end
     end
 

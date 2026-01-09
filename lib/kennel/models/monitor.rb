@@ -25,7 +25,7 @@ module Kennel
         group_retention_duration: nil,
         groupby_simple_monitor: false,
         variables: nil,
-        on_missing_data: "default", # "default" is "evaluate as zero"
+        on_missing_data: nil,
         notification_preset_name: nil,
         notify_by: nil
       }.freeze
@@ -132,7 +132,7 @@ module Kennel
         # Add in statuses where we would re notify on. Possible values: alert, no data, warn
         if options[:renotify_interval] != 0
           statuses = ["alert"]
-          statuses << "no data" if options[:notify_no_data] || options[:on_missing_data]&.start_with?("show_no_data")
+          statuses << "no data" if options[:notify_no_data] || options[:on_missing_data] == "show_and_notify_no_data"
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
         end
@@ -148,23 +148,22 @@ module Kennel
         data
       end
 
+      # TODO: migrate everything to only use on_missing_data by only sending notify_no_data when it was set by a user
+      # and enforce that it is not set at the same time as on_missing_data
       def configure_no_data
         notify = notify_no_data
         action = on_missing_data
-        result = {
-          notify_no_data: notify,
-          no_data_timeframe: notify ? no_data_timeframe : nil
-        }
 
         # on_missing_data cannot be used with notify_no_data or no_data_timeframe
-        # TODO migrate everything to only use on_missing_data
-        if type == "event-v2 alert" || action != "default"
-          result[:on_missing_data] = action
-          result[:notify_no_data] = false # cannot set nil or it's an endless update loop
-          result.delete :no_data_timeframe
+        if type == "event-v2 alert" || action
+          # TODO: mark setting notify_no_data or no_data_timeframe at all as invalid
+          { on_missing_data: action || "default" }
+        else
+          {
+            notify_no_data: notify,
+            no_data_timeframe: notify ? no_data_timeframe : nil
+          }
         end
-
-        result
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
@@ -200,7 +199,8 @@ module Kennel
       # validate that monitors that alert on no data resolve in external services by using timeout_h, so it sends a
       # notification when the no data group is removed from the monitor, which datadog does automatically after 24h
       def timeout_h
-        notify_no_data && on_missing_data != "resolve" ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
+        sending_no_data_notifications = (on_missing_data ? on_missing_data == "show_and_notify_no_data" : notify_no_data)
+        sending_no_data_notifications ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
       end
 
       def self.api_resource
