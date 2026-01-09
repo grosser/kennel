@@ -56,6 +56,7 @@ module Kennel
         # datadog UI sets this to false by default, but true is safer
         # except for log alerts which will always have "no error" gaps and should default to false
         notify_no_data: -> { !SKIP_NOTIFY_NO_DATA_TYPES.include?(type) },
+        no_data_timeframe: -> { MONITOR_OPTION_DEFAULTS.fetch(:no_data_timeframe) },
         notify_audit: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_audit) },
         new_host_delay: -> { MONITOR_OPTION_DEFAULTS.fetch(:new_host_delay) },
         new_group_delay: -> { nil },
@@ -149,19 +150,25 @@ module Kennel
       # and enforce that it is not set at the same time as on_missing_data
       def configure_no_data
         notify = notify_no_data
+        timeframe = no_data_timeframe
         action = on_missing_data
+        action ||= "default" if type == "event-v2 alert"
 
-        # on_missing_data cannot be used with notify_no_data or no_data_timeframe
+        # TODO: mark setting action && !notify.nil? at all as invalid
+        if action && timeframe
+          invalid! :invalid_no_data_config, "set either no_data_timeframe or on_missing_data"
+        end
         if type == "composite" && action
-          # TODO: also fail when setting no_data_timeframe since timeout_h should be used
-          raise "#{safe_tracking_id}: cannot use on_missing_data with composite monitor"
-        elsif type == "event-v2 alert" || action
-          # TODO: mark setting notify_no_data or no_data_timeframe at all as invalid
+          invalid! :invalid_no_data_config, "cannot use on_missing_data with composite monitor"
+        end
+
+        # on_missing_data cannot be used with notify_no_data + no_data_timeframe
+        if action
           { on_missing_data: action || "default" }
         else
           {
             notify_no_data: notify,
-            no_data_timeframe: notify ? no_data_timeframe : nil
+            no_data_timeframe: notify ? no_data_timeframe || default_no_data_timeframe : nil
           }
         end
       end
@@ -187,7 +194,7 @@ module Kennel
       # deprecated this setting is no longer returned by dd for new monitors
       # datadog UI warns when setting no data timeframe to less than 2x the query window
       # limited to 24h because `no_data_timeframe must not exceed group retention` and max group retention is 24h
-      def no_data_timeframe
+      def default_no_data_timeframe
         default = 60
         if type == "query alert" && (minutes = query_window_minutes)
           (minutes * 2).clamp(default, 24 * 60)
@@ -308,9 +315,11 @@ module Kennel
         end
 
         # verify query includes critical value
-        if (query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1])
-          if Float(query_value) != Float(data.dig(:options, :thresholds, :critical))
-            invalid! :critical_does_not_match_query, "critical and value used in query must match"
+        if (critical = data.dig(:options, :thresholds, :critical))
+          if (query_value = data.fetch(:query)[/\s*[<>]=?\s*(\d+(\.\d+)?)\s*$/, 1])
+            if Float(query_value) != Float(critical)
+              invalid! :critical_does_not_match_query, "critical and value used in query must match"
+            end
           end
         end
 
