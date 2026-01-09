@@ -6,7 +6,8 @@ module Kennel
 
       OPTIONAL_SERVICE_CHECK_THRESHOLDS = [:ok, :warning].freeze
       READONLY_ATTRIBUTES = superclass::READONLY_ATTRIBUTES + [
-        :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles, :draft_status, :assets
+        :multi, :matching_downtimes, :overall_state_modified, :overall_state, :restricted_roles, :draft_status, :assets,
+        :enable_logs_sample
       ]
       TRACKING_FIELD = :message
 
@@ -25,7 +26,7 @@ module Kennel
         group_retention_duration: nil,
         groupby_simple_monitor: false,
         variables: nil,
-        on_missing_data: "default", # "default" is "evaluate as zero"
+        on_missing_data: nil,
         notification_preset_name: nil,
         notify_by: nil
       }.freeze
@@ -74,6 +75,8 @@ module Kennel
       )
 
       def build_json
+        no_data_options = configure_no_data
+
         data = super.merge(
           name: "#{name}#{LOCK}",
           type: type,
@@ -83,8 +86,7 @@ module Kennel
           priority: priority,
           options: {
             timeout_h: timeout_h,
-            notify_no_data: notify_no_data,
-            no_data_timeframe: notify_no_data ? no_data_timeframe : nil,
+            **no_data_options.except(:on_missing_data),
             notify_audit: notify_audit,
             require_full_window: require_full_window,
             new_host_delay: new_host_delay,
@@ -93,31 +95,13 @@ module Kennel
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             renotify_interval: renotify_interval || 0,
-            variables: variables
+            variables: variables,
+            **configure_thresholds,
+            **no_data_options.slice(:on_missing_data) # moved here to avoid generated diff
           }
         )
 
         options = data[:options]
-        if data.fetch(:type) != "composite"
-          thresholds = (options[:thresholds] = { critical: critical })
-
-          # warning, ok, critical_recovery, and warning_recovery are optional
-          [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
-            if (value = send(key))
-              thresholds[key] = value
-            end
-          end
-
-          thresholds[:critical] = critical unless
-          case data.fetch(:type)
-          when "service check"
-            # avoid diff for default values of 1
-            OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
-          when "query alert"
-            # metric and query values are stored as float by datadog
-            thresholds.each { |k, v| thresholds[k] = Float(v) }
-          end
-        end
 
         # set without causing lots of nulls to be stored
         if (notify_by_value = notify_by)
@@ -148,17 +132,9 @@ module Kennel
         # Add in statuses where we would re notify on. Possible values: alert, no data, warn
         if options[:renotify_interval] != 0
           statuses = ["alert"]
-          statuses << "no data" if options[:notify_no_data]
+          statuses << "no data" if options[:notify_no_data] || options[:on_missing_data] == "show_and_notify_no_data"
           statuses << "warn" if options.dig(:thresholds, :warning)
           options[:renotify_statuses] = statuses
-        end
-
-        # on_missing_data cannot be used with notify_no_data or no_data_timeframe
-        # TODO migrate everything to only use on_missing_data
-        if data.fetch(:type) == "event-v2 alert" || on_missing_data != "default"
-          options[:on_missing_data] = on_missing_data
-          options[:notify_no_data] = false # cannot set nil or it's an endless update loop
-          options.delete :no_data_timeframe
         end
 
         # only set when needed to avoid big diff
@@ -167,6 +143,24 @@ module Kennel
         end
 
         data
+      end
+
+      # TODO: migrate everything to only use on_missing_data by only sending notify_no_data when it was set by a user
+      # and enforce that it is not set at the same time as on_missing_data
+      def configure_no_data
+        notify = notify_no_data
+        action = on_missing_data
+
+        # on_missing_data cannot be used with notify_no_data or no_data_timeframe
+        if type == "event-v2 alert" || action
+          # TODO: mark setting notify_no_data or no_data_timeframe at all as invalid
+          { on_missing_data: action || "default" }
+        else
+          {
+            notify_no_data: notify,
+            no_data_timeframe: notify ? no_data_timeframe : nil
+          }
+        end
       end
 
       def resolve_linked_tracking_ids!(id_map, **args)
@@ -202,7 +196,8 @@ module Kennel
       # validate that monitors that alert on no data resolve in external services by using timeout_h, so it sends a
       # notification when the no data group is removed from the monitor, which datadog does automatically after 24h
       def timeout_h
-        notify_no_data && on_missing_data != "resolve" ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
+        sending_no_data_notifications = (on_missing_data ? on_missing_data == "show_and_notify_no_data" : notify_no_data)
+        sending_no_data_notifications ? 24 : MONITOR_OPTION_DEFAULTS.fetch(:timeout_h)
       end
 
       def self.api_resource
@@ -269,6 +264,31 @@ module Kennel
       end
 
       private
+
+      def configure_thresholds
+        return {} if type == "composite"
+
+        thresholds = { critical: critical }
+
+        # set optional variables
+        [:warning, :ok, :critical_recovery, :warning_recovery].each do |key|
+          if (value = send(key))
+            thresholds[key] = value
+          end
+        end
+
+        # custom logic for some types
+        case type
+        when "service check"
+          # avoid diff for default values of 1
+          OPTIONAL_SERVICE_CHECK_THRESHOLDS.each { |t| thresholds[t] ||= 1 }
+        when "query alert"
+          # metric and query values are stored as float by datadog
+          thresholds.each { |k, v| thresholds[k] = Float(v) }
+        end
+
+        { thresholds: thresholds }
+      end
 
       def validate_json(data)
         super
