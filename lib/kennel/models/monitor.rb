@@ -152,7 +152,10 @@ module Kennel
         action = on_missing_data
 
         # on_missing_data cannot be used with notify_no_data or no_data_timeframe
-        if type == "event-v2 alert" || action
+        if type == "composite" && action
+          # TODO: also fail when setting no_data_timeframe since timeout_h should be used
+          raise "#{safe_tracking_id}: cannot use on_missing_data with composite monitor"
+        elsif type == "event-v2 alert" || action
           # TODO: mark setting notify_no_data or no_data_timeframe at all as invalid
           { on_missing_data: action || "default" }
         else

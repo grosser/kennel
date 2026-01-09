@@ -299,6 +299,15 @@ describe Kennel::Models::Monitor do
           on_missing_data: -> { "resolve" }
         ).must_equal({ on_missing_data: "resolve" })
       end
+
+      it "prevents bad config for composite monitors" do
+        assert_raises RuntimeError do
+          call(
+            type: -> { "composite" },
+            on_missing_data: -> { "resolve" }
+          )
+        end
+      end
     end
 
     describe "renotify_interval" do
