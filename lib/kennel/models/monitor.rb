@@ -92,7 +92,6 @@ module Kennel
             include_tags: true,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
-            locked: false, # deprecated: setting this to true will likely fail
             renotify_interval: renotify_interval || 0,
             variables: variables
           }
@@ -167,9 +166,6 @@ module Kennel
           options[:notification_preset_name] = notification_preset_name
         end
 
-        # locked is deprecated, will fail if used
-        options.delete :locked
-
         data
       end
 
@@ -235,7 +231,9 @@ module Kennel
         ignore_default(expected, actual, MONITOR_DEFAULTS)
 
         options = actual.fetch(:options)
-        options.delete(:silenced) # we do not manage silenced, so ignore it when diffing
+
+        # we do not manage silenced: ignore it when diffing
+        options.delete(:silenced)
 
         # fields are not returned when set to true
         if ["service check", "event alert"].include?(actual[:type])
@@ -265,9 +263,9 @@ module Kennel
           options.delete(:escalation_message)
           expected_options.delete(:escalation_message)
         end
+
         # locked is deprecated: ignored when diffing
         options.delete(:locked)
-        expected_options.delete(:locked)
       end
 
       private
