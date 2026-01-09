@@ -301,12 +301,22 @@ describe Kennel::Models::Monitor do
       end
 
       it "prevents bad config for composite monitors" do
-        assert_raises RuntimeError do
-          call(
+        validation_errors_from(
+          monitor(
             type: -> { "composite" },
+            query: "foo",
             on_missing_data: -> { "resolve" }
           )
-        end
+        ).must_equal ["cannot use on_missing_data with composite monitor"]
+      end
+
+      it "tells users when their no_data_timeframe setting would be ignored" do
+        validation_errors_from(
+          monitor(
+            on_missing_data: -> { "resolve" },
+            no_data_timeframe: -> { 10 }
+          )
+        ).must_equal ["set either no_data_timeframe or on_missing_data"]
       end
     end
 
