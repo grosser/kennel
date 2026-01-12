@@ -318,6 +318,15 @@ describe Kennel::Models::Monitor do
           )
         ).must_equal ["set either no_data_timeframe or on_missing_data"]
       end
+
+      it "tells users when timeout_h setting is invalid" do
+        validation_errors_from(
+          monitor(
+            on_missing_data: -> { "resolve" },
+            timeout_h: -> { 1 }
+          )
+        ).must_equal ["timeout_h cannot be set and non-zero when on_missing_data is `resolve`"]
+      end
     end
 
     describe "renotify_interval" do
