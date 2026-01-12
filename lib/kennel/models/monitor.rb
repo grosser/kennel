@@ -161,6 +161,9 @@ module Kennel
         if type == "composite" && action
           invalid! :invalid_no_data_config, "cannot use on_missing_data with composite monitor"
         end
+        if action == "resolve" && timeout_h.to_i != 0
+          invalid! :invalid_no_data_config, "timeout_h cannot be set and non-zero when on_missing_data is `resolve`"
+        end
 
         # on_missing_data cannot be used with notify_no_data + no_data_timeframe
         if action
