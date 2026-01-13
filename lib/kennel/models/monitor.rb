@@ -33,6 +33,7 @@ module Kennel
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
       SKIP_NOTIFY_NO_DATA_TYPES = ["event alert", "event-v2 alert", "log alert"].freeze
+      ON_MISSING_DATA_UNSUPPORTED_TYPES = ["composite", "datadog-usage alert"].freeze
       MINUTES_PER_UNIT = {
         "m" => 1,
         "h" => 60,
@@ -155,14 +156,19 @@ module Kennel
         action ||= "default" if type == "event-v2 alert"
 
         # TODO: mark setting action && !notify.nil? at all as invalid
-        if action && timeframe
-          invalid! :invalid_no_data_config, "set either no_data_timeframe or on_missing_data"
-        end
-        if type == "composite" && action
-          invalid! :invalid_no_data_config, "cannot use on_missing_data with composite monitor"
-        end
-        if action == "resolve" && timeout_h.to_i != 0
-          invalid! :invalid_no_data_config, "timeout_h cannot be set and non-zero when on_missing_data is `resolve`"
+        if action
+          if ON_MISSING_DATA_UNSUPPORTED_TYPES.include?(type)
+            invalid! :invalid_no_data_config, "cannot use on_missing_data with #{type} monitor"
+          end
+          if timeframe
+            invalid! :invalid_no_data_config, "set either no_data_timeframe or on_missing_data"
+          end
+          if action != "default" && type == "query alert" && query.to_s.include?("default_zero(") # is allowed for log alert for example
+            invalid! :invalid_no_data_config, "set on_missing_data to `default` when using default_zero"
+          end
+          if action == "resolve" && timeout_h.to_i != 0
+            invalid! :invalid_no_data_config, "timeout_h cannot be set and non-zero when on_missing_data is `resolve`"
+          end
         end
 
         # on_missing_data cannot be used with notify_no_data + no_data_timeframe

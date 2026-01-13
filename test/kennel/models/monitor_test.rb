@@ -327,6 +327,15 @@ describe Kennel::Models::Monitor do
           )
         ).must_equal ["timeout_h cannot be set and non-zero when on_missing_data is `resolve`"]
       end
+
+      it "tells users when their setting would be ignored because they use default_zero" do
+        validation_errors_from(
+          monitor(
+            on_missing_data: -> { "resolve" },
+            query: -> { "default_zero(foo)" }
+          )
+        ).must_equal ["set on_missing_data to `default` when using default_zero"]
+      end
     end
 
     describe "renotify_interval" do
