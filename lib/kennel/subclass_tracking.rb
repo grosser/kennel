@@ -9,7 +9,15 @@ module Kennel
       @subclasses ||= []
     end
 
+    def abstract_class?
+      !!@abstract_class
+    end
+
     private
+
+    def abstract_class!
+      @abstract_class = true # not inherited by children
+    end
 
     def inherited(child)
       super

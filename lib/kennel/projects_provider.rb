@@ -18,7 +18,7 @@ module Kennel
     private
 
     def loaded_projects
-      Models::Project.recursive_subclasses
+      Models::Project.recursive_subclasses.reject(&:abstract_class?)
     end
 
     # "require" requested .rb files under './projects',
