@@ -21,6 +21,7 @@ desc "Turn template folder into a play area"
 task :play do
   require "./test/integration_helper"
   include IntegrationHelper
+
   report_fake_metric
   Dir.chdir "template" do
     with_test_keys_in_dotenv do

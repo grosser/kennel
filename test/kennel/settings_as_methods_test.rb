@@ -8,6 +8,7 @@ describe Kennel::SettingsAsMethods do
 
   class TestSetting
     include Kennel::SettingsAsMethods
+
     settings :foo, :bar, :override, :unset
     defaults(
       bar: -> { "bar" },
