@@ -325,7 +325,7 @@ describe Kennel::Api do
 
     it "retries on timeout" do
       request = stub_datadog_request(:get, "monitor/1234").to_timeout
-      assert_raises Faraday::TimeoutError do
+      assert_raises Faraday::ConnectionFailed do
         api.show("monitor", 1234).must_equal foo: "bar"
       end
       assert_requested request, times: 3
