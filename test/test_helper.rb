@@ -63,7 +63,7 @@ Minitest::Test.class_eval do
     around { |t| with_env(hash, &t) }
   end
 
-  def self.capture_all
+  def self.capture_std
     let(:stdout) { StringIO.new }
     let(:stderr) { StringIO.new }
 

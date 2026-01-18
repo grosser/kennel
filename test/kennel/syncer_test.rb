@@ -191,7 +191,7 @@ describe Kennel::Syncer do
     api.stubs(:fill_details!)
   end
 
-  capture_all # TODO: pass an IO to syncer so we don't have to capture all output
+  capture_std # TODO: pass an IO to syncer so we don't have to capture all output
 
   describe "planning" do # plan + print_plan
     let(:plan) do

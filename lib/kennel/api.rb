@@ -109,7 +109,9 @@ module Kennel
 
     def request(method, path, body: nil, params: {}, ignore_404: false)
       path = "#{path}?#{Faraday::FlatParamsEncoder.encode(params)}" if params.any?
-      with_cache ENV["FORCE_GET_CACHE"] && method == :get, path do
+      cached = (ENV["FORCE_GET_CACHE"] && method == :get)
+
+      with_cache cached, path do
         response = nil
         tries = 2
 
@@ -128,7 +130,8 @@ module Kennel
             redo
           end
 
-          break if i == tries - 1 || method != :get || response.status < 500
+          last_try = (i == tries - 1)
+          break if last_try || ![:get, :put].include?(method) || response.status < 500
           Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
         end
 

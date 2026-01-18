@@ -256,7 +256,7 @@ describe Kennel::Api do
   end
 
   describe "rate limiting" do
-    capture_all
+    capture_std
 
     it "retries on a rate-limited response" do
       request = stub_datadog_request(:get, "monitor/1234").to_return(
@@ -266,40 +266,52 @@ describe Kennel::Api do
             "X-RateLimit-Limit": "1000",
             "X-RateLimit-Period": "60",
             "X-RateLimit-Remaining": "-5",
-            "X-RateLimit-Reset": "1.1"
+            "X-RateLimit-Reset": "0.01"
           } },
           { status: 200, body: { foo: "bar" }.to_json }
         ]
       )
       api.show("monitor", 1234).must_equal(foo: "bar", klass: Kennel::Models::Monitor, tracking_id: nil)
       assert_requested request, times: 2
-      stderr.string.must_equal "Datadog rate limit \"too many secrets\" hit (1000 requests per 60 seconds); sleeping 1.1 seconds before trying again\n"
+      stderr.string.must_equal "Datadog rate limit \"too many secrets\" hit (1000 requests per 60 seconds); sleeping 0.01 seconds before trying again\n"
     end
   end
 
   describe "retries" do
-    capture_all
+    capture_std
 
-    it "does not retry successful" do
+    it "does not retry success" do
       request = stub_datadog_request(:get, "monitor/1234").to_return(body: { bar: "foo" }.to_json)
       api.show("monitor", 1234).must_equal(bar: "foo", klass: Kennel::Models::Monitor, tracking_id: nil)
       assert_requested request
     end
 
-    it "does not retry other failures" do
+    it "does not retry user caused failures" do
       request = stub_datadog_request(:get, "monitor/1234").to_return(body: { bar: "foo" }.to_json, status: 400)
       assert_raises(RuntimeError) { api.show("monitor", 1234) }
       assert_requested request
     end
 
-    it "does not retry non-gets" do
+    it "does not retry un-retryable request types" do
       request = stub_datadog_request(:delete, "monitor/1234", "&force=true")
         .to_return(body: { bar: "foo" }.to_json, status: 400)
       assert_raises(RuntimeError) { api.delete("monitor", 1234) }
       assert_requested request
     end
 
-    it "retries on random get 500 errors" do
+    it "retries on update" do
+      request = stub_datadog_request(:put, "monitor/1234").to_return(
+        [
+          { status: 500 },
+          { status: 200, body: { foo: "bar" }.to_json }
+        ]
+      )
+      api.update("monitor", 1234, {})
+      assert_requested request, times: 2
+      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
+    end
+
+    it "retries on random 500 errors" do
       request = stub_datadog_request(:get, "monitor/1234").to_return(
         [
           { status: 500 },

@@ -17,7 +17,7 @@ describe "tasks" do
   end
 
   enable_api
-  capture_all
+  capture_std
 
   let(:dump_output) do
     <<~TXT
