@@ -244,6 +244,11 @@ describe Kennel::Models::Slo do
       call(url).must_equal "123abc456def123"
     end
 
+    it "parses show url" do # not a real thing, but a user tried it and it might be supported in the future
+      url = "https://zendesk.datadoghq.com/slo/123abc456def123"
+      call(url).must_equal "123abc456def123"
+    end
+
     # not sure where to get that url from
     it "does not parses url with alert because that is importing a monitor" do
       url = "https://app.datadoghq.com/slo/123abc456def123/edit/alerts/789"
