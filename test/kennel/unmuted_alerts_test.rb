@@ -5,7 +5,7 @@ require "stringio"
 SingleCov.covered!
 
 describe Kennel::UnmutedAlerts do
-  capture_all
+  capture_std
 
   let(:tag) { "team:compute" }
   let(:monitors) { [monitor] }

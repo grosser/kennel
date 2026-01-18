@@ -24,7 +24,7 @@ describe Kennel::OptionalValidations do
   end
 
   describe ".valid?" do
-    capture_all
+    capture_std
 
     def good
       part = mock

@@ -40,7 +40,7 @@ describe Kennel::PartsSerializer do
     with_env(PROJECT: p_arg, TRACKING_ID: t_arg) { Kennel::Filter.new }
   end
 
-  capture_all
+  capture_std
   in_temp_dir
 
   describe "#write" do

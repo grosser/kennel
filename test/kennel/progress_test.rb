@@ -4,7 +4,7 @@ require_relative "../test_helper"
 SingleCov.covered!
 
 describe Kennel::Progress do
-  capture_all
+  capture_std
 
   describe ".progress" do
     it "shows animated progress with tty" do

@@ -16,7 +16,7 @@ describe Kennel do
   let(:models_count) { 4 }
   let(:kennel) { Kennel::Engine.new }
 
-  capture_all
+  capture_std
   without_cached_projects
   in_temp_dir
   enable_api

@@ -53,7 +53,7 @@ describe Kennel::Console do
   end
 
   describe ".ask?" do
-    capture_all
+    capture_std
 
     it "is true on yes" do
       Kennel.in.expects(:gets).returns("y\n")
