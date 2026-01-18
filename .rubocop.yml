@@ -172,3 +172,11 @@ Style/ArgumentsForwarding:
 # sometimes necessary
 Style/SafeNavigationChainLength:
   Enabled: false
+
+# our cache method triggers rubocop
+Lint/UselessDefaultValueArgument:
+  Enabled: false
+
+# wrong in lib/kennel/syncer.rb
+Naming/PredicateMethod:
+  Enabled: false

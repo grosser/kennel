@@ -32,8 +32,8 @@ module Kennel
       private_class_method def self.force_relative_path(path)
         return path unless File.absolute_path?(path)
         path.dup.sub!("#{Bundler.root}/", "") ||
-        path.dup.sub!("#{Dir.pwd}/", "") ||
-        raise("Unable to make path #{path} relative with bundler root #{Bundler.root} or pwd #{Dir.pwd}")
+          path.dup.sub!("#{Dir.pwd}/", "") ||
+          raise("Unable to make path #{path} relative with bundler root #{Bundler.root} or pwd #{Dir.pwd}")
       end
 
       # hook for users to add custom filtering via `prepend`

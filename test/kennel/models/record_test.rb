@@ -183,7 +183,7 @@ describe Kennel::Models::Record do
 
   describe "#allowed_update_error" do
     it "allows updates" do
-      monitor.allowed_update_error({ type: "query" }).must_be_nil
+      TestRecord.new(TestProject.new).allowed_update_error({ type: "query" }).must_be_nil
     end
   end
 
