@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (2.13.0)
+    kennel (2.14.0)
       benchmark (~> 0.5)
       diff-lcs (~> 1.5)
       faraday (~> 2.0)
