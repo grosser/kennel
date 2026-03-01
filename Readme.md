@@ -249,6 +249,7 @@ Remove the code that created the resource. The next update will delete it (see a
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to find a dashboard
  - run `URL='https://app.datadoghq.com/dashboard/bet-foo-bar' bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
+ - tags: only `team:` tags are submitted to datadog since nothing else is supported
  - add a dashboard to `parts: [` list, for example:
   ```Ruby
   class MyProject < Kennel::Models::Project
@@ -264,8 +265,9 @@ Remove the code that created the resource. The next update will delete it (see a
             template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
             kennel_id: -> { "overview-dashboard" }, # make up a unique name
             layout_type: -> { "ordered" },
+            widgets: -> { "... raw widget definitions, most flexible ..." },
             definitions: -> {
-              [ # An array or arrays, each one is a graph in the dashboard, alternatively a hash for finer control
+              [ # each element is a graph in the dashboard, alternatively a hash for complete control just like in `widgets`
                 [
                   # title, viz, type, query, edit an existing graph and see the json definition
                   "Graph name", "timeseries", "area", "sum:mystats.foobar{$environment}"
@@ -274,7 +276,7 @@ Remove the code that created the resource. The next update will delete it (see a
                   # queries can be an Array as well, this will generate multiple requests
                   # for a single graph
                   "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"],
-                  # add events too ...
+                  # add events too ... (also supports `:markers` and `:precision`)
                   events: [{q: "tags:foobar,deploy", tags_execution: "and"}]
                 ]
               ]
