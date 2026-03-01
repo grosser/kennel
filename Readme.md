@@ -388,6 +388,9 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 ### Validating mentions work
 `rake kennel:validate_mentions` should run as part of CI
 
+Use `KNOWN=foo@bar.com,baz@bar.com` to exempt mentions that are not returned by the API.
+Use `KNOWN_RANDOM=@sns-foo,@sns-bar` to ignore for example SNS handles that are randomly invalid in the API.
+
 ### Grepping through all of datadog
 ```Bash
 rake kennel:dump > tmp/dump
@@ -420,6 +423,14 @@ rake kennel:tracking_id ID=123 RESOURCE=monitor
 ### Benchmarking
 - Setting `FORCE_GET_CACHE=true` will cache all get requests, which makes benchmarking improvements more reliable.
 - Setting `STORE=false` will make `rake plan` not update the files on disk and save a bit of time
+
+### Other Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `KENNEL_MARKER_TEXT` | Custom marker text to namespace multiple Kennel instances in the same Datadog account. Each instance will only manage resources with its marker. | `Managed by kennel` |
+| `KENNEL_API_CACHE_FILE` | Path to the API cache file for dashboard details. | `tmp/cache/details` |
+| `KENNEL_NO_GENERATE` | When set, skip generating files during `plan` or `update_datadog`. Useful when generated files are already up to date. | - |
+| `NO_IGNORED_ERRORS` | When set, show all validation errors including ones suppressed via `ignored_errors`. | - |
 
 ### Integration testing
 ```Bash
