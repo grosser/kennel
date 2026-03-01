@@ -392,7 +392,7 @@ so they can be created in a single update and can be re-created if any of them i
 
 |Resource|Type|Syntax|
 |---|---|---|
-|Dashboard|uptime|`monitor: {id: "foo:bar"}`|
+|Dashboard|uptime|`monitor_ids: ["foo:bar", "foo:baz"]`|
 |Dashboard|alert_graph|`alert_id: "foo:bar"`|
 |Dashboard|slo|`slo_id: "foo:bar"`|
 |Dashboard|timeseries|`queries: [{ data_source: "slo", slo_id: "foo:bar" }]`|
