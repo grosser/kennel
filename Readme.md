@@ -379,7 +379,7 @@ module ProjectA
 
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
-to unblock use the `validate: -> { false }` option.
+to unblock use `ignored_errors: [:name_of_the_error]`.
 
 ### Linking resources with kennel_id
 Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
