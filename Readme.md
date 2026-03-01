@@ -379,6 +379,7 @@ module ProjectA
 - Use `TRACKING_ID=<project-kennel_id>:<resource-kennel_id>` for single resource:
 
   Use the project kennel_id and the resources kennel_id, for example `class ProjectA` and `FooAlert` would give `project_a:foo_alert`.
+  Alternatively use the path of the generated file `TRACKING_ID=generated/project_a/foo_alert.json`
 
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
