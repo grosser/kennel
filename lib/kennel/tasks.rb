@@ -25,6 +25,7 @@ module Kennel
           source = ".env"
 
           # warn when users have things like DATADOG_TOKEN already set and it will not be loaded from .env
+          # (KENNEL_SILENCE_UPDATED_ENV is intentionally not documented - users see it when needed)
           unless ENV["KENNEL_SILENCE_UPDATED_ENV"]
             updated = Dotenv.parse(source).select { |k, v| ENV[k] && ENV[k] != v }
             warn "Environment variables #{updated.keys.join(", ")} need to be unset to be sourced from #{source}" if updated.any?

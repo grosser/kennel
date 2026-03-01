@@ -206,6 +206,7 @@ end
   class MyProject < Kennel::Models::Project
     defaults(
       team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/
+      # kennel_id: -> { "my_project" } # Custom kennel_id (default is snake_cased class name)
       parts: -> {
         [
           Kennel::Models::Monitor.new(
@@ -249,6 +250,7 @@ Remove the code that created the resource. The next update will delete it (see a
  - go to [datadog dashboard UI](https://app.datadoghq.com/dashboard/lists) and click on _New Dashboard_ to find a dashboard
  - run `URL='https://app.datadoghq.com/dashboard/bet-foo-bar' bundle exec rake kennel:import` and copy the output
  - find or create a project in `projects/`
+ - tags: only `team:` tags are submitted to datadog since nothing else is supported
  - add a dashboard to `parts: [` list, for example:
   ```Ruby
   class MyProject < Kennel::Models::Project
@@ -264,8 +266,9 @@ Remove the code that created the resource. The next update will delete it (see a
             template_variables: -> { ["environment"] }, # see https://docs.datadoghq.com/api/?lang=ruby#timeboards
             kennel_id: -> { "overview-dashboard" }, # make up a unique name
             layout_type: -> { "ordered" },
+            widgets: -> { "... raw widget definitions, most flexible ..." },
             definitions: -> {
-              [ # An array or arrays, each one is a graph in the dashboard, alternatively a hash for finer control
+              [ # each element is a graph in the dashboard, alternatively a hash for complete control just like in `widgets`
                 [
                   # title, viz, type, query, edit an existing graph and see the json definition
                   "Graph name", "timeseries", "area", "sum:mystats.foobar{$environment}"
@@ -274,7 +277,7 @@ Remove the code that created the resource. The next update will delete it (see a
                   # queries can be an Array as well, this will generate multiple requests
                   # for a single graph
                   "Graph name", "timeseries", "area", ["sum:mystats.foobar{$environment}", "sum:mystats.success{$environment}"],
-                  # add events too ...
+                  # add events too ... (also supports `:markers` and `:precision`)
                   events: [{q: "tags:foobar,deploy", tags_execution: "and"}]
                 ]
               ]
@@ -285,6 +288,55 @@ Remove the code that created the resource. The next update will delete it (see a
     )
   end
  ```
+
+### Adding a new synthetic test
+ - go to [datadog synthetic tests UI](https://app.datadoghq.com/synthetics/tests) and click on _New_ to create a test
+ - see below
+
+### Updating an existing synthetic test
+ - go to [datadog synthetic tests UI](https://app.datadoghq.com/synthetics/tests) to find a test
+ - run `URL='https://app.datadoghq.com/synthetics/details/abc-def-ghi' bundle exec rake kennel:import` and copy the output
+ - find or create a project in `projects/`
+ - add a synthetic test to `parts: [` list, for example:
+  ```Ruby
+  class MyProject < Kennel::Models::Project
+    defaults(
+      team: -> { Teams::MyTeam.new },
+      parts: -> {
+        [
+          Kennel::Models::SyntheticTest.new(
+            self,
+            id: -> { "abc-def-ghi" }, # id from datadog url, not needed when creating a new test
+            kennel_id: -> { "my-api-test" },
+            name: -> { "My API Test" },
+            type: -> { "api" },
+            subtype: -> { "http" },
+            locations: -> { :all }, # use all locations, or specify: ["aws:us-east-1", "aws:eu-west-1"]
+            message: -> {
+              <<~TEXT
+                API check failed!
+                #{super()}
+              TEXT
+            },
+            options: -> {
+              {
+                tick_every: 60,
+                min_failure_duration: 0,
+                min_location_failed: 1
+              }
+            },
+            config: -> {
+              {
+                assertions: [{ type: "statusCode", operator: "is", target: 200 }],
+                request: { method: "GET", url: "https://example.com/health" }
+              }
+            }
+          )
+        ]
+      }
+    )
+  end
+  ```
 
 ### Updating existing resources with id
 Setting `id` makes kennel take over a manually created datadog resource.
@@ -327,10 +379,11 @@ module ProjectA
 - Use `TRACKING_ID=<project-kennel_id>:<resource-kennel_id>` for single resource:
 
   Use the project kennel_id and the resources kennel_id, for example `class ProjectA` and `FooAlert` would give `project_a:foo_alert`.
+  Alternatively use the path of the generated file `TRACKING_ID=generated/project_a/foo_alert.json`
 
 ### Skipping validations
 Some validations might be too strict for your usecase or just wrong, please [open an issue](https://github.com/grosser/kennel/issues) and
-to unblock use the `validate: -> { false }` option.
+to unblock use `ignored_errors: [:name_of_the_error]`.
 
 ### Linking resources with kennel_id
 Link resources with their kennel_id in the format `project kennel_id` + `:` + `resource kennel_id`,
@@ -339,7 +392,7 @@ so they can be created in a single update and can be re-created if any of them i
 
 |Resource|Type|Syntax|
 |---|---|---|
-|Dashboard|uptime|`monitor: {id: "foo:bar"}`|
+|Dashboard|uptime|`monitor_ids: ["foo:bar", "foo:baz"]`|
 |Dashboard|alert_graph|`alert_id: "foo:bar"`|
 |Dashboard|slo|`slo_id: "foo:bar"`|
 |Dashboard|timeseries|`queries: [{ data_source: "slo", slo_id: "foo:bar" }]`|
@@ -388,6 +441,9 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 ### Validating mentions work
 `rake kennel:validate_mentions` should run as part of CI
 
+Use `KNOWN=foo@bar.com,baz@bar.com` to exempt mentions that are not returned by the API.
+Use `KNOWN_RANDOM=@sns-foo,@sns-bar` to ignore for example SNS handles that are randomly invalid in the API.
+
 ### Grepping through all of datadog
 ```Bash
 rake kennel:dump > tmp/dump
@@ -405,6 +461,9 @@ https://foo.datadog.com/monitor/123
 ### Find all monitors with No-Data
 `rake kennel:nodata TAG=team:foo`
 
+- `FORMAT=json` to output as JSON with tracking IDs
+- `THRESHOLD_DAYS=N` to filter to monitors with N+ days in no-data
+
 ### Finding the tracking id of a resource
 
 When trying to link resources together, this avoids having to go through datadog UI.
@@ -420,6 +479,14 @@ rake kennel:tracking_id ID=123 RESOURCE=monitor
 ### Benchmarking
 - Setting `FORCE_GET_CACHE=true` will cache all get requests, which makes benchmarking improvements more reliable.
 - Setting `STORE=false` will make `rake plan` not update the files on disk and save a bit of time
+
+### Other Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `KENNEL_MARKER_TEXT` | Custom marker text to namespace multiple Kennel instances in the same Datadog account. Each instance will only manage resources with its marker. | `Managed by kennel` |
+| `KENNEL_API_CACHE_FILE` | Path to the API cache file for dashboard details. | `tmp/cache/details` |
+| `KENNEL_NO_GENERATE` | When set, skip generating files during `plan` or `update_datadog`. Useful when generated files are already up to date. | - |
+| `NO_IGNORED_ERRORS` | When set, show all validation errors including ones suppressed via `ignored_errors`. | - |
 
 ### Integration testing
 ```Bash

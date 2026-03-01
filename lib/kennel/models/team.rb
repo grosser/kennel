@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 module Kennel
   module Models
-    class Team < Base
-      settings :mention, :tags, :renotify_interval, :kennel_id
+    class Team
+      include SettingsAsMethods
+
+      settings :mention, :tags, :renotify_interval
       defaults(
-        tags: -> { ["team:#{kennel_id.sub(/^teams_/, "").tr("_", "-")}"] },
+        tags: -> { ["team:#{StringUtils.snake_case(self.class.name).sub(/^teams_/, "").tr("_", "-")}"] },
         renotify_interval: -> { 0 }
       )
     end

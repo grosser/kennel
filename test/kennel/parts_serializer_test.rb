@@ -13,7 +13,6 @@ describe Kennel::PartsSerializer do
   def make_project(kennel_id, monitor_kennel_ids)
     Kennel::Models::Project.new(
       team: Kennel::Models::Team.new(
-        kennel_id: "team-id",
         mention: "@slack-whatever"
       ),
       name: kennel_id,
