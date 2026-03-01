@@ -286,6 +286,55 @@ Remove the code that created the resource. The next update will delete it (see a
   end
  ```
 
+### Adding a new synthetic test
+ - go to [datadog synthetic tests UI](https://app.datadoghq.com/synthetics/tests) and click on _New_ to create a test
+ - see below
+
+### Updating an existing synthetic test
+ - go to [datadog synthetic tests UI](https://app.datadoghq.com/synthetics/tests) to find a test
+ - run `URL='https://app.datadoghq.com/synthetics/details/abc-def-ghi' bundle exec rake kennel:import` and copy the output
+ - find or create a project in `projects/`
+ - add a synthetic test to `parts: [` list, for example:
+  ```Ruby
+  class MyProject < Kennel::Models::Project
+    defaults(
+      team: -> { Teams::MyTeam.new },
+      parts: -> {
+        [
+          Kennel::Models::SyntheticTest.new(
+            self,
+            id: -> { "abc-def-ghi" }, # id from datadog url, not needed when creating a new test
+            kennel_id: -> { "my-api-test" },
+            name: -> { "My API Test" },
+            type: -> { "api" },
+            subtype: -> { "http" },
+            locations: -> { :all }, # use all locations, or specify: ["aws:us-east-1", "aws:eu-west-1"]
+            message: -> {
+              <<~TEXT
+                API check failed!
+                #{super()}
+              TEXT
+            },
+            options: -> {
+              {
+                tick_every: 60,
+                min_failure_duration: 0,
+                min_location_failed: 1
+              }
+            },
+            config: -> {
+              {
+                assertions: [{ type: "statusCode", operator: "is", target: 200 }],
+                request: { method: "GET", url: "https://example.com/health" }
+              }
+            }
+          )
+        ]
+      }
+    )
+  end
+  ```
+
 ### Updating existing resources with id
 Setting `id` makes kennel take over a manually created datadog resource.
 When manually creating to import, it is best to remove the `id` and delete the manually created resource.
