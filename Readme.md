@@ -206,6 +206,7 @@ end
   class MyProject < Kennel::Models::Project
     defaults(
       team: -> { Teams::MyTeam.new }, # use existing team or create new one in teams/
+      # kennel_id: -> { "my_project" } # Custom kennel_id (default is snake_cased class name)
       parts: -> {
         [
           Kennel::Models::Monitor.new(
