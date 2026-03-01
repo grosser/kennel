@@ -460,6 +460,9 @@ https://foo.datadog.com/monitor/123
 ### Find all monitors with No-Data
 `rake kennel:nodata TAG=team:foo`
 
+- `FORMAT=json` to output as JSON with tracking IDs
+- `THRESHOLD_DAYS=N` to filter to monitors with N+ days in no-data
+
 ### Finding the tracking id of a resource
 
 When trying to link resources together, this avoids having to go through datadog UI.
