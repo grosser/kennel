@@ -31,6 +31,16 @@ describe Kennel::PartsSerializer do
     )
   end
 
+  def expect_no_warn
+    serializer.unstub(:warn)
+    serializer.expects(:warn).never
+  end
+
+  def expect_warn
+    serializer.unstub(:warn)
+    serializer.expects(:warn)
+  end
+
   let(:project_filter) { nil }
   let(:tracking_id_filter) { nil }
   let(:filter) do
@@ -38,14 +48,22 @@ describe Kennel::PartsSerializer do
     t_arg = Kennel::Utils.presence(tracking_id_filter)&.join(",")
     with_env(PROJECT: p_arg, TRACKING_ID: t_arg) { Kennel::Filter.new }
   end
+  let(:serializer) { Kennel::PartsSerializer.new(filter: filter) }
 
   capture_std
   in_temp_dir
 
   describe "#write" do
+    def call(parts)
+      serializer.write(parts)
+    end
+
+    before { serializer.stubs(:warn) }
+
     it "saves formatted json" do
       parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      expect_warn
+      call(parts)
       content = File.read("generated/temp_project/foo.json")
       assert content.start_with?("{\n") # pretty generated
       json = JSON.parse(content, symbolize_names: true)
@@ -54,25 +72,25 @@ describe Kennel::PartsSerializer do
 
     it "keeps same" do
       parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      call(parts)
 
       old = Time.now - 10
       FileUtils.touch "generated/temp_project/foo.json", mtime: old
 
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      call(parts)
 
       File.mtime("generated/temp_project/foo.json").must_equal old
     end
 
     it "overrides different" do
       parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      call(parts)
 
       old = Time.now - 10
       File.write "generated/temp_project/foo.json", "x"
       File.utime(old, old, "generated/temp_project/foo.json")
 
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      call(parts)
 
       File.mtime("generated/temp_project/foo.json").wont_equal old
     end
@@ -84,7 +102,7 @@ describe Kennel::PartsSerializer do
       write "generated/stray_file_not_in_a_subfolder.json", "whatever"
 
       parts = make_project("temp_project", ["foo"]).validated_parts.each(&:build)
-      Kennel::PartsSerializer.new(filter: filter).write(parts)
+      call(parts)
 
       Dir["generated/**/*"].must_equal [
         "generated/temp_project",
@@ -92,11 +110,18 @@ describe Kennel::PartsSerializer do
       ]
     end
 
+    it "does nothing when empty" do
+      expect_no_warn
+      call([])
+    end
+
     describe "project filtering" do
       # The filtering only applies to the _cleanup_, not to the _write_.
       # This is because filtering of what parts to write is handled by
       # Kennel.generated
       let(:project_filter) { ["included1", "included2"] }
+
+      before { expect_no_warn }
 
       it "filters the cleanup" do
         write "generated/included1/old_part.json", "whatever"
@@ -109,7 +134,7 @@ describe Kennel::PartsSerializer do
           *make_project("included1", ["foo1"]).validated_parts.each(&:build),
           *make_project("included2", ["foo2"]).validated_parts.each(&:build)
         ]
-        Kennel::PartsSerializer.new(filter: filter).write(parts)
+        call(parts)
 
         Dir["generated/**/*"].must_equal %w[
           generated/excluded
@@ -145,7 +170,7 @@ describe Kennel::PartsSerializer do
           *make_project("included1", ["foo1"]).validated_parts.each(&:build),
           *make_project("included2", ["foo2"]).validated_parts.each(&:build)
         ]
-        Kennel::PartsSerializer.new(filter: filter).write(parts)
+        call(parts)
 
         Dir["generated/**/*"].must_equal %w[
           generated/excluded

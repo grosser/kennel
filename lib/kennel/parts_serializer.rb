@@ -9,8 +9,9 @@ module Kennel
     def write(parts)
       Progress.progress "Storing" do
         existing = existing_files_and_folders
-        used = write_changed(parts)
-        FileUtils.rm_rf(existing - used)
+        used, changed = write_changed(parts)
+        FileUtils.rm_rf(existing - used) # cleanup abandoned
+        suggest_using_project_filter(changed)
       end
     end
 
@@ -20,6 +21,7 @@ module Kennel
 
     def write_changed(parts)
       used = []
+      changed = []
 
       Utils.parallel(parts, max: 2) do |part|
         path = path_for_tracking_id(part.tracking_id)
@@ -28,10 +30,9 @@ module Kennel
         used << path
 
         content = part.as_json.merge(api_resource: part.class.api_resource)
-        write_file_if_necessary(path, content)
+        changed << path if write_file_if_necessary(path, content)
       end
-
-      used
+      [used, changed]
     end
 
     def existing_files_and_folders
@@ -58,13 +59,21 @@ module Kennel
 
       # 99% case
       begin
-        return if File.read(path) == content
-      rescue Errno::ENOENT
+        return false if File.read(path) == content
+      rescue Errno::ENOENT # file or even folder did not exist
         FileUtils.mkdir_p(File.dirname(path))
       end
 
       # slow 1% case
       File.write(path, content)
+      true
+    end
+
+    def suggest_using_project_filter(changed)
+      return if filter.filtering?
+      projects = changed.map { |path| path.split("/")[1] }.uniq
+      return if projects.size != 1
+      warn "Hint: Use PROJECT=#{projects[0]} to improve speed"
     end
   end
 end
