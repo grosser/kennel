@@ -7,9 +7,9 @@ describe Kennel::Filter do
   describe "#initialize" do
     it "can translate file path to tracking id" do
       f = with_env("TRACKING_ID" => "generated/foo/bar.json") { Kennel::Filter.new }
-      assert f.matches_tracking_id?("foo:bar")
-      refute f.matches_tracking_id?("foo:baz")
-      refute f.matches_tracking_id?("bar:bar")
+      assert f.filters_tracking_id?("foo:bar")
+      refute f.filters_tracking_id?("foo:baz")
+      refute f.filters_tracking_id?("bar:bar")
     end
 
     context "without project, without tracking_id" do
@@ -18,8 +18,8 @@ describe Kennel::Filter do
       it "works" do
         f = Kennel::Filter.new
         refute f.filtering?
-        assert f.matches_project_id?("a")
-        assert f.matches_tracking_id?("a:b")
+        assert f.filters_project_id?("a")
+        assert f.filters_tracking_id?("a:b")
       end
     end
 
@@ -28,11 +28,11 @@ describe Kennel::Filter do
         with_env("PROJECT" => "foo,bar", "TRACKING_ID" => nil) do
           f = Kennel::Filter.new
           assert f.filtering?
-          assert f.matches_project_id?("foo")
-          assert f.matches_project_id?("bar")
-          refute f.matches_project_id?("x")
-          assert f.matches_tracking_id?("foo:x")
-          refute f.matches_tracking_id?("x:foo")
+          assert f.filters_project_id?("foo")
+          assert f.filters_project_id?("bar")
+          refute f.filters_project_id?("x")
+          assert f.filters_tracking_id?("foo:x")
+          refute f.filters_tracking_id?("x:foo")
         end
       end
     end
@@ -43,14 +43,14 @@ describe Kennel::Filter do
           Kennel::Filter.new
         end
         assert f.filtering?
-        assert f.matches_project_id?("foo")
-        assert f.matches_project_id?("bar")
-        refute f.matches_project_id?("z")
-        assert f.matches_tracking_id?("foo:x")
-        refute f.matches_tracking_id?("foo:y")
-        assert f.matches_tracking_id?("bar:y")
-        refute f.matches_tracking_id?("bar:z")
-        refute f.matches_tracking_id?("z:z")
+        assert f.filters_project_id?("foo")
+        assert f.filters_project_id?("bar")
+        refute f.filters_project_id?("z")
+        assert f.filters_tracking_id?("foo:x")
+        refute f.filters_tracking_id?("foo:y")
+        assert f.filters_tracking_id?("bar:y")
+        refute f.filters_tracking_id?("bar:z")
+        refute f.filters_tracking_id?("z:z")
       end
 
       it "raises when they disagree" do
@@ -68,14 +68,14 @@ describe Kennel::Filter do
         with_env("PROJECT" => nil, "TRACKING_ID" => "foo:x,bar:y") do
           f = Kennel::Filter.new
           assert f.filtering?
-          assert f.matches_project_id?("foo")
-          assert f.matches_project_id?("bar")
-          refute f.matches_project_id?("z")
-          assert f.matches_tracking_id?("foo:x")
-          refute f.matches_tracking_id?("foo:y")
-          assert f.matches_tracking_id?("bar:y")
-          refute f.matches_tracking_id?("bar:z")
-          refute f.matches_tracking_id?("z:z")
+          assert f.filters_project_id?("foo")
+          assert f.filters_project_id?("bar")
+          refute f.filters_project_id?("z")
+          assert f.filters_tracking_id?("foo:x")
+          refute f.filters_tracking_id?("foo:y")
+          assert f.filters_tracking_id?("bar:y")
+          refute f.filters_tracking_id?("bar:z")
+          refute f.filters_tracking_id?("z:z")
         end
       end
     end

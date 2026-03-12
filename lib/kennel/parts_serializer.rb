@@ -2,6 +2,9 @@
 
 module Kennel
   class PartsSerializer
+    FILE_EXTENSION = ".json"
+    FOLDER = "generated"
+
     def initialize(filter:)
       @filter = filter
     end
@@ -12,6 +15,12 @@ module Kennel
         used, changed = write_changed(parts)
         FileUtils.rm_rf(existing - used) # cleanup abandoned
         suggest_using_project_filter(changed)
+      end
+    end
+
+    class << self
+      def tracking_id_for_path(path)
+        path.sub("#{FOLDER}/", "").sub(FILE_EXTENSION, "").sub("/", ":")
       end
     end
 
@@ -26,6 +35,7 @@ module Kennel
       Utils.parallel(parts, max: 2) do |part|
         path = path_for_tracking_id(part.tracking_id)
 
+        # match paths returned from existing_files_and_folders
         used << File.dirname(path) # we have 1 level of sub folders, so this is enough
         used << path
 
@@ -36,13 +46,13 @@ module Kennel
     end
 
     def existing_files_and_folders
-      paths = Dir["generated/**/*"]
+      paths = Dir["#{FOLDER}/**/*"] # we rely on this returning folders and files, see write_changed
 
       # when filtering we only need the files we are going to write
       if filter.filtering?
         paths.select! do |path|
-          tracking_id = filter.tracking_id_for_path(path)
-          filter.matches_tracking_id?(tracking_id)
+          tracking_id = self.class.tracking_id_for_path(path)
+          filter.filters_tracking_id?(tracking_id)
         end
       end
 
@@ -50,7 +60,7 @@ module Kennel
     end
 
     def path_for_tracking_id(tracking_id)
-      "generated/#{tracking_id.tr("/", ":").sub(":", "/")}.json"
+      "#{FOLDER}/#{tracking_id.tr("/", ":").sub(":", "/")}#{FILE_EXTENSION}"
     end
 
     def write_file_if_necessary(path, content)
@@ -73,7 +83,7 @@ module Kennel
       return if filter.filtering?
       projects = changed.map { |path| path.split("/")[1] }.uniq
       return if projects.size != 1
-      warn "Hint: Use PROJECT=#{projects[0]} to improve speed"
+      warn "Hint: Using PROJECT=#{projects[0]} is faster"
     end
   end
 end

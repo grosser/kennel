@@ -27,7 +27,7 @@ module Kennel
           # ignore when deleted from the codebase
           # (when running with filters we cannot see the other resources in the codebase)
           api_resource = a.fetch(:klass).api_resource
-          next if !id_map.get(api_resource, tracking_id) && filter.matches_tracking_id?(tracking_id)
+          next if !id_map.get(api_resource, tracking_id) && filter.filters_tracking_id?(tracking_id)
 
           id_map.set(api_resource, tracking_id, a.fetch(:id))
           if a.fetch(:klass).api_resource == "synthetics/tests"

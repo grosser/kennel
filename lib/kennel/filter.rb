@@ -2,6 +2,7 @@
 
 module Kennel
   class Filter
+    ID_SEPARATOR = ":"
     attr_reader :project_filter
 
     def initialize
@@ -22,21 +23,16 @@ module Kennel
       !project_filter.nil?
     end
 
-    def matches_project_id?(project_id)
+    def filters_project_id?(project_id)
       !filtering? || project_filter.include?(project_id)
     end
 
-    def matches_tracking_id?(tracking_id)
+    def filters_tracking_id?(tracking_id)
       return true unless filtering?
       return tracking_id_filter.include?(tracking_id) if tracking_id_filter
 
-      project_id = tracking_id.split(":").first
+      project_id = tracking_id.split(ID_SEPARATOR, 2).first
       project_filter.include?(project_id)
-    end
-
-    def tracking_id_for_path(tracking_id)
-      return tracking_id unless tracking_id.end_with?(".json")
-      tracking_id.sub("generated/", "").sub(".json", "").sub("/", ":")
     end
 
     private
@@ -46,7 +42,7 @@ module Kennel
     # needs to be called after read_tracking_id_filter_from_env
     def read_project_filter_from_env
       project_names = ENV["PROJECT"]&.split(",")&.sort&.uniq
-      tracking_project_names = tracking_id_filter&.map { |id| id.split(":", 2).first }&.sort&.uniq
+      tracking_project_names = tracking_id_filter&.map { |id| id.split(ID_SEPARATOR, 2).first }&.sort&.uniq
       if project_names && tracking_project_names && project_names != tracking_project_names
         # avoid everything being filtered out
         raise "do not set a different PROJECT= when using TRACKING_ID="
@@ -57,8 +53,8 @@ module Kennel
     def read_tracking_id_filter_from_env
       return unless (tracking_id = ENV["TRACKING_ID"])
       tracking_id.split(",").map do |id|
-        # allow users to paste the generated/ path of an objects to update it without manually converting
-        tracking_id_for_path(id)
+        # allow using the generated/ path from `git diff` to update objects without manually converting
+        id.include?(ID_SEPARATOR) ? id : PartsSerializer.tracking_id_for_path(id)
       end.sort.uniq
     end
 
