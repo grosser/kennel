@@ -144,6 +144,7 @@ describe Kennel::ProjectsProvider do
         write "projects/projecta/project.rb", <<~RUBY
           module Projecta
             class Project < Kennel::Models::Project
+              defaults(kennel_id: "projecta")
             end
           end
         RUBY
@@ -176,6 +177,7 @@ describe Kennel::ProjectsProvider do
         write "projects/projecta/c.rb", <<~RUBY
           module Projecta
             class C < Kennel::Models::Project
+              defaults(kennel_id: "projecta-c")
             end
           end
         RUBY
