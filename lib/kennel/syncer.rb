@@ -179,7 +179,7 @@ module Kennel
 
       actual.select! do |a|
         tracking_id = a.fetch(:tracking_id)
-        tracking_id.nil? || filter.matches_tracking_id?(tracking_id)
+        tracking_id.nil? || filter.filters_tracking_id?(tracking_id)
       end
     end
   end

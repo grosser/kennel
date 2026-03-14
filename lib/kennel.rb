@@ -69,7 +69,9 @@ module Kennel
 
     def generate
       parts = generated
-      PartsSerializer.new(filter: filter).write(parts) if ENV["STORE"] != "false" # quicker when debugging
+      if ENV["STORE"] != "false" # quicker when debugging
+        PartsSerializer.new(filter: filter).write(parts)
+      end
       parts
     end
 
