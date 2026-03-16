@@ -12,7 +12,8 @@ module Kennel
     #   All requested projects. This is a slow operation when loading all projects.
     def projects
       load_requested
-      loaded_projects.map(&:new)
+      projects = loaded_projects.map(&:new)
+      @filter.filter_projects projects # in case we loaded more though dependencies
     end
 
     private
