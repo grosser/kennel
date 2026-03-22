@@ -336,8 +336,8 @@ describe Kennel::Api do
       request = stub_datadog_request(:get, "monitor/1234").to_return(status: 500)
       e = assert_raises(RuntimeError) { api.show("monitor", 1234) }
       e.message.must_equal "Error 500 during GET /api/v1/monitor/1234\n"
-      assert_requested request, times: 2
-      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
+      assert_requested request, times: 3
+      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n" * 2
     end
   end
 
