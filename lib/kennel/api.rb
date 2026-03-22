@@ -107,14 +107,12 @@ module Kennel
       cache.open(&block)
     end
 
-    def request(method, path, body: nil, params: {}, ignore_404: false)
+    def request(method, path, body: nil, params: {}, ignore_404: false, tries: 3)
       path = "#{path}?#{Faraday::FlatParamsEncoder.encode(params)}" if params.any?
       cached = (ENV["FORCE_GET_CACHE"] && method == :get)
 
       with_cache cached, path do
         response = nil
-        tries = 2
-
         tries.times do |i|
           response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
             @client.send(method, path) do |request|

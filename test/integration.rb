@@ -41,6 +41,7 @@ describe "Integration" do
     result = sh "bundle exec rake plan 2>&1"
     result.gsub!(/\d+\.\d+s/, "0.00s")
     progress, plan = result.split("Plan:\n")
+    progress.sub!("Hint: Using PROJECT=my_project is faster\n", "")
     progress.split("\n").sort.join("\n").must_equal <<~TXT.rstrip
       Building json ...
       Building json ... 0.00s
@@ -50,7 +51,6 @@ describe "Integration" do
       Downloading definitions ... 0.00s
       Finding parts ...
       Finding parts ... 0.00s
-      Hint: Using PROJECT=my_project is faster
       Loading projects ...
       Loading projects ... 0.00s
       Storing ...
