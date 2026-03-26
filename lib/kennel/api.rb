@@ -107,7 +107,7 @@ module Kennel
       cache.open(&block)
     end
 
-    def request(method, path, body: nil, params: {}, ignore_404: false, tries: 3)
+    def request(method, path, body: nil, params: {}, ignore_404: false, tries: 5)
       path = "#{path}?#{Faraday::FlatParamsEncoder.encode(params)}" if params.any?
       cached = (ENV["FORCE_GET_CACHE"] && method == :get)
 
@@ -131,6 +131,7 @@ module Kennel
           last_try = (i == tries - 1)
           break if last_try || ![:get, :put].include?(method) || response.status < 500
           Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
+          sleep retry_backoff_time(i)
         end
 
         if !response.success? && (response.status != 404 || !ignore_404)
@@ -160,6 +161,12 @@ module Kennel
 
       Kennel.err.puts message
       sleep reset.to_f
+    end
+
+    # 0:0.1s - 4:2s
+    def retry_backoff_time(attempt)
+      base = 2**attempt
+      0.1 * base * (0.5 + (rand / 2.0))
     end
 
     # allow caching all requests to speedup/benchmark logic that includes repeated requests
