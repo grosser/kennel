@@ -299,6 +299,12 @@ describe Kennel::Api do
       assert_requested request
     end
 
+    it "uses exponential backoff with jitter" do
+      api.send(:retry_backoff_time, 0).must_be_within_delta 0.075, 0.025
+      api.send(:retry_backoff_time, 0).wont_equal api.send(:retry_backoff_time, 0)
+      api.send(:retry_backoff_time, 4).must_be_within_delta 1.2, 0.4
+    end
+
     it "retries on update" do
       request = stub_datadog_request(:put, "monitor/1234").to_return(
         [
@@ -306,6 +312,7 @@ describe Kennel::Api do
           { status: 200, body: { foo: "bar" }.to_json }
         ]
       )
+      api.stubs(:sleep)
       api.update("monitor", 1234, {})
       assert_requested request, times: 2
       stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
@@ -318,6 +325,7 @@ describe Kennel::Api do
           { status: 200, body: { foo: "bar" }.to_json }
         ]
       )
+      api.stubs(:sleep)
       api.show("monitor", 1234).must_equal(foo: "bar", klass: Kennel::Models::Monitor, tracking_id: nil)
       assert_requested request, times: 2
       stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n"
@@ -334,10 +342,11 @@ describe Kennel::Api do
 
     it "fails on repeated errors" do
       request = stub_datadog_request(:get, "monitor/1234").to_return(status: 500)
+      api.stubs(:sleep)
       e = assert_raises(RuntimeError) { api.show("monitor", 1234) }
       e.message.must_equal "Error 500 during GET /api/v1/monitor/1234\n"
-      assert_requested request, times: 3
-      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n" * 2
+      assert_requested request, times: 5
+      stderr.string.must_equal "Retrying on server error 500 for /api/v1/monitor/1234\n" * 4
     end
   end
 
