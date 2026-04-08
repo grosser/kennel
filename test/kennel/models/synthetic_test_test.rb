@@ -93,5 +93,19 @@ describe Kennel::Models::SyntheticTest do
       e[:locations].must_equal ["a", "b", "c"]
       a[:locations].must_equal ["a", "b", "c"]
     end
+
+    it "removes downtime_ids from actual when expected does not manage them" do
+      a = { options: { downtime_ids: [1, 2] } }
+      e = { options: {} }
+      Kennel::Models::SyntheticTest.normalize(e, a)
+      a[:options].wont_include :downtime_ids
+    end
+
+    it "keeps downtime_ids in actual when expected manages them" do
+      a = { options: { downtime_ids: [1, 2] } }
+      e = { options: { downtime_ids: [3] } }
+      Kennel::Models::SyntheticTest.normalize(e, a)
+      a[:options][:downtime_ids].must_equal [1, 2]
+    end
   end
 end
