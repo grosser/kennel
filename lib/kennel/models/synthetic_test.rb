@@ -54,6 +54,9 @@ module Kennel
         actual[:locations] = actual[:locations]&.sort
 
         ignore_default(expected, actual, DEFAULTS)
+
+        # only update downtime_ids if we are trying to manage them
+        actual[:options]&.delete :downtime_ids unless expected.dig(:options, :downtime_ids)
       end
     end
   end
