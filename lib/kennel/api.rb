@@ -129,7 +129,7 @@ module Kennel
           end
 
           last_try = (i == tries - 1)
-          break if last_try || ![:get, :put].include?(method) || response.status < 500
+          break if last_try || response.status < 500
           Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
           sleep retry_backoff_time(i)
         end
