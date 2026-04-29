@@ -430,6 +430,12 @@ describe Kennel::Models::Monitor do
           .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
       end
 
+      it "fails when using invalid single-quote is_match" do
+        mon.stubs(:message).returns(%({{#is_match 'environment.name' 'production'}}TEST{{/is_match}}))
+        validation_errors_from(mon)
+          .must_equal ["Used environment.name in the message, but can only be used with env.name.\nGroup or filter the query by environment to use it."]
+      end
+
       it "fails when using invalid negative is_match" do
         mon.stubs(:message).returns('{{^is_match "environment.name" "production"}}TEST{{/is_match}}')
         validation_errors_from(mon)
