@@ -357,7 +357,7 @@ module Kennel
         message = data.fetch(:message)
 
         used =
-          message.scan(/{{\s*(?:[#^]is(?:_exact)?_match)\s*"([^\s}]+)"/) + # {{#is_match "environment.name" "production"}}
+          message.scan(/{{\s*(?:[#^]is(?:_exact)?_match)\s*['"]([^\s}]+)['"]/) + # {{#is_match "environment.name" "production"}}
           message.scan(/{{\s*([^}]+\.name)\s*}}/) # Pod {{pod.name}} failed
         return if used.empty?
         used.flatten!(1)
