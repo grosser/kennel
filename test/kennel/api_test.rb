@@ -253,6 +253,19 @@ describe Kennel::Api do
       end
       assert_requested show, times: 2
     end
+
+    it "returns the number of uncached fetches" do
+      stub_datadog_request(:get, "dashboard/123").to_return(body: "{}")
+      stub_datadog_request(:get, "dashboard/456").to_return(body: "{}")
+      list = [{ id: "123", modified_at: "1" }, { id: "456", modified_at: "1" }]
+      api.fill_details!("dashboard", list).must_equal 2
+    end
+
+    it "returns 0 when all results come from the cache" do
+      stub_datadog_request(:get, "dashboard/123").to_return(body: "{}")
+      api.fill_details!("dashboard", [{ id: "123", modified_at: "1" }])
+      api.fill_details!("dashboard", [{ id: "123", modified_at: "1" }]).must_equal 0
+    end
   end
 
   describe "rate limiting" do

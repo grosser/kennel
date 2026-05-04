@@ -93,7 +93,8 @@ module Kennel
         convert_replace_into_update!(matching, unmatched_actual, unmatched_expected)
 
         validate_expected_id_not_missing unmatched_expected
-        fill_details! matching # need details to diff later
+        uncached = fill_details! matching # need details to diff later
+        Kennel.out.puts "Uncached dashboard gets to fill details: #{uncached}" if ENV["SHOW_UNCACHED_FILL_DETAILS"]
 
         # update matching if needed
         updates = matching.map do |e, a|

@@ -415,6 +415,15 @@ describe Kennel::Syncer do
         api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }
         output.must_equal "Plan:\nNothing to do\n"
       end
+
+      it "can show uncached fill details count" do
+        expected << dashboard("a", "b", id: "abc")
+        dashboards << dashboard_api_response("a", "b")
+        api.expects(:fill_details!).with { dashboards.last[:widgets] = [] }.returns(2)
+        with_env("SHOW_UNCACHED_FILL_DETAILS" => "true") do
+          output.must_equal "Uncached dashboard gets to fill details: 2\nPlan:\nNothing to do\n"
+        end
+      end
     end
 
     describe "slos" do
