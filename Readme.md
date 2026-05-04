@@ -487,6 +487,7 @@ rake kennel:tracking_id ID=123 RESOURCE=monitor
 | `KENNEL_API_CACHE_FILE` | Path to the API cache file for dashboard details. | `tmp/cache/details` |
 | `KENNEL_NO_GENERATE` | When set, skip generating files during `plan` or `update_datadog`. Useful when generated files are already up to date. | - |
 | `NO_IGNORED_ERRORS` | When set, show all validation errors including ones suppressed via `ignored_errors`. | - |
+| `SHOW_UNCACHED_FILL_DETAILS` | When set, print the number of uncached dashboard `show` requests made to fill details during diffing. | - |
 
 ### Integration testing
 ```Bash

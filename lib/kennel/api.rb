@@ -74,7 +74,7 @@ module Kennel
     # fill the resource with the full response from the `show` if `list` does not return it
     def fill_details!(api_resource, list)
       details_cache do |cache|
-        Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }
+        Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }.sum
       end
     end
 
@@ -97,9 +97,14 @@ module Kennel
 
     # Make diff work even though we cannot mass-fetch definitions
     def fill_detail!(api_resource, a, cache)
+      uncached = 0
       args = [api_resource, a.fetch(:id)]
-      full = cache.fetch(args, a.fetch(:modified_at)) { show(*args) }
+      full = cache.fetch(args, a.fetch(:modified_at)) do
+        uncached += 1
+        show(*args)
+      end
       a.merge!(full)
+      uncached
     end
 
     def details_cache(&block)
