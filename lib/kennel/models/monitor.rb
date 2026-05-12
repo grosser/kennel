@@ -28,7 +28,8 @@ module Kennel
         variables: nil,
         on_missing_data: nil,
         notification_preset_name: nil,
-        notify_by: nil
+        notify_by: nil,
+        include_tags: true
       }.freeze
       DEFAULT_ESCALATION_MESSAGE = ["", nil].freeze
       ALLOWED_PRIORITY_CLASSES = [NilClass, Integer].freeze
@@ -45,7 +46,7 @@ module Kennel
         :query, :name, :message, :escalation_message, :critical, :type, :renotify_interval, :warning, :timeout_h, :evaluation_delay,
         :ok, :no_data_timeframe, :notify_no_data, :notify_audit, :tags, :critical_recovery, :warning_recovery, :require_full_window,
         :threshold_windows, :scheduling_options, :new_host_delay, :new_group_delay, :group_retention_duration, :priority,
-        :variables, :on_missing_data, :notification_preset_name, :notify_by
+        :variables, :on_missing_data, :notification_preset_name, :notify_by, :include_tags
       )
 
       defaults(
@@ -73,7 +74,8 @@ module Kennel
         on_missing_data: -> { MONITOR_OPTION_DEFAULTS.fetch(:on_missing_data) },
         notification_preset_name: -> { MONITOR_OPTION_DEFAULTS.fetch(:notification_preset_name) },
         notify_by: -> { MONITOR_OPTION_DEFAULTS.fetch(:notify_by) },
-        require_full_window: -> { false }
+        require_full_window: -> { false },
+        include_tags: -> { MONITOR_OPTION_DEFAULTS.fetch(:include_tags) }
       )
 
       def build_json
@@ -93,7 +95,7 @@ module Kennel
             require_full_window: require_full_window,
             new_host_delay: new_host_delay,
             new_group_delay: new_group_delay,
-            include_tags: true,
+            include_tags: include_tags,
             escalation_message: Utils.presence(escalation_message.strip),
             evaluation_delay: evaluation_delay,
             renotify_interval: renotify_interval || 0,

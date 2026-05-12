@@ -98,6 +98,10 @@ describe Kennel::Models::Monitor do
       valid_monitor_json(require_full_window: -> { true })[:options][:require_full_window].must_equal true
     end
 
+    it "can set include_tags" do
+      valid_monitor_json(include_tags: -> { false })[:options][:include_tags].must_equal false
+    end
+
     it "can set variables" do
       valid_monitor_json(variables: -> { { a: 1 } })[:options][:variables].must_equal a: 1
     end
