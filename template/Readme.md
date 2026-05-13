@@ -152,10 +152,23 @@ for simple constants you may prefer to use the plain syntax (`critical: 5.0`).
  - clone the repo
  - `gem install bundler && bundle install`
  - `cp .env.example .env`
- - open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
- - create a `API Key` or get an existing one from an admin, then add it to `.env` as `DATADOG_API_KEY`
- - open [Datadog API Settings](https://app.datadoghq.com/personal-settings/application-keys) and create a new key, then add it to `.env` as `DATADOG_APP_KEY=`
+ - either configure Datadog API/application keys or use OAuth login
+ - key auth: open [Datadog API Settings](https://app.datadoghq.com/account/settings#api)
+ - key auth: create a `API Key` or get an existing one from an admin, then add it to `.env` as `DATADOG_API_KEY`
+ - key auth: open [Datadog API Settings](https://app.datadoghq.com/personal-settings/application-keys) and create a new key, then add it to `.env` as `DATADOG_APP_KEY=`
+ - auth selection: by default kennel uses static auth when `DATADOG_API_KEY` and `DATADOG_APP_KEY` are set, otherwise it warns and falls back to OAuth
+ - auth selection: set `DATADOG_AUTH_METHOD=static` to require static keys or `DATADOG_AUTH_METHOD=oauth` to always use OAuth without the fallback warning
+ - oauth auth: leave `DATADOG_API_KEY` and `DATADOG_APP_KEY` unset, or set `DATADOG_AUTH_METHOD=oauth`, then run `rake plan`
+ - oauth auth: kennel registers an OAuth client, opens a browser login, and stores tokens in the system keychain when available
+ - oauth auth: to enable the OAuth browser callback server in downstream repos, add `gem "webrick"` to the Gemfile and run `bundle install`
+ - oauth auth: to enable system keychain storage in downstream repos, add `gem "ruby-keychain"` to the Gemfile and run `bundle install`
+ - oauth auth: if keychain storage is unavailable or `DD_TOKEN_STORAGE=file`, kennel falls back to `~/.kennel/oauth_auth.json` with `0600` permissions
+ - oauth auth: file storage keeps OAuth access and refresh tokens on disk, so protect that file on your machine
+ - oauth auth: if `DD_TOKEN_STORAGE=keychain`, kennel requires keychain storage and fails instead of falling back
+ - oauth auth: CI does not run interactive login, so CI still needs `DATADOG_API_KEY` and `DATADOG_APP_KEY`
  - if you have a custom subdomain, change the `DATADOG_SUBDOMAIN=app` in `.env`
+ - if you are using a different datadog site, change the `DD_SITE=datadoghq.com` in `.env`
+ - optional oauth tuning: `DD_OAUTH_SCOPES`, `DD_OAUTH_CALLBACK_PORT`, and `DD_OAUTH_ORG_UUID`
  - verify it works by running `rake plan`, it might show some diff, but should not crash
 
 ### Adding a team
@@ -453,4 +466,3 @@ When trying to link resources together, this avoids having to go through datadog
 ```Bash
 rake kennel:tracking_id ID=123 RESOURCE=monitor
 ```
-

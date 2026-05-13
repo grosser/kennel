@@ -37,12 +37,65 @@ describe Kennel::Api do
 
     it "fails if the default keys are missing" do
       with_env("DATADOG_APP_KEY" => nil, "DATADOG_API_KEY" => nil) do
-        assert_raises(KeyError) { Kennel::Api.new }
+        Kennel::Api.new.instance_variable_get(:@auth).must_be_instance_of Kennel::Auth::OAuth
       end
+    end
+
+    it "fails on CI when no auth is configured" do
+      with_env("DATADOG_APP_KEY" => nil, "DATADOG_API_KEY" => nil, "CI" => "true") do
+        assert_raises(RuntimeError) { Kennel::Api.new }
+      end
+    end
+
+    it "can use an explicitly injected static auth provider" do
+      auth = Kennel::Auth::StaticKeys.new(app_key: "foo", api_key: "bar")
+      api = Kennel::Api.new(auth: auth)
+      api.instance_variable_get(:@app_key).must_equal "foo"
+      api.instance_variable_get(:@api_key).must_equal "bar"
+    end
+
+    it "does not expose legacy key ivars for non-static auth providers" do
+      auth = Object.new
+      auth.define_singleton_method(:apply!) { |_request| }
+      api = Kennel::Api.new(auth: auth)
+      api.instance_variable_get(:@app_key).must_be_nil
+      api.instance_variable_get(:@api_key).must_be_nil
     end
   end
 
   describe "#show" do
+    it "can authenticate auth providers before requests start" do
+      auth = mock
+      auth.expects(:prepare!).returns(true)
+
+      api = Kennel::Api.new(auth: auth)
+
+      api.authenticate!.must_equal api
+    end
+
+    it "does nothing when auth providers do not support preparation" do
+      auth = Object.new
+      auth.define_singleton_method(:apply!) { |_request| }
+
+      api = Kennel::Api.new(auth: auth)
+
+      api.authenticate!.must_equal api
+    end
+
+    it "retries once after refreshing auth on 401" do
+      auth = mock
+      auth.stubs(:apply!).with { |request| request.headers["Authorization"] = "Bearer token" }
+      auth.expects(:invalidate!).returns(true)
+      auth.expects(:refresh!).returns(true)
+
+      stub_datadog_request(:get, "monitor/1234")
+        .to_return({ status: 401, body: "expired" }, { body: { bar: "foo" }.to_json })
+
+      api = Kennel::Api.new(auth: auth)
+      answer = api.show("monitor", 1234)
+      answer.must_equal(bar: "foo", klass: Kennel::Models::Monitor, tracking_id: nil)
+    end
+
     it "fetches monitor" do
       stub_datadog_request(:get, "monitor/1234")
         .with(body: nil, headers: { "Content-Type" => "application/json" })

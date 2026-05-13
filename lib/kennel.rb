@@ -16,6 +16,15 @@ require "kennel/attribute_differ"
 require "kennel/tags_validation"
 require "kennel/syncer"
 require "kennel/id_map"
+require "kennel/auth"
+require "kennel/auth/types"
+require "kennel/auth/pkce"
+require "kennel/auth/callback_server"
+require "kennel/auth/static_keys"
+require "kennel/auth/token_store"
+require "kennel/auth/token_store/file_store"
+require "kennel/auth/token_store/keychain_store"
+require "kennel/auth/oauth"
 require "kennel/api"
 require "kennel/github_reporter"
 require "kennel/subclass_tracking"
@@ -144,6 +153,7 @@ module Kennel
     end
 
     def definitions(**kwargs)
+      api.authenticate!
       @definitions ||= Progress.progress("Downloading definitions", **kwargs) do
         Utils.parallel(Models::Record.subclasses) do |klass|
           # lookup monitors without adding unnecessary downtime information

@@ -45,6 +45,7 @@ module Kennel
 
       def filtered_monitors(api, tag)
         # Download all monitors with given tag
+        api.authenticate!
         monitors = Progress.progress("Downloading") do
           api.list("monitor", monitor_tags: tag, group_states: "all", with_downtimes: "true")
         end

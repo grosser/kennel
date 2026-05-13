@@ -4,6 +4,10 @@ source "https://rubygems.org"
 ruby File.read(".ruby-version").strip
 
 gem "kennel"
+# Optional: enables the OAuth browser callback server.
+# gem "webrick"
+# Optional: enables OAuth token storage in the system keychain.
+# gem "ruby-keychain"
 gem "dotenv"
 gem "rake"
 gem "bootsnap"
