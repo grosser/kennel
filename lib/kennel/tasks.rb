@@ -49,7 +49,11 @@ module Kennel
 
       def on_default_branch?
         branch = (ENV["TRAVIS_BRANCH"] || ENV["GITHUB_REF"]).to_s.sub(/^refs\/heads\//, "")
-        (branch == (ENV["DEFAULT_BRANCH"] || "master"))
+        if (default = ENV["DEFAULT_BRANCH"])
+          branch == default
+        else
+          ["main", "master"].include?(branch)
+        end
       end
 
       def git_push?
