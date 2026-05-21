@@ -140,11 +140,22 @@ describe "tasks" do
     in_temp_dir # uses file-cache
 
     let(:task) { "kennel:dump" }
-    let(:api) { Kennel::Api.any_instance }
+    let(:api) { mock }
 
     before do
       list = [{ id: 1, modified_at: 2, name: "N" }]
+      api.stubs(:authenticate!).returns(api)
       api.stubs(:list).returns list, deep_dup(list), deep_dup(list)
+      Kennel::Tasks.stubs(:api).returns(api)
+    end
+
+    it "authenticates before downloading" do
+      list = [{ id: 1, modified_at: 2, name: "N" }]
+      sequence = sequence("dump-auth")
+      api.expects(:authenticate!).in_sequence(sequence).returns(api)
+      api.expects(:list).with("monitor").in_sequence(sequence).returns(list)
+
+      execute(TYPE: "monitor")
     end
 
     it "dumps" do
@@ -162,7 +173,7 @@ describe "tasks" do
     end
 
     it "dumps all" do
-      api.expects(:show).returns foo: "bar"
+      api.stubs(:fill_details!).with { |_resource, list| list.first&.merge!(foo: "bar"); 1 }
       execute
       stdout.string.must_equal dump_output
     end

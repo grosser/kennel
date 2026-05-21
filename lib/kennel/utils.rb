@@ -14,7 +14,8 @@ module Kennel
 
       def path_to_url(path)
         subdomain = (ENV["DATADOG_SUBDOMAIN"] || "app")
-        "https://#{subdomain}.datadoghq.com#{path}"
+        site = (ENV["DD_SITE"] || "datadoghq.com")
+        "https://#{subdomain}.#{site}#{path}"
       end
 
       def parallel(items, max: 10)

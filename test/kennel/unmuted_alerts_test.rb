@@ -75,10 +75,19 @@ describe Kennel::UnmutedAlerts do
   end
 
   describe "#filtered_monitors" do
-    let(:api) { Kennel::Api.new("app", "api") }
+    let(:api) { mock }
 
     def result
-      stub_datadog_request(:get, "monitor", "&monitor_tags=#{tag}&group_states=all&with_downtimes=true").to_return(body: monitors.to_json)
+      api.stubs(:authenticate!).returns(api)
+      api.stubs(:list).with("monitor", monitor_tags: tag, group_states: "all", with_downtimes: "true").returns(monitors)
+      Kennel::UnmutedAlerts.send(:filtered_monitors, api, tag)
+    end
+
+    it "authenticates before downloading monitors" do
+      sequence = sequence("monitor-auth")
+      api.expects(:authenticate!).in_sequence(sequence).returns(api)
+      api.expects(:list).with("monitor", monitor_tags: tag, group_states: "all", with_downtimes: "true").in_sequence(sequence).returns(monitors)
+
       Kennel::UnmutedAlerts.send(:filtered_monitors, api, tag)
     end
 

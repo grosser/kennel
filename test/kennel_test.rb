@@ -55,6 +55,16 @@ describe Kennel do
       kennel.preload
       stdout.string.must_equal ""
     end
+
+    it "authenticates before downloading definitions" do
+      api = mock
+      sequence = sequence("download-auth")
+      api.expects(:authenticate!).in_sequence(sequence).returns(api)
+      api.expects(:list).times(models_count).in_sequence(sequence).returns([])
+      kennel.stubs(:api).returns(api)
+
+      kennel.send(:definitions, plain: true)
+    end
   end
 
   describe ".generate" do

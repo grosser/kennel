@@ -15,9 +15,21 @@ module Kennel
       )
     end
 
-    def initialize(app_key = nil, api_key = nil)
-      @app_key = app_key || ENV.fetch("DATADOG_APP_KEY")
-      @api_key = api_key || ENV.fetch("DATADOG_API_KEY")
+    def initialize(app_key = nil, api_key = nil, auth: nil)
+      @auth =
+        auth ||
+        if app_key || api_key
+          Auth::StaticKeys.new(
+            app_key: app_key || ENV.fetch("DATADOG_APP_KEY"),
+            api_key: api_key || ENV.fetch("DATADOG_API_KEY")
+          )
+        else
+          Auth.build
+        end
+      if @auth.is_a?(Auth::StaticKeys)
+        @app_key = @auth.app_key
+        @api_key = @auth.api_key
+      end
       url = Utils.path_to_url("")
       @client = Faraday.new(url: url)
     end
@@ -78,6 +90,11 @@ module Kennel
       end
     end
 
+    def authenticate!
+      @auth.prepare! if @auth.respond_to?(:prepare!)
+      self
+    end
+
     private
 
     def with_pagination(enabled, params)
@@ -118,14 +135,19 @@ module Kennel
 
       with_cache cached, path do
         response = nil
+        retried_auth = false
         tries.times do |i|
           response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
             @client.send(method, path) do |request|
               request.body = JSON.generate(body) if body
               request.headers["Content-type"] = "application/json"
-              request.headers["DD-API-KEY"] = @api_key
-              request.headers["DD-APPLICATION-KEY"] = @app_key
+              @auth.apply!(request)
             end
+          end
+
+          if response.status == 401 && !retried_auth && @auth.invalidate! && @auth.refresh!
+            retried_auth = true
+            redo
           end
 
           if response.status == 429

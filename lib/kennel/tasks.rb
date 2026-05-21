@@ -12,6 +12,10 @@ module Kennel
         @kennel ||= Kennel::Engine.new
       end
 
+      def api
+        @api ||= Kennel::Api.new
+      end
+
       def abort(message = nil)
         Kennel.err.puts message if message
         raise SystemExit.new(1), message
@@ -81,7 +85,7 @@ namespace :kennel do
     known = []
 
     # @slack- @team- @webhook- @sns- user-emails
-    known += Kennel::Api.new.send(:request, :get, "/api/v2/notifications/handles?group_limit=99999")
+    known += Kennel::Tasks.api.send(:request, :get, "/api/v2/notifications/handles?group_limit=99999")
       .fetch(:data)
       .flat_map { |d| d.dig(:attributes, :handles) }
       .map { |v| v.fetch(:value) }
@@ -143,13 +147,13 @@ namespace :kennel do
   desc "show unmuted alerts filtered by TAG, for example TAG=team:foo"
   task alerts: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    Kennel::UnmutedAlerts.print(Kennel::Api.new, tag)
+    Kennel::UnmutedAlerts.print(Kennel::Tasks.api, tag)
   end
 
   desc "show monitors with no data by TAG, for example TAG=team:foo [THRESHOLD_DAYS=7] [FORMAT=json]"
   task nodata: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    monitors = Kennel::Api.new.list("monitor", monitor_tags: tag, group_states: "no data")
+    monitors = Kennel::Tasks.api.list("monitor", monitor_tags: tag, group_states: "no data")
     monitors.select! { |m| m[:overall_state] == "No Data" }
     monitors.reject! { |m| m[:tags].include? "nodata:ignore" }
     if monitors.any?
@@ -207,7 +211,7 @@ namespace :kennel do
       Kennel::Tasks.abort("Call with URL= or call with RESOURCE=#{possible_resources.join(" or ")} and ID=")
     end
 
-    Kennel.out.puts Kennel::Importer.new(Kennel::Api.new).import(resource, id)
+    Kennel.out.puts Kennel::Importer.new(Kennel::Tasks.api).import(resource, id)
   end
 
   desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
@@ -218,7 +222,8 @@ namespace :kennel do
       else
         Kennel::Models::Record.api_resource_map.keys
       end
-    api = Kennel::Api.new
+    api = Kennel::Tasks.api
+    api.authenticate!
     list = nil
     first = true
 
@@ -268,7 +273,7 @@ namespace :kennel do
     klass =
       Kennel::Models::Record.subclasses.detect { |s| s.api_resource == resource } ||
       raise("resource #{resource} not know")
-    object = Kennel::Api.new.show(resource, id)
+    object = Kennel::Tasks.api.show(resource, id)
     Kennel.out.puts klass.parse_tracking_id(object)
   end
 
