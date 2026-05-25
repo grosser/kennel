@@ -5,6 +5,8 @@ require "kennel/unmuted_alerts"
 require "kennel/importer"
 require "json"
 
+Dir.children("#{__dir__}/tasks").each { |f| require_relative "tasks/#{File.basename(f, ".rb")}" }
+
 module Kennel
   module Tasks
     class << self
@@ -71,49 +73,6 @@ namespace :kennel do
     Kennel::Tasks.abort "Error during diffing" unless $CHILD_STATUS.success?
   end
 
-  # ideally do this on every run, but it's slow (~1.5s) and brittle
-  # (might not find all via the regex + might find false-positives because random emails can also be sent to)
-  # https://help.datadoghq.com/hc/en-us/requests/254114 for automatic validation
-  # /monitor/notifications has users+slack+sns but not @team- and @webhook-
-  # got a support ticket open to get sns into api/v2 too
-  desc "Verify that all used monitor  mentions are valid"
-  task validate_mentions: :environment do
-    known = []
-
-    # @slack- @team- @webhook- @sns- user-emails
-    known += Kennel::Api.new.send(:request, :get, "/api/v2/notifications/handles?group_limit=99999")
-      .fetch(:data)
-      .flat_map { |d| d.dig(:attributes, :handles) }
-      .map { |v| v.fetch(:value) }
-
-    # group emails or other 1-off things we know are valid
-    manual = ENV["KNOWN"].to_s.split(",")
-    dupes = (manual & known)
-    Kennel::Tasks.abort "KNOWN=#{dupes.join(",")} values are already known and should be removed" if dupes.any?
-    known += manual
-
-    # @sns- handles are randomly invalid so we need to ignore them without checking if the ignore is needed
-    # https://help.datadoghq.com/hc/en-us/requests/2310423
-    known += ENV["KNOWN_RANDOM"].to_s.split(",")
-
-    bad = []
-    Dir["generated/**/*.json"].each do |f|
-      next unless (message = JSON.parse(File.read(f))["message"])
-      used = message
-        .scan(/(?:^|\s)(@[^\s{,'"]+)/)
-        .flatten(1)
-        .grep(/^@.*@|^@.*-/) # ignore @here etc handles ... datadog uses @foo@bar.com for emails and @foo-bar for integrations
-      (used - known).each { |v| bad << [f, v] }
-    end
-
-    if bad.any?
-      url = Kennel::Utils.path_to_url "/account/settings"
-      Kennel.err.puts "Invalid mentions found, either ignore them by adding to `KNOWN` env var or add them via #{url}"
-      bad.each { |f, v| Kennel.err.puts "Invalid mention #{v} in monitor message of #{f}" }
-      Kennel::Tasks.abort ENV["KNOWN_WARNING"]
-    end
-  end
-
   desc "store definitions in generated/"
   task generate: :environment do
     Kennel::Tasks.kennel.generate
@@ -144,132 +103,6 @@ namespace :kennel do
   task alerts: :environment do
     tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
     Kennel::UnmutedAlerts.print(Kennel::Api.new, tag)
-  end
-
-  desc "show monitors with no data by TAG, for example TAG=team:foo [THRESHOLD_DAYS=7] [FORMAT=json]"
-  task nodata: :environment do
-    tag = ENV["TAG"] || Kennel::Tasks.abort("Call with TAG=foo:bar")
-    monitors = Kennel::Api.new.list("monitor", monitor_tags: tag, group_states: "no data")
-    monitors.select! { |m| m[:overall_state] == "No Data" }
-    monitors.reject! { |m| m[:tags].include? "nodata:ignore" }
-    if monitors.any?
-      Kennel.err.puts <<~TEXT
-        To ignore monitors with expected nodata, tag it with "nodata:ignore"
-
-      TEXT
-    end
-
-    now = Time.now
-    monitors.each do |m|
-      m[:days_in_no_data] =
-        if m[:overall_state_modified]
-          since = Date.parse(m[:overall_state_modified]).to_time
-          ((now - since) / (24 * 60 * 60)).to_i
-        else
-          999
-        end
-    end
-
-    if (threshold = ENV["THRESHOLD_DAYS"])
-      monitors.select! { |m| m[:days_in_no_data] > Integer(threshold) }
-    end
-
-    monitors.each { |m| m[:url] = Kennel::Utils.path_to_url("/monitors/#{m[:id]}") }
-
-    if ENV["FORMAT"] == "json"
-      report = monitors.map do |m|
-        match = m[:message].to_s.match(/-- #{Regexp.escape(Kennel::Models::Record::MARKER_TEXT)} (\S+:\S+) in (\S+), /) || []
-        m.slice(:url, :name, :tags, :days_in_no_data).merge(
-          kennel_tracking_id: match[1],
-          kennel_source: match[2]
-        )
-      end
-
-      Kennel.out.puts JSON.pretty_generate(report)
-    else
-      monitors.each do |m|
-        Kennel.out.puts m[:name]
-        Kennel.out.puts Kennel::Utils.path_to_url("/monitors/#{m[:id]}")
-        Kennel.out.puts "No data since #{m[:days_in_no_data]}d"
-        Kennel.out.puts
-      end
-    end
-  end
-
-  desc "Convert existing resources to copy-pasteable definitions to import existing resources (call with URL= or call with RESOURCE= and ID=)"
-  task import: :environment do
-    if (id = ENV["ID"]) && (resource = ENV["RESOURCE"])
-      id = Integer(id) if id =~ /^\d+$/ # dashboards can have alphanumeric ids
-    elsif (url = ENV["URL"])
-      resource, id = Kennel::Models::Record.parse_any_url(url) || Kennel::Tasks.abort("Unable to parse url")
-    else
-      possible_resources = Kennel::Models::Record.subclasses.map(&:api_resource)
-      Kennel::Tasks.abort("Call with URL= or call with RESOURCE=#{possible_resources.join(" or ")} and ID=")
-    end
-
-    Kennel.out.puts Kennel::Importer.new(Kennel::Api.new).import(resource, id)
-  end
-
-  desc "Dump ALL of datadog config as raw json ... useful for grep/search [TYPE=slo|monitor|dashboard]"
-  task dump: :environment do
-    resources =
-      if (type = ENV["TYPE"])
-        [type]
-      else
-        Kennel::Models::Record.api_resource_map.keys
-      end
-    api = Kennel::Api.new
-    list = nil
-    first = true
-
-    Kennel.out.puts "["
-    resources.each do |resource|
-      Kennel::Progress.progress("Downloading #{resource}") do
-        list = api.list(resource)
-        api.fill_details!(resource, list) if resource == "dashboard"
-      end
-      list.each do |r|
-        r[:api_resource] = resource
-        if first
-          first = false
-        else
-          Kennel.out.puts ","
-        end
-        Kennel.out.print JSON.pretty_generate(r)
-      end
-    end
-    Kennel.out.puts "\n]"
-  end
-
-  desc "Find items from dump by pattern DUMP= PATTERN= [URLS=true]"
-  task dump_grep: :environment do
-    file = ENV.fetch("DUMP")
-    pattern = Regexp.new ENV.fetch("PATTERN")
-    items = File.read(file)[2..-2].gsub("},\n{", "}--SPLIT--{").split("--SPLIT--")
-    models = Kennel::Models::Record.api_resource_map
-    found = items.grep(pattern)
-    exit 1 if found.empty?
-    found.each do |resource|
-      if ENV["URLS"]
-        parsed = JSON.parse(resource)
-        url = models[parsed.fetch("api_resource")].url(parsed.fetch("id"))
-        title = parsed["title"] || parsed["name"]
-        Kennel.out.puts "#{url} # #{title}"
-      else
-        Kennel.out.puts resource
-      end
-    end
-  end
-
-  desc "Resolve given id to kennel tracking-id RESOURCE= ID="
-  task tracking_id: "kennel:environment" do
-    resource = ENV.fetch("RESOURCE")
-    id = ENV.fetch("ID")
-    klass =
-      Kennel::Models::Record.subclasses.detect { |s| s.api_resource == resource } ||
-      raise("resource #{resource} not know")
-    object = Kennel::Api.new.show(resource, id)
-    Kennel.out.puts klass.parse_tracking_id(object)
   end
 
   task :environment do
