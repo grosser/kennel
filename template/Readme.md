@@ -426,6 +426,9 @@ Run `rake kennel:alerts TAG=service:my-service` to see all un-muted alerts for a
 Use `KNOWN=foo@bar.com,baz@bar.com` to exempt mentions that are not returned by the API.
 Use `KNOWN_RANDOM=@sns-foo,@sns-bar` to ignore for example SNS handles that are randomly invalid in the API.
 
+### Validating planned changes
+`rake kennel:validate_plan` validates planned monitor and dashboard changes against the Datadog API.
+
 ### Grepping through all of datadog
 ```Bash
 rake kennel:dump > tmp/dump
