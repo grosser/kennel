@@ -136,6 +136,14 @@ Minitest::Test.class_eval do
     errors.first
   end
 
+  def execute_task(env = {})
+    task = (defined?(task()) ? task() : self.class.name.split("::").first[/(\S+)/, 1])
+    with_env(env) { Rake::Task[task].execute }
+  rescue SystemExit
+    $!.status.must_equal 1
+    raise "Aborted #{$!.message}"
+  end
+
   def remove_nested_const(klass)
     path = klass.name.split("::")
     path[0...-1].inject(Object) { |mod, name| mod.const_get(name) }.send(:remove_const, path.last.to_sym)

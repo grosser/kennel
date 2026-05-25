@@ -13,4 +13,5 @@ require "kennel/tasks"
 
 task generate: "kennel:generate"
 task plan: "kennel:plan"
+task validate_plan: "kennel:validate_plan"
 task default: "kennel:no_diff"
