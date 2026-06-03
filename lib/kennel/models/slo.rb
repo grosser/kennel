@@ -103,11 +103,14 @@ module Kennel
           [:timeframe, :warning_threshold, :target_threshold].each { |k| actual.delete k }
         end
 
-        # discard deprecated query which stays in datadog forever when we are trying to
-        # set sli_specification or are importing sli_specification
+        # discard deprecated query which stays in datadog forever when we are trying to set sli_specification
         # (downgrading to query by setting sli_specification=nil is not supported in the api)
-        actual.delete :query if expected[:sli_specification] || (expected.empty? && actual[:sli_specification])
-        actual.delete :sli_specification if expected[:query] # uncovered TODO: this might be a bug, once sli_specification is set query does not override it
+        actual.delete :query if expected[:sli_specification]
+
+        # user set query so let's not worry about sli_specification even if this might be hiding bugs
+        # ideally we'd validate and tell the user that this will have no effect (see importer logic)
+        # but I'm not confident this will always be right
+        actual.delete :sli_specification if expected[:query]
 
         ignore_default(expected, actual, DEFAULTS)
       end

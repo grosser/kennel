@@ -86,7 +86,14 @@ module Kennel
         end
       when "synthetics/tests"
         data[:locations] = :all if data[:locations].sort == Kennel::Models::SyntheticTest::LOCATIONS.sort
-      else
+      when "slo"
+        # sli_specification it is only used by datadog if the user switched to "Bad Events"
+        # otherwise user would be trying to set sli_specification but the slo does not change since query is used
+        if data.key?(:query) && data.key?(:sli_specification)
+          delete = (data.dig(:sli_specification, :count, :bad_events_formula) ? :query : :sli_specification)
+          data.delete delete
+        end
+      else # uncovered
         # noop
       end
 

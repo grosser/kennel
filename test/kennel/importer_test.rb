@@ -643,6 +643,29 @@ describe Kennel::Importer do
         response.delete(:thresholds)
         call
       end
+
+      it "keeps only sli_specification when slo is migrated to bad events and would ignore query" do
+        response[:query] = { numerator: "a", denominator: "b" }
+        response[:sli_specification] = { count: { bad_events_formula: "x", total_events_formula: "y" } }
+        result = call
+        result.must_include "sli_specification:"
+        result.wont_include "query:"
+      end
+
+      it "keeps only query when slo is not migrated to bad events and would ignore sli_specification" do
+        response[:query] = { numerator: "a", denominator: "b" }
+        response[:sli_specification] = { count: { total_events_formula: "y" } }
+        result = call
+        result.must_include "query:"
+        result.wont_include "sli_specification:"
+      end
+
+      it "keeps existing when there is just 1" do
+        response[:query] = { numerator: "a", denominator: "b" }
+        result = call
+        result.must_include "query:"
+        result.wont_include "sli_specification:"
+      end
     end
 
     describe "synthetic test" do

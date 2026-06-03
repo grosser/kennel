@@ -325,12 +325,12 @@ describe Kennel::Models::Slo do
         actual.must_equal(tags: [], sli_specification: 1)
       end
 
-      it "shows when importing" do
-        expected = {}
-        actual = { tags: [], query: 2, sli_specification: 2 }
+      it "ignores when not set" do
+        expected = { tags: [], query: 1 }
+        actual = { query: 2, sli_specification: 1, tags: [] } # sli_specification will always stay in dd api
         Kennel::Models::Slo.normalize(expected, actual)
-        expected.must_equal({})
-        actual.must_equal(tags: [], sli_specification: 2)
+        expected.must_equal(tags: [], query: 1)
+        actual.must_equal(tags: [], query: 2)
       end
     end
   end
