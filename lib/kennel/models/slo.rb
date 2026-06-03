@@ -15,7 +15,8 @@ module Kennel
         groups: nil,
         monitor_ids: [],
         thresholds: [],
-        primary: nil
+        primary: nil,
+        sli_specification: nil
       }.freeze
 
       settings :type, :description, :thresholds, :query, :tags, :monitor_ids, :monitor_tags, :name, :groups, :sli_specification, :primary
@@ -27,7 +28,8 @@ module Kennel
         monitor_ids: -> { DEFAULTS.fetch(:monitor_ids) },
         thresholds: -> { DEFAULTS.fetch(:thresholds) },
         groups: -> { DEFAULTS.fetch(:groups) },
-        primary: -> { DEFAULTS.fetch(:primary) }
+        primary: -> { DEFAULTS.fetch(:primary) },
+        sli_specification: -> { DEFAULTS.fetch(:sli_specification) }
       )
 
       def build_json
@@ -50,9 +52,8 @@ module Kennel
           data[:target_threshold] = threshold[:target]
         end
 
-        # TODO: if user set sli_specification but we don't use it we should raise, but sadly we can't detect that easily
-        if type == "time_slice"
-          data[:sli_specification] = sli_specification
+        if (v = sli_specification)
+          data[:sli_specification] = v
         elsif (v = query)
           data[:query] = v
         end
@@ -102,10 +103,11 @@ module Kennel
           [:timeframe, :warning_threshold, :target_threshold].each { |k| actual.delete k }
         end
 
-        # datadog always sets this, but we only set it for time_slice, so discard it for everything else to avoid diff
-        if expected[:type] != "time_slice"
-          actual.delete :sli_specification
-        end
+        # discard deprecated query which stays in datadog forever when we are trying to
+        # set sli_specification or are importing sli_specification
+        # (downgrading to query by setting sli_specification=nil is not supported in the api)
+        actual.delete :query if expected[:sli_specification] || (expected.empty? && actual[:sli_specification])
+        actual.delete :sli_specification if expected[:query] # uncovered TODO: this might be a bug, once sli_specification is set query does not override it
 
         ignore_default(expected, actual, DEFAULTS)
       end

@@ -309,20 +309,28 @@ describe Kennel::Models::Slo do
     end
 
     describe "sli_specification" do
-      it "diffs remote for time_slice" do
-        expected = { type: "time_slice", tags: [], sli_specification: 1 }
-        actual = { type: "time_slice", tags: [], sli_specification: 2 }
+      it "diffs remote" do
+        expected = { tags: [], sli_specification: 1 }
+        actual = { tags: [], sli_specification: 2 }
         Kennel::Models::Slo.normalize(expected, actual)
-        expected.must_equal(type: "time_slice", tags: [], sli_specification: 1)
-        actual.must_equal(type: "time_slice", tags: [], sli_specification: 2)
+        expected.must_equal(tags: [], sli_specification: 1)
+        actual.must_equal(tags: [], sli_specification: 2)
       end
 
-      it "ignores remote for non time_slice" do
-        expected = { tags: [] }
-        actual = { sli_specification: 1, tags: [] }
+      it "ignores query when not set" do
+        expected = { tags: [], sli_specification: 1 }
+        actual = { query: 2, sli_specification: 1, tags: [] } # query will always stay in dd api
         Kennel::Models::Slo.normalize(expected, actual)
-        expected.must_equal(tags: [])
-        actual.must_equal(tags: [])
+        expected.must_equal(tags: [], sli_specification: 1)
+        actual.must_equal(tags: [], sli_specification: 1)
+      end
+
+      it "shows when importing" do
+        expected = {}
+        actual = { tags: [], query: 2, sli_specification: 2 }
+        Kennel::Models::Slo.normalize(expected, actual)
+        expected.must_equal({})
+        actual.must_equal(tags: [], sli_specification: 2)
       end
     end
   end
