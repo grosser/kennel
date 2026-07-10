@@ -187,6 +187,74 @@ describe Kennel::Api do
       stub_datadog_request(:put, "synthetics/tests/123").to_return(body: { public_id: "123" }.to_json)
       api.update("synthetics/tests", "123", foo: "bar").must_equal(id: "123", klass: Kennel::Models::SyntheticTest, tracking_id: nil)
     end
+
+    describe "dashboard widget ids" do
+      it "restores widget ids by title" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [{ id: 111, definition: { title: "Bar" } }] }.to_json
+        )
+        expected = { widgets: [{ definition: { title: "Bar" } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ definition: { title: "Bar" }, id: 111 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "restores nested widget ids using the group title" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: {
+            widgets: [{ id: 1, definition: { title: "Foo", widgets: [{ id: 222, definition: { title: "Bar" } }] } }]
+          }.to_json
+        )
+        expected = { widgets: [{ definition: { title: "Foo", widgets: [{ definition: { title: "Bar" } }] } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(
+            body: {
+              widgets: [{ definition: { title: "Foo", widgets: [{ definition: { title: "Bar" }, id: 222 }] }, id: 1 }]
+            }.to_json
+          )
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "keeps explicitly set widget ids" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [{ id: 111, definition: { title: "Bar" } }] }.to_json
+        )
+        expected = { widgets: [{ id: 999, definition: { title: "Bar" } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ id: 999, definition: { title: "Bar" } }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "leaves widgets without a matching title untouched" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [{ id: 111, definition: { title: "Bar" } }] }.to_json
+        )
+        expected = { widgets: [{ definition: { title: "New" } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ definition: { title: "New" } }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "does nothing when there are no widgets" do
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { title: "Foo" }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, title: "Foo")
+      end
+
+      it "does nothing when the current dashboard is gone" do
+        stub_datadog_request(:get, "dashboard/123").to_return(status: 404)
+        expected = { widgets: [{ definition: { title: "Bar" } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ definition: { title: "Bar" } }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+    end
   end
 
   describe "#delete" do
