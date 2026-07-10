@@ -139,7 +139,9 @@ module Kennel
           sleep retry_backoff_time(i)
         end
 
-        if !response.success? && (response.status != 404 || !ignore_404)
+        next if response.status == 404 && ignore_404
+
+        unless response.success?
           message = "Error #{response.status} during #{method.upcase} #{path}\n"
           message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
           message << response.body.encode(message.encoding, invalid: :replace, undef: :replace)

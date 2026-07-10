@@ -220,7 +220,7 @@ describe Kennel::Api do
 
     it "ignores 404" do
       stub_datadog_request(:delete, "monitor/123", "&force=true").to_return(status: 404)
-      api.delete("monitor", 123).must_equal({})
+      api.delete("monitor", 123).must_be_nil
     end
   end
 
