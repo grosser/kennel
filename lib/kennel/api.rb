@@ -157,6 +157,8 @@ module Kennel
       tries.times do |i|
         response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2, &block
 
+        # we do not count 429s into the "tries", tries are only for real errors
+        # so this could loop forever if datadog consistently 429s
         if response.status == 429
           sleep_until_rate_limit_resets(response)
           redo
