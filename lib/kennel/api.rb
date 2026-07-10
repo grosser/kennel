@@ -22,8 +22,9 @@ module Kennel
       @client = Faraday.new(url: url)
     end
 
-    def show(api_resource, id, params = {})
-      response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
+    def show(api_resource, id, params = {}, ignore_404: false)
+      response = request :get, "/api/v1/#{api_resource}/#{id}", params: params, ignore_404: ignore_404
+      return if response.nil? # 404 that was ignored
       response = response.fetch(:data) if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
       self.class.with_tracking(api_resource, response)
@@ -74,7 +75,12 @@ module Kennel
     # fill the resource with the full response from the `show` if `list` does not return it
     def fill_details!(api_resource, list)
       details_cache do |cache|
-        Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }.sum
+        results = Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }
+
+        # drop resources that were not found (race condition between listing and showing)
+        list.select!.with_index { |_, i| results[i][1] }
+
+        results.count { |uncached, _| uncached }
       end
     end
 
@@ -96,15 +102,16 @@ module Kennel
     end
 
     # Make diff work even though we cannot mass-fetch definitions
+    # @return [uncached, found]
     def fill_detail!(api_resource, a, cache)
-      uncached = 0
+      uncached = false
       args = [api_resource, a.fetch(:id)]
       full = cache.fetch(args, a.fetch(:modified_at)) do
-        uncached += 1
-        show(*args)
+        uncached = true
+        show(*args, ignore_404: true)
       end
-      a.merge!(full)
-      uncached
+      a.merge!(full) if full
+      [uncached, !!full]
     end
 
     def details_cache(&block)
