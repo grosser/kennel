@@ -67,7 +67,7 @@ describe Kennel::Api do
       stub_datadog_request(:get, "monitor/1234", "&foo=bar")
         .with(body: nil, headers: { "Content-Type" => "application/json" })
         .to_return(body: { bar: "foo" }.to_json)
-      api.show("monitor", 1234, foo: "bar").must_equal(bar: "foo", klass: Kennel::Models::Monitor, tracking_id: nil)
+      api.show("monitor", 1234, { foo: "bar" }).must_equal(bar: "foo", klass: Kennel::Models::Monitor, tracking_id: nil)
     end
 
     it "does not ignore 404" do
@@ -220,7 +220,7 @@ describe Kennel::Api do
 
     it "ignores 404" do
       stub_datadog_request(:delete, "monitor/123", "&force=true").to_return(status: 404)
-      api.delete("monitor", 123).must_equal({})
+      api.delete("monitor", 123).must_be_nil
     end
   end
 
@@ -265,6 +265,14 @@ describe Kennel::Api do
       stub_datadog_request(:get, "dashboard/123").to_return(body: "{}")
       api.fill_details!("dashboard", [{ id: "123", modified_at: "1" }])
       api.fill_details!("dashboard", [{ id: "123", modified_at: "1" }]).must_equal 0
+    end
+
+    it "drops dashboards that were deleted between list and show" do
+      stub_datadog_request(:get, "dashboard/123").to_return(body: { bar: "foo" }.to_json)
+      stub_datadog_request(:get, "dashboard/456").to_return(status: 404)
+      list = [{ id: "123", modified_at: "1" }, { id: "456", modified_at: "1" }]
+      api.fill_details!("dashboard", list).must_equal 2
+      list.must_equal [{ id: "123", klass: Kennel::Models::Dashboard, tracking_id: nil, modified_at: "1", bar: "foo" }]
     end
   end
 
@@ -351,6 +359,11 @@ describe Kennel::Api do
       end
       assert_requested request, times: 3
       stderr.string.scan(/\d retries left/).must_equal ["1 retries left", "0 retries left"]
+    end
+
+    it "fails when no request would be made" do
+      e = assert_raises(ArgumentError) { api.send(:request_with_retries, "/x", 0) {} }
+      e.message.must_equal "tries must be > 0"
     end
 
     it "fails on repeated errors" do

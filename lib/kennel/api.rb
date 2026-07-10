@@ -22,8 +22,9 @@ module Kennel
       @client = Faraday.new(url: url)
     end
 
-    def show(api_resource, id, params = {})
-      response = request :get, "/api/v1/#{api_resource}/#{id}", params: params
+    def show(api_resource, id, params = {}, ignore_404: false)
+      response = request :get, "/api/v1/#{api_resource}/#{id}", params: params, ignore_404: ignore_404
+      return if response.nil? # 404 that was ignored
       response = response.fetch(:data) if api_resource == "slo"
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
       self.class.with_tracking(api_resource, response)
@@ -74,7 +75,12 @@ module Kennel
     # fill the resource with the full response from the `show` if `list` does not return it
     def fill_details!(api_resource, list)
       details_cache do |cache|
-        Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }.sum
+        results = Utils.parallel(list) { |a| fill_detail!(api_resource, a, cache) }
+
+        # drop resources that were not found (race condition between listing and showing)
+        list.select!.with_index { |_, i| results[i][1] }
+
+        results.count { |uncached, _| uncached }
       end
     end
 
@@ -96,15 +102,16 @@ module Kennel
     end
 
     # Make diff work even though we cannot mass-fetch definitions
+    # @return [uncached, found]
     def fill_detail!(api_resource, a, cache)
-      uncached = 0
+      uncached = false
       args = [api_resource, a.fetch(:id)]
       full = cache.fetch(args, a.fetch(:modified_at)) do
-        uncached += 1
-        show(*args)
+        uncached = true
+        show(*args, ignore_404: true)
       end
-      a.merge!(full)
-      uncached
+      a.merge!(full) if full
+      [uncached, !!full]
     end
 
     def details_cache(&block)
@@ -117,29 +124,18 @@ module Kennel
       cached = (ENV["FORCE_GET_CACHE"] && method == :get)
 
       with_cache cached, path do
-        response = nil
-        tries.times do |i|
-          response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
-            @client.send(method, path) do |request|
-              request.body = JSON.generate(body) if body
-              request.headers["Content-type"] = "application/json"
-              request.headers["DD-API-KEY"] = @api_key
-              request.headers["DD-APPLICATION-KEY"] = @app_key
-            end
+        response = request_with_retries(path, tries) do
+          @client.send(method, path) do |request|
+            request.body = JSON.generate(body) if body
+            request.headers["Content-type"] = "application/json"
+            request.headers["DD-API-KEY"] = @api_key
+            request.headers["DD-APPLICATION-KEY"] = @app_key
           end
-
-          if response.status == 429
-            sleep_until_rate_limit_resets(response)
-            redo
-          end
-
-          last_try = (i == tries - 1)
-          break if last_try || response.status < 500
-          Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
-          sleep retry_backoff_time(i)
         end
 
-        if !response.success? && (response.status != 404 || !ignore_404)
+        next if response.status == 404 && ignore_404
+
+        unless response.success?
           message = "Error #{response.status} during #{method.upcase} #{path}\n"
           message << "request:\n#{JSON.pretty_generate(body)}\nresponse:\n" if body
           message << response.body.encode(message.encoding, invalid: :replace, undef: :replace)
@@ -152,6 +148,28 @@ module Kennel
           JSON.parse(response.body, symbolize_names: true)
         end
       end
+    end
+
+    # retry on rate-limits and server errors, giving up after `tries` attempts
+    def request_with_retries(path, tries, &block)
+      raise ArgumentError, "tries must be > 0" if tries < 1
+      response = nil
+      tries.times do |i|
+        response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2, &block
+
+        # we do not count 429s into the "tries", tries are only for real errors
+        # so this could loop forever if datadog consistently 429s
+        if response.status == 429
+          sleep_until_rate_limit_resets(response)
+          redo
+        end
+
+        last_try = (i == tries - 1)
+        break if last_try || response.status < 500
+        Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
+        sleep retry_backoff_time(i)
+      end
+      response
     end
 
     def sleep_until_rate_limit_resets(response)
