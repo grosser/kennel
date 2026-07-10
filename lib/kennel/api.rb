@@ -117,26 +117,13 @@ module Kennel
       cached = (ENV["FORCE_GET_CACHE"] && method == :get)
 
       with_cache cached, path do
-        response = nil
-        tries.times do |i|
-          response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2 do
-            @client.send(method, path) do |request|
-              request.body = JSON.generate(body) if body
-              request.headers["Content-type"] = "application/json"
-              request.headers["DD-API-KEY"] = @api_key
-              request.headers["DD-APPLICATION-KEY"] = @app_key
-            end
+        response = request_with_retries(path, tries) do
+          @client.send(method, path) do |request|
+            request.body = JSON.generate(body) if body
+            request.headers["Content-type"] = "application/json"
+            request.headers["DD-API-KEY"] = @api_key
+            request.headers["DD-APPLICATION-KEY"] = @app_key
           end
-
-          if response.status == 429
-            sleep_until_rate_limit_resets(response)
-            redo
-          end
-
-          last_try = (i == tries - 1)
-          break if last_try || response.status < 500
-          Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
-          sleep retry_backoff_time(i)
         end
 
         next if response.status == 404 && ignore_404
@@ -154,6 +141,26 @@ module Kennel
           JSON.parse(response.body, symbolize_names: true)
         end
       end
+    end
+
+    # retry on rate-limits and server errors, giving up after `tries` attempts
+    def request_with_retries(path, tries, &block)
+      raise ArgumentError, "tries must be > 0" if tries < 1
+      response = nil
+      tries.times do |i|
+        response = Utils.retry Faraday::ConnectionFailed, Faraday::TimeoutError, times: 2, &block
+
+        if response.status == 429
+          sleep_until_rate_limit_resets(response)
+          redo
+        end
+
+        last_try = (i == tries - 1)
+        break if last_try || response.status < 500
+        Kennel.err.puts "Retrying on server error #{response.status} for #{path}"
+        sleep retry_backoff_time(i)
+      end
+      response
     end
 
     def sleep_until_rate_limit_resets(response)
