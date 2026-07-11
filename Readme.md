@@ -267,6 +267,7 @@ Remove the code that created the resource. The next update will delete it (see a
             kennel_id: -> { "overview-dashboard" }, # make up a unique name
             layout_type: -> { "ordered" },
             widgets: -> { "... raw widget definitions, most flexible ..." },
+            groups_as_tabs: -> { true }, # optional: one tab per top-level group widget, named from group title
             definitions: -> {
               [ # each element is a graph in the dashboard, alternatively a hash for complete control just like in `widgets`
                 [

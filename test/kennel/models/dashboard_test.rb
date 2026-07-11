@@ -381,6 +381,34 @@ describe Kennel::Models::Dashboard do
     end
   end
 
+  describe "with groups_as_tabs" do
+    it "adds tabs with 1-indexed positional widget refs" do
+      group_widgets = [
+        { definition: { title: "One", type: "group", layout_type: "ordered", widgets: [] } },
+        { definition: { title: "Two", type: "group", layout_type: "ordered", widgets: [] } },
+      ]
+      tabbed = dashboard(groups_as_tabs: -> { true }, widgets: -> { group_widgets })
+      tabbed.build_json[:tabs].must_equal(
+        [
+          { name: "One", widget_ids: ["@1"] },
+          { name: "Two", widget_ids: ["@2"] },
+        ]
+      )
+    end
+
+    it "ignores tabs when diffing" do
+      group_widgets = [{ definition: { title: "One", type: "group", layout_type: "ordered", widgets: [] } }]
+      dash = dashboard(groups_as_tabs: -> { true }, widgets: -> { group_widgets })
+      dash.build
+      actual = dash.as_json.dup.merge(
+        tabs: [{ id: "tab-1", name: "One", widget_ids: [111] }],
+        widgets: [{ id: 111, definition: { title: "One", type: "group", layout_type: "ordered", widgets: [] } }]
+      )
+      dash.diff(actual).must_equal []
+      dash.as_json[:tabs].must_equal [{ name: "One", widget_ids: ["@1"] }]
+    end
+  end
+
   describe ".normalize" do
     it "can clean up import" do
       actual = expected_json_with_requests

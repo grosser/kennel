@@ -77,7 +77,7 @@ module Kennel
 
       settings(
         :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
-        :tags
+        :tags, :groups_as_tabs
       )
 
       defaults(
@@ -86,7 +86,8 @@ module Kennel
         widgets: -> { [] },
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
-        tags: -> { project.tags }
+        tags: -> { project.tags },
+        groups_as_tabs: -> { false }
       )
 
       class << self
@@ -106,6 +107,8 @@ module Kennel
             ignore_request_defaults(*pair)
             pair.each { |widget| widget&.delete(:id) } # ids change on every update so we always discard them
           end
+
+          [expected, actual].each { |data| data.delete(:tabs) }
         end
 
         private
@@ -165,7 +168,23 @@ module Kennel
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
 
+        json[:tabs] = groups_as_tabs_json(all_widgets) if groups_as_tabs
+
         json
+      end
+
+      def diff(actual)
+        expected = as_json.dup
+        actual = actual.dup
+        expected.delete(:id)
+
+        self.class.normalize(expected, actual)
+
+        return [] if actual == expected
+
+        result = Hashdiff.diff(actual, expected, use_lcs: false, strict: false, similarity: 1)
+        raise "Empty diff detected: guard condition failed" if result.empty?
+        result
       end
 
       def self.url(id)
@@ -215,6 +234,13 @@ module Kennel
       end
 
       private
+
+      def groups_as_tabs_json(widgets)
+        widgets.each_with_index.map do |widget, index|
+          title = widget.fetch(:definition).fetch(:title)
+          { name: title, widget_ids: ["@#{index + 1}"] }
+        end
+      end
 
       # creates queries from metadata to avoid having to keep q and expression in sync
       #

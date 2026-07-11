@@ -254,6 +254,37 @@ describe Kennel::Api do
           .to_return(body: "{}")
         api.update("dashboard", 123, expected)
       end
+
+      it "resolves groups_as_tabs refs for update" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: {
+            widgets: [
+              { id: 111, definition: { title: "One", type: "group" } },
+              { id: 222, definition: { title: "Two", type: "group" } },
+            ],
+            tabs: [{ id: "tab-1", name: "One", widget_ids: [111] }]
+          }.to_json
+        )
+        expected = {
+          widgets: [
+            { definition: { title: "One", type: "group" } },
+            { definition: { title: "Two", type: "group" } },
+          ],
+          tabs: [
+            { name: "One", widget_ids: ["@1"] },
+            { name: "Two", widget_ids: ["@2"] },
+          ]
+        }
+        stub_datadog_request(:put, "dashboard/123") do |request|
+          body = JSON.parse(request.body, symbolize_names: true)
+          body[:widgets].map { |w| w[:id] }.must_equal [111, 222]
+          body[:tabs].must_equal [
+            { id: "tab-1", name: "One", widget_ids: [111] },
+            { name: "Two", widget_ids: [222] },
+          ]
+        end.to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
     end
   end
 

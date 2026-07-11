@@ -56,6 +56,7 @@ module Kennel
 
     def update(api_resource, id, attributes)
       restore_widget_ids(id, attributes) if api_resource == "dashboard"
+      restore_groups_as_tabs(id, attributes) if api_resource == "dashboard"
 
       response = request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
@@ -100,6 +101,32 @@ module Kennel
       each_widget_with_key(widgets) do |key, widget|
         next unless (id = ids[key])
         widget[:id] ||= id # do not set nil, that breaks updates
+      end
+    end
+
+    # groups_as_tabs uses @N refs on create; on update Datadog needs tab ids and real widget ids in tabs
+    def restore_groups_as_tabs(id, attributes)
+      tabs = attributes[:tabs]
+      return unless tabs&.any?
+
+      widgets = attributes[:widgets]
+      return unless widgets&.any?
+      return unless (current = show("dashboard", id, {}, ignore_404: true))
+
+      current_tabs = current[:tabs] || []
+      current_tabs_by_name = current_tabs.to_h { |tab| [tab.fetch(:name), tab] }
+
+      tabs.each_with_index do |tab, index|
+        name = tab.fetch(:name)
+        current_tab = current_tabs[index] if current_tabs[index]&.fetch(:name) == name
+        current_tab ||= current_tabs_by_name[name]
+        tab[:id] = current_tab.fetch(:id) if current_tab&.fetch(:id)
+
+        widget_id = tab.fetch(:widget_ids).first
+        if widget_id.is_a?(String) && widget_id.start_with?("@")
+          widget_id = widgets.fetch(widget_id.delete_prefix("@").to_i - 1).fetch(:id)
+        end
+        tab[:widget_ids] = [widget_id]
       end
     end
 
