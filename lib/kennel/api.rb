@@ -55,6 +55,8 @@ module Kennel
     end
 
     def update(api_resource, id, attributes)
+      restore_widget_ids(id, attributes) if api_resource == "dashboard"
+
       response = request :put, "/api/v1/#{api_resource}/#{id}", body: attributes
       response[:id] = response.delete(:public_id) if api_resource == "synthetics/tests"
       self.class.with_tracking(api_resource, response)
@@ -85,6 +87,33 @@ module Kennel
     end
 
     private
+
+    # keep widget ids stable so stored dashboard urls that point at a widget do not break on every update
+    # widget ids are dropped when diffing since they change on every update, but that also changes them in datadog
+    # and breaks stored urls that point at a specific widget, so restore the previous ids by matching widget titles
+    def restore_widget_ids(id, attributes)
+      return unless (widgets = attributes[:widgets])
+      return unless (current = show("dashboard", id, {}, ignore_404: true))
+
+      ids = {}
+      each_widget_with_key(current[:widgets]) { |key, widget| ids[key] = widget[:id] }
+      each_widget_with_key(widgets) do |key, widget|
+        next unless (id = ids[key])
+        widget[:id] ||= id # do not set nil, that breaks updates
+      end
+    end
+
+    # yield each widget with a key built from its (optional) group title and its own title
+    def each_widget_with_key(widgets, prefix: nil, &block)
+      widgets.each do |widget|
+        title = widget.dig(:definition, :title)
+        key = [prefix, title].compact.join("-")
+        yield key, widget
+        if (nested = widget.dig(:definition, :widgets))
+          each_widget_with_key(nested, prefix: title, &block)
+        end
+      end
+    end
 
     def with_pagination(enabled, params)
       return yield params unless enabled
