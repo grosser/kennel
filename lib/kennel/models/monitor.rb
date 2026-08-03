@@ -352,6 +352,10 @@ module Kennel
         if data.dig(:options, :timeout_h)&.> 24
           invalid! :invalid_timeout_h, "timeout_h must be <= 24"
         end
+
+        if type == "composite" && data.dig(:options, :new_group_delay)
+          invalid! :composite_new_group_delay, "new_group_delay is not supported for composite monitors"
+        end
       end
 
       # verify is_match/is_exact_match and {{foo.name}} uses available variables
