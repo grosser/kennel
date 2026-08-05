@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 6 # lines inside Ractor.new blocks run in a separate Ractor, invisible to line coverage
 
 describe Kennel::PartsSerializer do
   def write(file, content)
