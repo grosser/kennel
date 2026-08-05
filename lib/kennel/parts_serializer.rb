@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require "etc"
+require "parallel"
 
 module Kennel
   class PartsSerializer
@@ -29,20 +31,32 @@ module Kennel
     attr_reader :filter
 
     def write_changed(parts)
-      used = []
-      changed = []
+      paths_used = []
+      to_generate = []
 
-      Utils.parallel(parts, max: 2) do |part|
+      parts.each do |part|
         path = path_for_tracking_id(part.tracking_id)
 
         # match paths returned from existing_files_and_folders
-        used << File.dirname(path) # we have 1 level of sub folders, so this is enough
-        used << path
+        paths_used << File.dirname(path) # we have 1 level of sub folders, so this is enough
+        paths_used << path
 
         content = part.as_json.merge(api_resource: part.class.api_resource)
-        changed << path if write_file_if_necessary(path, content)
+        to_generate << [path, content]
       end
-      [used, changed]
+
+      paths_changed = generate_and_write(to_generate)
+
+      [paths_used, paths_changed]
+    end
+
+    # JSON.pretty_generate is CPU-bound and threads are limited by the GVL, so we fork
+    def generate_and_write(to_generate)
+      chunks = to_generate.each_slice(100) # processing 1-by-1 would be slow
+
+      Parallel.flat_map(chunks, exit!: true) do |chunk|
+        chunk.filter_map { |path, content| path if write_file_if_necessary(path, content) }
+      end
     end
 
     def existing_files_and_folders

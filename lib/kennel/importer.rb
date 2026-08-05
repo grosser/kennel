@@ -161,7 +161,7 @@ module Kennel
 
       sort_hash(hash).map do |k, v|
         pretty_value =
-          if v.is_a?(Hash) || (v.is_a?(Array) && !v.all? { |e| e.is_a?(String) })
+          if v.is_a?(Hash) || (v.is_a?(Array) && !v.all?(String))
             # update answer here when changing https://stackoverflow.com/questions/8842546/best-way-to-pretty-print-a-hash
             # (exclude last indent gsub)
             pretty = JSON.pretty_generate(v)

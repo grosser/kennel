@@ -25,7 +25,7 @@ module Kennel
 
       def validated_parts
         all = filter_parts(parts)
-        unless all.is_a?(Array) && all.all? { |part| part.is_a?(Record) }
+        unless all.is_a?(Array) && all.all?(Record)
           raise "Project #{kennel_id} #parts must return an array of Records"
         end
 
