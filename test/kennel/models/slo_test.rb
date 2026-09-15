@@ -67,36 +67,6 @@ describe Kennel::Models::Slo do
       )
     end
 
-    it "sets timeframe and threshold values based on primary setting" do
-      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }, { warning: 99.9, target: 99.95, timeframe: "30d" }]
-      expected_basic_json.merge!(
-        timeframe: "30d",
-        warning_threshold: 99.9,
-        target_threshold: 99.95,
-        thresholds: thresholds
-      )
-
-      assert_json_equal(
-        slo(
-          primary: -> { "30d" },
-          thresholds: -> { thresholds }
-        ).build_json,
-        expected_basic_json
-      )
-    end
-
-    it "alerts user when primary has no matching threshold timeframe" do
-      thresholds = [{ warning: 99.5, target: 99.9, timeframe: "30d" }]
-
-      error = assert_raises ArgumentError do
-        slo(
-          primary: -> { "7d" },
-          thresholds: -> { thresholds }
-        ).build_json
-      end
-      error.message.must_include "unable to find threshold with timeframe 7d"
-    end
-
     it "sets groups when given" do
       expected_basic_json[:groups] = ["foo"]
       assert_json_equal(
@@ -131,6 +101,55 @@ describe Kennel::Models::Slo do
         slo(type: "time_slice", sli_specification: sli_spec).build_json,
         expected_basic_json
       )
+    end
+
+    describe "with primary" do
+      it "sets timeframe and threshold values based on primary setting" do
+        thresholds = [{ warning: 99.5, target: 99.9, timeframe: "7d" }, { warning: 99.9, target: 99.95, timeframe: "30d" }]
+        expected_basic_json.merge!(
+          timeframe: "30d",
+          warning_threshold: 99.9,
+          target_threshold: 99.95,
+          thresholds: thresholds
+        )
+
+        assert_json_equal(
+          slo(
+            primary: -> { "30d" },
+            thresholds: -> { thresholds }
+          ).build_json,
+          expected_basic_json
+        )
+      end
+
+      it "does not set nil warning to avoid permanent diff" do
+        thresholds = [{ target: 99.95, timeframe: "30d" }]
+        expected_basic_json.merge!(
+          timeframe: "30d",
+          target_threshold: 99.95,
+          thresholds: thresholds
+        )
+
+        assert_json_equal(
+          slo(
+            primary: -> { "30d" },
+            thresholds: -> { thresholds }
+          ).build_json,
+          expected_basic_json
+        )
+      end
+
+      it "alerts user when primary has no matching threshold timeframe" do
+        thresholds = [{ warning: 99.5, target: 99.9, timeframe: "30d" }]
+
+        error = assert_raises ArgumentError do
+          slo(
+            primary: -> { "7d" },
+            thresholds: -> { thresholds }
+          ).build_json
+        end
+        error.message.must_include "unable to find threshold with timeframe 7d"
+      end
     end
   end
 

@@ -48,7 +48,9 @@ module Kennel
           threshold =
             thresholds.detect { |t| t[:timeframe] == p } ||
             raise(ArgumentError, "#{tracking_id} unable to find threshold with timeframe #{p}")
-          data[:warning_threshold] = threshold[:warning]
+          if (value = threshold[:warning]) # only set if needed to avoid permanent diff
+            data[:warning_threshold] = value
+          end
           data[:target_threshold] = threshold[:target]
         end
 
