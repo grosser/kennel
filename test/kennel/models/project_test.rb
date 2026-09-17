@@ -48,6 +48,20 @@ describe Kennel::Models::Project do
       plain_project_class.file_location.must_equal("dir/foo.rb")
     end
 
+    it "ignores settings-defined methods since they point into the gem" do
+      klass = Class.new(Kennel::Models::Project) { settings :runbooks }
+      assert_raises(Kennel::Models::Project::FileLocationNotFound) { klass.file_location }
+    end
+
+    it "falls through to user methods when a settings-defined method comes first" do
+      eval <<~EVAL, nil, "dir/foo.rb", 1
+        plain_project_class.define_method(:my_method) { }
+      EVAL
+      plain_project_class.settings :runbooks
+      plain_project_class.stubs(:instance_methods).with(false).returns([:runbooks, :my_method])
+      plain_project_class.file_location.must_equal "dir/foo.rb"
+    end
+
     it "removes bundler root if absolute" do
       eval <<~EVAL, nil, "#{Bundler.root}/dir/foo.rb", 1
         plain_project_class.define_method(:my_method) { }
@@ -64,7 +78,7 @@ describe Kennel::Models::Project do
     end
 
     it "fails if no relative root can be found and the resource would have no trace of where it came from" do
-      assert_raises(RuntimeError) do
+      assert_raises(Kennel::Models::Project::FileLocationNotFound) do
         eval <<~EVAL, nil, "/nix/will/break/you/dir/foo.rb", 1
           plain_project_class.define_method(:my_method) { }
         EVAL

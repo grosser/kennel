@@ -2,6 +2,11 @@
 module Kennel
   module Models
     class Project < Base
+      class FileLocationNotFound < StandardError
+      end
+
+      GEM_LIB = File.expand_path("..", __dir__)
+
       settings :team, :parts, :tags, :mention, :name, :kennel_id
       defaults(
         tags: -> { team.tags },
@@ -14,10 +19,12 @@ module Kennel
         if methods.any?
           @file_location = methods.detect do |method|
             location = instance_method(method).source_location.first
+            # methods created by `settings` point inside this gem, which is not the project file
+            next if location.start_with?("#{GEM_LIB}/")
             if (path = find_relative_path(location))
               break path
             end
-          end || raise("Unable to find file_location for #{name}")
+          end || raise(FileLocationNotFound, "Unable to find file_location for #{name}")
         else
           @file_location = nil # not sure if this is actually needed
         end
