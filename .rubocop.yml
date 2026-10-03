@@ -180,3 +180,6 @@ Lint/UselessDefaultValueArgument:
 # wrong in lib/kennel/syncer.rb
 Naming/PredicateMethod:
   Enabled: false
+
+Style/OneClassPerFile:
+  Enabled: false

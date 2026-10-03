@@ -43,9 +43,14 @@ module Teams
 end
 
 module Kennel
-  UnresolvableIdError = Class.new(StandardError)
-  DisallowedUpdateError = Class.new(StandardError)
-  GenerationAbortedError = Class.new(StandardError)
+  class UnresolvableIdError < StandardError
+  end
+
+  class DisallowedUpdateError < StandardError
+  end
+
+  class GenerationAbortedError < StandardError
+  end
 
   class << self
     attr_accessor :in, :out, :err

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require_relative "../test_helper"
 
-SingleCov.covered!
+SingleCov.covered! uncovered: 12 # lines running in forked children are invisible to line coverage
 
 describe Kennel::PartsSerializer do
   def write(file, content)

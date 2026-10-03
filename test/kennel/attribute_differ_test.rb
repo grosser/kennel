@@ -33,7 +33,7 @@ describe Kennel::AttributeDiffer do
 
     describe "diff limit" do
       it "limits the size of diffs" do
-        output = printer.format("~", "foo", 100.times.map(&:to_s).join("\n"), "")
+        output = printer.format("~", "foo", 100.times.to_a.join("\n"), "")
         output.must_include "- 48\n"
         output.wont_include "- 49\n"
         output.must_include "(Diff for this item truncated after 50 lines. Rerun with MAX_DIFF_LINES=100 to see more)"
@@ -41,7 +41,7 @@ describe Kennel::AttributeDiffer do
 
       it "can configure the diff size limit" do
         with_env MAX_DIFF_LINES: "20" do
-          output = printer.format("~", "foo", 100.times.map(&:to_s).join("\n"), "")
+          output = printer.format("~", "foo", 100.times.to_a.join("\n"), "")
           output.must_include "- 18\n"
           output.wont_include "- 19\n"
           output.must_include "(Diff for this item truncated after 20 lines. Rerun with MAX_DIFF_LINES=40 to see more)"
