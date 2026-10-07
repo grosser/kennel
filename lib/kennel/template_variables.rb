@@ -38,8 +38,22 @@ module Kennel
 
     def widget_queries(widget)
       requests = widget.dig(:definition, :requests) || []
-      return requests.values.map { |r| r[:q] } if requests.is_a?(Hash) # hostmap widgets have hash requests
+      return hostmap_queries(requests) if requests.is_a?(Hash) # hostmap widgets have hash requests
       requests.flat_map { |r| r[:q] || r[:queries]&.map { |q| q[:query] } } # old format with q: or queries: [{query:}]
+    end
+
+    # hostmap requests nest queries at varying depth, for example
+    # { fill: { q: "..." } } or { fill: { queries: [{ search: { query: "..." } }] }, request_type: "hosts" }
+    def hostmap_queries(node)
+      case node
+      when Hash
+        query = node[:q] || node[:query]
+        [*query, *hostmap_queries(node.except(:q, :query).values)]
+      when Array
+        node.flat_map { |v| hostmap_queries(v) }
+      else
+        [] # scalar leaves like request_type: "hosts"
+      end
     end
   end
 end

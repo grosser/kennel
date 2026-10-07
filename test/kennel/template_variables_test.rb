@@ -82,6 +82,12 @@ describe Kennel::TemplateVariables do
       error_tags.must_equal [:queries_must_use_template_variables]
     end
 
+    it "works with infrastructure hostmap widgets" do
+      requests = { request_type: "hosts", enrichments: ["x"], fill: { queries: [{ query: "$a" }, { search: { query: "x" } }] } }
+      validate ["a"], [{ definition: { requests: requests } }]
+      errors.map(&:text).must_equal ["queries x must use the template variables $a"]
+    end
+
     it "works with new api format" do
       validate ["a"], [{ definition: { requests: [{ queries: [{ query: "x" }] }] } }]
       error_tags.must_equal [:queries_must_use_template_variables]
