@@ -484,6 +484,13 @@ describe Kennel::Models::Monitor do
         validation_errors_from(mon).must_equal []
       end
 
+      it "does not allow variables from negated filter" do
+        mon.stubs(:query).returns("avg(last_5m):avg:foo{!bar:foo} by {env} > 123.0")
+        mon.expects(:message).returns("{{bar.name}}")
+        validation_errors_from(mon)
+          .must_equal ["Used bar.name in the message, but can only be used with env.name.\nGroup or filter the query by bar to use it."]
+      end
+
       it "passes when using unknown query" do
         mon.stubs(:query).returns("wuuut")
         mon.expects(:message).returns("{{bar.name}}")

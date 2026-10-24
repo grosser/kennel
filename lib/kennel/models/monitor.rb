@@ -377,7 +377,9 @@ module Kennel
         return unless (match = data.fetch(:query).match(/(?:{([^}]*)}\s*)?by\s*[({]([^})]+)[})]/))
 
         allowed =
-          match[1].to_s.split(/\s*,\s*/).map { |k| k.split(":", 2)[-2] } + # {a:b} -> a TODO: does not work for service check
+          match[1].to_s.split(/\s*,\s*/)
+            .reject { |k| k.start_with?("!") } # {!a:b} does not pin a value, so a.name is not available
+            .map { |k| k.split(":", 2)[-2] } + # {a:b} -> a TODO: does not work for service check
           match[2].to_s.gsub(/["']/, "").split(/\s*,\s*/) # by {a} -> a
 
         return if allowed.include?("*")
