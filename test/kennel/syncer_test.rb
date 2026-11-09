@@ -141,6 +141,7 @@ describe Kennel::Syncer do
     with_tracking(
       "slo",
       id: "1",
+      type: "metric",
       description: "x\n-- Managed by kennel #{pid}:#{cid} in test/test_helper.rb, do not modify manually",
       tags: [],
       **extra
