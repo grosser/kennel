@@ -79,6 +79,13 @@ module Kennel
         url[/[?&]slo_id=([a-z\d]{10,})/, 1] || url[/\/slo\/([a-z\d]{10,})(:?\/edit)?(\?|$)/, 1]
       end
 
+      # datadog rejects changing the type in place, so force a re-create
+      def allowed_update_error(actual)
+        actual_type = actual[:type]
+        return if actual_type == type
+        "cannot update type from #{actual_type} to #{type}"
+      end
+
       def resolve_linked_tracking_ids!(id_map, **args)
         return unless (ids = as_json[:monitor_ids]) # ignore_default can remove it
         as_json[:monitor_ids] = ids.map do |id|

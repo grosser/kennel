@@ -236,6 +236,16 @@ describe Kennel::Models::Slo do
     end
   end
 
+  describe "#allowed_update_error" do
+    it "allows update of name" do
+      slo.allowed_update_error(name: "foo", type: "metric").must_be_nil
+    end
+
+    it "disallows update of type" do
+      slo.allowed_update_error(type: "time_slice").must_equal "cannot update type from time_slice to metric"
+    end
+  end
+
   describe ".url" do
     it "shows path" do
       Kennel::Models::Slo.url(111).must_equal "https://app.datadoghq.com/slo?slo_id=111"
