@@ -3,7 +3,8 @@ source "https://rubygems.org"
 
 gemspec
 
-ruby File.read(".ruby-version").strip
+# keep in sync with .github/workflows/actions.yml and .ruby-version
+ruby "~> 4.0.0"
 
 gem "bump"
 gem "rake"
