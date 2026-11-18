@@ -88,18 +88,41 @@ module Kennel
 
     private
 
-    # keep widget ids stable so stored dashboard urls that point at a widget do not break on every update
-    # widget ids are dropped when diffing since they change on every update, but that also changes them in datadog
-    # and breaks stored urls that point at a specific widget, so restore the previous ids by matching widget titles
+    # keep widget + tab ids stable so stored dashboard urls that point at a widget or tab do not break on every update
+    # ids are dropped when diffing since storing them would be ugly, so restore the previous ids by matching widget titles
     def restore_widget_ids(id, attributes)
       return unless (widgets = attributes[:widgets])
       return unless (current = show("dashboard", id, {}, ignore_404: true))
 
-      ids = {}
-      each_widget_with_key(current[:widgets]) { |key, widget| ids[key] = widget[:id] }
+      # backfill widget ids
+      widget_ids = {}
+      each_widget_with_key(current[:widgets]) { |key, widget| widget_ids[key] = widget[:id] }
       each_widget_with_key(widgets) do |key, widget|
-        next unless (id = ids[key])
+        next unless (id = widget_ids[key])
         widget[:id] ||= id # do not set nil, that breaks updates
+      end
+
+      return unless (tags = attributes[:tags])
+
+      # backfill tag ids
+      tag_ids = {}
+      current[:tags]&.each do |tag|
+        tag_ids[tag[:name]] = tag[:id]
+      end
+      tags.each do |tag|
+        tag[:id] ||= tag_ids[tag[:name]]
+      end
+
+      # backfill tag widget ids ... widget_ids: [["Foo"]] -> ["abc"], but leave unknown or ids alone
+      tags.each do |tag|
+        tag[:widget_ids] = tag[:widget_ids].filter_map do |key|
+          # hardcoded widget id, just leave it alone
+          next key unless key.is_a?(Array)
+
+          # find the id or ignore it ... hoping it will be generated later
+          # at least don't blow up when an id is gone which would break CI
+          widget_ids[key]
+        end
       end
     end
 
@@ -108,7 +131,7 @@ module Kennel
       widgets.each_with_index do |widget, i|
         title = widget.dig(:definition, :title)
         title = i.to_s if title.to_s.empty?
-        key = [prefix, title].compact.join("-")
+        key = prefix ? [prefix, title] : [title]
         yield key, widget
         if (nested = widget.dig(:definition, :widgets))
           each_widget_with_key(nested, prefix: title, &block)
