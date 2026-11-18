@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 source "https://rubygems.org"
 
-# any 4.0.x patch, .ruby-version stays for local tooling
-ruby "~> 4.0.0"
-
 gem "kennel"
 gem "dotenv"
 gem "rake"

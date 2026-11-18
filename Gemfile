@@ -3,9 +3,6 @@ source "https://rubygems.org"
 
 gemspec
 
-# keep in sync with .github/workflows/actions.yml and .ruby-version
-ruby "~> 4.0.0"
-
 gem "bump"
 gem "rake"
 gem "maxitest"

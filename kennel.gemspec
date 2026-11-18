@@ -10,7 +10,7 @@ Gem::Specification.new name, Kennel::VERSION do |s|
   s.homepage = "https://github.com/grosser/#{name}"
   s.files = `git ls-files lib Readme.md template/Readme.md`.split("\n")
   s.license = "MIT"
-  s.required_ruby_version = ">= #{File.read(".ruby-version").strip[0..2]}.0"
+  s.required_ruby_version = "~> #{File.read(".ruby-version").strip[0..2]}.0"
   s.add_dependency "benchmark", "~> 0.5"
   s.add_dependency "diff-lcs", "~> 1.5"
   s.add_dependency "faraday", "~> 2.0"
