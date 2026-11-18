@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kennel (2.24.0)
+    kennel (2.25.0)
       benchmark (~> 0.5)
       diff-lcs (~> 1.5)
       faraday (~> 2.0)
@@ -120,4 +120,4 @@ DEPENDENCIES
   webmock
 
 BUNDLED WITH
-  4.0.3
+  4.0.20
