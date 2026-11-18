@@ -77,7 +77,7 @@ module Kennel
 
       settings(
         :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
-        :tags
+        :tags, :tab_groups
       )
 
       defaults(
@@ -100,6 +100,8 @@ module Kennel
           ignore_default expected, actual, DEFAULTS
           ignore_default expected, actual, reflow_type: "auto" if expected[:layout_type] == "ordered"
 
+          dry_up_dashboard_tabs(actual)
+
           widgets_pairs(expected, actual).each do |pair|
             pair.each { |w| sort_conditional_formats w }
             ignore_widget_defaults(*pair)
@@ -109,6 +111,30 @@ module Kennel
         end
 
         private
+
+        def dry_up_dashboard_tabs(dashboard)
+          return unless (tabs = dashboard[:tabs])
+          tabs.each { |t| t.delete :id } # we never want to update that, see api.rb
+
+          # convert ids to titles, needs to be in sync with lib/kennel/api.rb
+          ids = {}
+          dashboard[:widgets].each do |widget|
+            title = widget.dig(:definition, :title)
+            ids[widget[:id]] = [title]
+            next unless (nested = widget.dig(:definition, :widgets))
+            nested.each do |nested|
+              ids[nested[:id]] = [title, nested.dig(:definition, :title)]
+            end
+          end
+
+          p ids
+
+          # if a widget with the id exists then link it by name to not be brittle
+          tabs.each do |t|
+            p t[:widget_ids]
+            t[:widget_ids].map! { |id| ids[id] || id }
+          end
+        end
 
         # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
         def sort_conditional_formats(widget)
@@ -162,6 +188,10 @@ module Kennel
           widgets: all_widgets,
           tags: tags.grep(TAG_PREFIX)
         )
+
+        if (value = tabs)
+          json[:tabs] = value
+        end
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
 
