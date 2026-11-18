@@ -266,6 +266,52 @@ describe Kennel::Api do
         api.update("dashboard", 123, expected)
       end
     end
+
+    describe "dashboard tab ids" do
+      it "restores tab ids by name" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [], tabs: [{ id: 1, name: "A" }, { id: 2, name: "B" }] }.to_json
+        )
+        expected = { widgets: [], tabs: [{ name: "B" }, { name: "A" }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [], tabs: [{ name: "B", id: 2 }, { name: "A", id: 1 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "reuses old tab ids for renamed tabs" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [], tabs: [{ id: 1, name: "A" }] }.to_json
+        )
+        expected = { widgets: [], tabs: [{ name: "B" }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [], tabs: [{ name: "B", id: 1 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "keeps explicitly set tab ids" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [], tabs: [{ id: 1, name: "A" }] }.to_json
+        )
+        expected = { widgets: [], tabs: [{ id: 999, name: "A" }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [], tabs: [{ id: 999, name: "A" }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "does nothing when the current dashboard has no tabs" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [] }.to_json
+        )
+        expected = { widgets: [], tabs: [{ name: "A" }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [], tabs: [{ name: "A" }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+    end
   end
 
   describe "#delete" do
