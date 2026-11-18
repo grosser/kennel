@@ -88,30 +88,49 @@ module Kennel
 
     private
 
-    # keep widget ids stable so stored dashboard urls that point at a widget do not break on every update
-    # widget ids are dropped when diffing since they change on every update, but that also changes them in datadog
-    # and breaks stored urls that point at a specific widget, so restore the previous ids by matching widget titles
+    # keep widget + tab ids stable so stored dashboard urls that point at a widget or tab do not break on every update
+    # ids are dropped when diffing since storing them would be ugly, so restore the previous ids by matching widget titles
     def restore_widget_ids(id, attributes)
       return unless (widgets = attributes[:widgets])
       return unless (current = show("dashboard", id, {}, ignore_404: true))
 
-      ids = {}
-      each_widget_with_key(current[:widgets]) { |key, widget| ids[key] = widget[:id] }
-      each_widget_with_key(widgets) do |key, widget|
-        next unless (id = ids[key])
+      # backfill widget ids
+      widget_title_to_id = {}
+      each_widget_with_title(current[:widgets]) { |title, widget| widget_title_to_id[title] = widget[:id] }
+      each_widget_with_title(widgets) do |title, widget|
+        next unless (id = widget_title_to_id[title])
         widget[:id] ||= id # do not set nil, that breaks updates
+      end
+
+      return unless (tabs = attributes[:tabs])
+
+      # backfill tag ids ... first by name, then just whatever we got left
+      # not setting nils so we get the proper `{"errors":["Required parameter 'id' is missing"]}` error
+      tab_name_to_id = {}
+      current[:tabs]&.each do |tab|
+        tab_name_to_id[tab[:name]] = tab[:id] # collect old tab names
+      end
+      tabs.each do |tab|
+        next if tab[:id]
+        next unless (id = tab_name_to_id.delete(tab[:name])) # reused moved tabs so links keep working
+        tab[:id] = id
+      end
+      tabs.each do |tab|
+        next if tab[:id]
+        next unless (id = tab_name_to_id.delete(tab_name_to_id.keys.first)) # reuse renamed tabs so links keep working
+        tab[:id] ||= id
       end
     end
 
     # yield each widget with a key built from its group optional title/position and its own title/position
-    def each_widget_with_key(widgets, prefix: nil, &block)
+    def each_widget_with_title(widgets, prefix: nil, &block)
       widgets.each_with_index do |widget, i|
         title = widget.dig(:definition, :title)
         title = i.to_s if title.to_s.empty?
-        key = [prefix, title].compact.join("-")
+        key = prefix ? [prefix, title] : [title]
         yield key, widget
         if (nested = widget.dig(:definition, :widgets))
-          each_widget_with_key(nested, prefix: title, &block)
+          each_widget_with_title(nested, prefix: title, &block)
         end
       end
     end

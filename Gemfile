@@ -3,8 +3,6 @@ source "https://rubygems.org"
 
 gemspec
 
-ruby File.read(".ruby-version").strip
-
 gem "bump"
 gem "rake"
 gem "maxitest"

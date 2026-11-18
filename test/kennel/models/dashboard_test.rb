@@ -124,6 +124,16 @@ describe Kennel::Models::Dashboard do
       end
     end
 
+    describe "tabs" do
+      it "does not add tabs by default" do
+        dashboard.build_json.key?(:tabs).must_equal false
+      end
+
+      it "adds tabs when given" do
+        dashboard(tabs: -> { [{ name: "A" }] }).build_json[:tabs].must_equal [{ name: "A" }]
+      end
+    end
+
     describe "tags" do
       it "does not add non-team tags, mirroring datadogs validation" do
         dashboard(tags: -> { ["foo"] }).build_json[:tags].must_equal []
@@ -290,6 +300,11 @@ describe Kennel::Models::Dashboard do
       json = expected_json_with_requests
       json[:widgets][0][:id] = 123
       call(dashboard_with_requests, json).must_equal []
+    end
+
+    it "ignores tab ids" do
+      json = expected_json.merge(tabs: [{ id: 123, name: "A" }])
+      call(dashboard(tabs: -> { [{ name: "A" }] }), json).must_equal []
     end
 
     it "ignores default styles" do

@@ -194,6 +194,30 @@ describe Kennel::Importer do
       RUBY
     end
 
+    it "imports dashboard tabs without ids" do
+      response = { id: "abc", title: "a", tabs: [{ id: 123, name: "A" }, { name: "B" }] }
+      stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)
+      dash = importer.import("dashboard", "abc")
+      dash.must_equal <<~RUBY
+        Kennel::Models::Dashboard.new(
+          self,
+          title: -> { "a" },
+          id: -> { "abc" },
+          kennel_id: -> { "a" },
+          tabs: -> {
+            [
+              {
+                name: "A"
+              },
+              {
+                name: "B"
+              }
+            ]
+          }
+        )
+      RUBY
+    end
+
     it "keeps dashboard show_legend if it is not the default" do
       response = { id: "abc", title: "a", widgets: [{ definition: { type: "timeseries", legend_layout: "vertical", show_legend: true } }] }
       stub_datadog_request(:get, "dashboard/abc").to_return(body: response.to_json)

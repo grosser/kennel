@@ -119,8 +119,5 @@ DEPENDENCIES
   single_cov
   webmock
 
-RUBY VERSION
-  ruby 4.0.0p0
-
 BUNDLED WITH
   4.0.3
