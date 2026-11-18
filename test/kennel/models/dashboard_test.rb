@@ -134,6 +134,16 @@ describe Kennel::Models::Dashboard do
       end
     end
 
+    describe "default_timeframe" do
+      it "does not add default_timeframe by default" do
+        dashboard.build_json.key?(:default_timeframe).must_equal false
+      end
+
+      it "adds default_timeframe when given" do
+        dashboard(default_timeframe: -> { "1h" }).build_json[:default_timeframe].must_equal "1h"
+      end
+    end
+
     describe "tags" do
       it "does not add non-team tags, mirroring datadogs validation" do
         dashboard(tags: -> { ["foo"] }).build_json[:tags].must_equal []

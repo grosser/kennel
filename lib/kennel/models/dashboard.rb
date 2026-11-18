@@ -77,7 +77,7 @@ module Kennel
 
       settings(
         :title, :description, :definitions, :widgets, :layout_type, :template_variable_presets, :reflow_type,
-        :tags, :tabs
+        :tags, :tabs, :default_timeframe
       )
 
       defaults(
@@ -87,7 +87,8 @@ module Kennel
         template_variable_presets: -> { DEFAULTS.fetch(:template_variable_presets) },
         reflow_type: -> { layout_type == "ordered" ? "auto" : nil },
         tags: -> { project.tags },
-        tabs: -> { nil }
+        tabs: -> { nil },
+        default_timeframe: -> { nil }
       )
 
       class << self
@@ -173,6 +174,10 @@ module Kennel
 
         if (value = tabs)
           json[:tabs] = value
+        end
+
+        if (value = default_timeframe)
+          json[:default_timeframe] = value
         end
 
         json[:reflow_type] = reflow_type if reflow_type # setting nil breaks create with "ordered"
