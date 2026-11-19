@@ -211,6 +211,17 @@ describe Kennel::Api do
         api.update("dashboard", 123, expected)
       end
 
+      it "restores widget ids by position when the definition of an untitled widget changed" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [{ id: 111, definition: { type: "note", content: "placeholder" } }] }.to_json
+        )
+        expected = { widgets: [{ definition: { type: "timeseries", title: "", requests: [] } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ definition: { type: "timeseries", title: "", requests: [] }, id: 111 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
       it "restores widget ids when untitled widgets were reordered in the UI" do
         stub_datadog_request(:get, "dashboard/123").to_return(
           body: {

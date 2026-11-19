@@ -94,13 +94,25 @@ module Kennel
       return unless (widgets = attributes[:widgets])
       return unless (current = show("dashboard", id, {}, ignore_404: true))
 
-      # backfill widget ids
-      widget_title_to_id = {}
-      each_widget_with_title(current[:widgets]) { |title, widget| widget_title_to_id[title] = widget[:id] }
-      each_widget_with_title(widgets) do |title, widget|
-        next unless (id = widget_title_to_id[title])
-        widget[:id] ||= id # do not set nil, that breaks updates
+      # backfill widget ids ... first by title, then by definition (untitled widgets like images),
+      # then by position for whatever is left, so reordering or editing widgets in the UI does not
+      # lose their ids and break tabs that reference them
+      matched = ->(key_for) do
+        key_to_id = {}
+        each_widget_with_title(current[:widgets]) do |key, widget|
+          next unless (match_key = key_for.call(key, widget))
+          key_to_id[match_key] ||= widget[:id]
+        end
+        each_widget_with_title(widgets) do |key, widget|
+          next if widget[:id]
+          next unless (match_key = key_for.call(key, widget))
+          next unless (id = key_to_id.delete(match_key)) # assign each existing id only once
+          widget[:id] = id
+        end
       end
+      matched.call(->(key, _widget) { key.first unless key.last.match?(/\A\d+\z/) }) # by title
+      matched.call(->(_key, widget) { widget[:definition]&.except(:id) }) # untitled by definition
+      matched.call(->(key, _widget) { key }) # by title + position
 
       return unless (tabs = attributes[:tabs])
 
@@ -122,13 +134,11 @@ module Kennel
       end
     end
 
-    # yield each widget with a key built from its group optional title and its own title
-    # untitled widgets (e.g. images) are keyed by their definition, since positions change when widgets are
-    # reordered in the UI and would lose their id since the same id ends up being used twice
+    # yield each widget with a key built from its group optional title/position and its own title/position
     def each_widget_with_title(widgets, prefix: nil, &block)
-      widgets.each do |widget|
+      widgets.each_with_index do |widget, i|
         title = widget.dig(:definition, :title)
-        title = (widget[:definition] || {}).except(:id).to_s if title.to_s.empty?
+        title = i.to_s if title.to_s.empty?
         key = prefix ? [prefix, title] : [title]
         yield key, widget
         if (nested = widget.dig(:definition, :widgets))
