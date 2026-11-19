@@ -122,11 +122,13 @@ module Kennel
       end
     end
 
-    # yield each widget with a key built from its group optional title/position and its own title/position
+    # yield each widget with a key built from its group optional title and its own title
+    # untitled widgets (e.g. images) are keyed by their definition, since positions change when widgets are
+    # reordered in the UI and would lose their id since the same id ends up being used twice
     def each_widget_with_title(widgets, prefix: nil, &block)
-      widgets.each_with_index do |widget, i|
+      widgets.each do |widget|
         title = widget.dig(:definition, :title)
-        title = i.to_s if title.to_s.empty?
+        title = (widget[:definition] || {}).except(:id).to_s if title.to_s.empty?
         key = prefix ? [prefix, title] : [title]
         yield key, widget
         if (nested = widget.dig(:definition, :widgets))
