@@ -123,12 +123,13 @@ module Kennel
     end
 
     # yield each widget with a key built from its group optional title and its own title
-    # untitled widgets (e.g. images) are keyed by their definition, since positions change when widgets are
-    # reordered in the UI and would lose their id since the same id ends up being used twice
+    # untitled widgets (e.g. images) are keyed by their url or content, their other attributes are
+    # randomly changed by the UI and positions change when widgets are reordered
+    # widgets with no stable key are matched by position as a last resort
     def each_widget_with_title(widgets, prefix: nil, &block)
-      widgets.each do |widget|
+      widgets.each_with_index do |widget, index|
         title = widget.dig(:definition, :title)
-        title = (widget[:definition] || {}).except(:id).to_s if title.to_s.empty?
+        title = widget.dig(:definition, :url) || widget.dig(:definition, :content) || index if title.to_s.empty?
         key = prefix ? [prefix, title] : [title]
         yield key, widget
         if (nested = widget.dig(:definition, :widgets))
