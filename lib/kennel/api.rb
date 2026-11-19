@@ -124,8 +124,7 @@ module Kennel
 
     # yield each widget with a key built from its group optional title and its own title
     # untitled widgets (e.g. images) are keyed by their definition, since positions change when widgets are
-    # reordered in the UI, which used to lose their ids and break tabs referencing them
-    # ("Tab '...' references non-existing widget ID: ...")
+    # reordered in the UI and would lose their id since the same id ends up being used twice
     def each_widget_with_title(widgets, prefix: nil, &block)
       widgets.each do |widget|
         title = widget.dig(:definition, :title)
