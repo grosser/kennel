@@ -200,13 +200,42 @@ describe Kennel::Api do
         api.update("dashboard", 123, expected)
       end
 
-      it "restores widget ids by position" do
+      it "restores widget ids by definition when they have no title" do
         stub_datadog_request(:get, "dashboard/123").to_return(
           body: { widgets: [{ id: 111, definition: {} }, { id: 222, definition: { title: "" } }] }.to_json
         )
         expected = { widgets: [{ definition: {} }, { definition: { title: "" } }] }
         stub_datadog_request(:put, "dashboard/123")
           .with(body: { widgets: [{ definition: {}, id: 111 }, { definition: { title: "" }, id: 222 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "restores widget ids when untitled widgets were reordered in the UI" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: {
+            widgets: [
+              { id: 222, definition: { type: "image", url: "b" } },
+              { id: 111, definition: { type: "image", url: "a" } }
+            ],
+            tabs: [{ id: 1, name: "A", widget_ids: [111, 222] }]
+          }.to_json
+        )
+        expected = {
+          widgets: [
+            { definition: { type: "image", url: "a" } },
+            { definition: { type: "image", url: "b" } }
+          ],
+          tabs: [{ name: "A", widget_ids: [111, 222] }]
+        }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: {
+            widgets: [
+              { definition: { type: "image", url: "a" }, id: 111 },
+              { definition: { type: "image", url: "b" }, id: 222 }
+            ],
+            tabs: [{ name: "A", widget_ids: [111, 222], id: 1 }]
+          }.to_json)
           .to_return(body: "{}")
         api.update("dashboard", 123, expected)
       end
