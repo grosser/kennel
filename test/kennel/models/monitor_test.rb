@@ -211,6 +211,12 @@ describe Kennel::Models::Monitor do
         .must_equal ["new_group_delay is not supported for composite monitors"]
     end
 
+    it "does not set timeout_h for composite monitors" do
+      mon = monitor(type: -> { "composite" }, query: -> { "%{foo:mon_a}" })
+      validation_errors_from(mon).must_equal []
+      refute mon.as_json[:options].key?(:timeout_h)
+    end
+
     it "can set threshold_windows" do
       valid_monitor_json(threshold_windows: -> { 20 }).dig(:options, :threshold_windows).must_equal 20
     end
