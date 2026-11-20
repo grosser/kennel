@@ -102,7 +102,7 @@ module Kennel
           ignore_default expected, actual, DEFAULTS
           ignore_default expected, actual, reflow_type: "auto" if expected[:layout_type] == "ordered"
 
-          dry_up_dashboard_tabs(actual)
+          dry_up_dashboard_tabs(expected, actual)
 
           widgets_pairs(expected, actual).each do |pair|
             pair.each { |w| sort_conditional_formats w }
@@ -114,9 +114,12 @@ module Kennel
 
         private
 
-        def dry_up_dashboard_tabs(dashboard)
-          return unless (tabs = dashboard[:tabs])
-          tabs.each { |t| t.delete :id } # we never want to update that, see api.rb
+        # we never want to update or compare tab ids that, see api.rb
+        def dry_up_dashboard_tabs(*dashboards)
+          dashboards.each do |dashboard|
+            next unless (tabs = dashboard[:tabs])
+            tabs.each { |t| t.delete :id }
+          end
         end
 
         # conditional_formats ordering is randomly changed by datadog, compare a stable ordering

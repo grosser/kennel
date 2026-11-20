@@ -129,6 +129,9 @@ module Kennel
         # Datadog requires only either new_group_delay or new_host_delay, never both
         options.delete(options[:new_group_delay] ? :new_host_delay : :new_group_delay)
 
+        # composite monitors do not support timeout_h
+        options.delete(:timeout_h) if type == "composite"
+
         if (duration = group_retention_duration)
           options[:group_retention_duration] = duration
         end
