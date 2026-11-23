@@ -341,17 +341,6 @@ describe Kennel::Api do
         api.update("dashboard", 123, expected)
       end
 
-      it "keeps explicitly set tab ids" do
-        stub_datadog_request(:get, "dashboard/123").to_return(
-          body: { widgets: [], tabs: [{ id: 1, name: "A" }] }.to_json
-        )
-        expected = { widgets: [], tabs: [{ id: 999, name: "A" }] }
-        stub_datadog_request(:put, "dashboard/123")
-          .with(body: { widgets: [], tabs: [{ id: 999, name: "A" }] }.to_json)
-          .to_return(body: "{}")
-        api.update("dashboard", 123, expected)
-      end
-
       it "does nothing when the current dashboard has no tabs" do
         stub_datadog_request(:get, "dashboard/123").to_return(
           body: { widgets: [] }.to_json

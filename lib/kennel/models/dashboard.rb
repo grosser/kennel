@@ -102,7 +102,7 @@ module Kennel
           ignore_default expected, actual, DEFAULTS
           ignore_default expected, actual, reflow_type: "auto" if expected[:layout_type] == "ordered"
 
-          dry_up_dashboard_tabs(expected, actual)
+          actual[:tabs]&.each { |t| t.delete :id } # we never want to update or compare tab ids, see api.rb
 
           widgets_pairs(expected, actual).each do |pair|
             pair.each { |w| sort_conditional_formats w }
@@ -113,13 +113,6 @@ module Kennel
         end
 
         private
-
-        # we never want to update or compare tab ids that, see api.rb
-        def dry_up_dashboard_tabs(*dashboards)
-          dashboards.each do |dashboard|
-            dashboard[:tabs]&.each { |t| t.delete :id }
-          end
-        end
 
         # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
         def sort_conditional_formats(widget)
@@ -264,6 +257,14 @@ module Kennel
           invalid!(
             :dashboard_widget_id,
             "widgets should not set id, found #{ids.join(", ")}, use `rake kennel:import URL=` to import dashboards"
+          )
+        end
+
+        # users should never set tab ids, if it happened then they did not use `import`
+        if (ids = data[:tabs]&.filter_map { |t| t[:id] })&.any?
+          invalid!(
+            :dashboard_tab_id,
+            "tabs should not set id, found #{ids.join(", ")}, use `rake kennel:import URL=` to import dashboards"
           )
         end
       end
