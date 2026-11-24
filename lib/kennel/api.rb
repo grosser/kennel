@@ -111,7 +111,6 @@ module Kennel
         tab_name_to_id[tab[:name]] = tab[:id] # collect old tab names
       end
       tabs.each do |tab|
-        next if tab[:id]
         next unless (id = tab_name_to_id.delete(tab[:name])) # reused moved tabs so links keep working
         tab[:id] = id
       end

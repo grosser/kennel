@@ -102,25 +102,17 @@ module Kennel
           ignore_default expected, actual, DEFAULTS
           ignore_default expected, actual, reflow_type: "auto" if expected[:layout_type] == "ordered"
 
-          dry_up_dashboard_tabs(expected, actual)
+          actual[:tabs]&.each { |t| t.delete :id } # we never want to update or compare tab ids, see api.rb
 
           widgets_pairs(expected, actual).each do |pair|
             pair.each { |w| sort_conditional_formats w }
             ignore_widget_defaults(*pair)
             ignore_request_defaults(*pair)
-            pair.each { |widget| widget&.delete(:id) } # ids change on every update so we always discard them
+            pair[1]&.delete :id # ids change on every update so we always discard them
           end
         end
 
         private
-
-        # we never want to update or compare tab ids that, see api.rb
-        def dry_up_dashboard_tabs(*dashboards)
-          dashboards.each do |dashboard|
-            next unless (tabs = dashboard[:tabs])
-            tabs.each { |t| t.delete :id }
-          end
-        end
 
         # conditional_formats ordering is randomly changed by datadog, compare a stable ordering
         def sort_conditional_formats(widget)
@@ -257,6 +249,23 @@ module Kennel
         presets = data[:template_variable_presets]
         if presets && presets != presets.sort_by { |p| p[:name] }
           invalid! :template_variable_presets_must_be_sorted, "template_variable_presets must be sorted by name"
+        end
+
+        # users should never set widget ids, if it happened then they did not use `import`
+        widgets = data[:widgets].flat_map { |w| [w, *w.dig(:definition, :widgets) || []] }
+        if (ids = widgets.filter_map { |w| w[:id] }).any?
+          invalid!(
+            :dashboard_widget_id,
+            "widgets should not set id, found #{ids.join(", ")}, use `rake kennel:import URL=` to import dashboards"
+          )
+        end
+
+        # users should never set tab ids, if it happened then they did not use `import`
+        if (ids = data[:tabs]&.filter_map { |t| t[:id] })&.any?
+          invalid!(
+            :dashboard_tab_id,
+            "tabs should not set id, found #{ids.join(", ")}, use `rake kennel:import URL=` to import dashboards"
+          )
         end
       end
 

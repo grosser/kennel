@@ -124,6 +124,15 @@ describe Kennel::Models::Dashboard do
       end
     end
 
+    describe "widget ids" do
+      it "complains when widgets set ids" do
+        widgets = [{ id: 1, definition: { type: "group", widgets: [{ id: 2, definition: { type: "note" } }] } }]
+        validation_errors_from(dashboard(widgets: -> { widgets })).must_equal [
+          "widgets should not set id, found 1, 2, use `rake kennel:import URL=` to import dashboards"
+        ]
+      end
+    end
+
     describe "tabs" do
       it "does not add tabs by default" do
         dashboard.build_json.key?(:tabs).must_equal false
@@ -131,6 +140,12 @@ describe Kennel::Models::Dashboard do
 
       it "adds tabs when given" do
         dashboard(tabs: -> { [{ name: "A" }] }).build_json[:tabs].must_equal [{ name: "A" }]
+      end
+
+      it "complains when tabs set ids" do
+        validation_errors_from(dashboard(tabs: -> { [{ id: "a", name: "A" }, { name: "B" }] })).must_equal [
+          "tabs should not set id, found a, use `rake kennel:import URL=` to import dashboards"
+        ]
       end
     end
 
