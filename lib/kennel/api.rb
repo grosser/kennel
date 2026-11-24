@@ -90,34 +90,46 @@ module Kennel
 
     # keep widget + tab ids stable so stored dashboard urls that point at a widget or tab do not break on every update
     # ids are dropped when diffing since storing them would be ugly, so restore the previous ids by matching widget titles
+    # groups and widgets use separate id pools since tabs reference groups and should not end up pointing at a widget
     def restore_widget_ids(id, attributes)
       return unless (widgets = attributes[:widgets])
       return unless (current = show("dashboard", id, {}, ignore_404: true))
 
-      # backfill widget ids
-      widget_title_to_id = {}
-      each_widget_with_title(current[:widgets]) { |title, widget| widget_title_to_id[title] = widget[:id] }
-      each_widget_with_title(widgets) do |title, widget|
-        next unless (id = widget_title_to_id[title])
-        widget[:id] ||= id # do not set nil, that breaks updates
-      end
+      old_groups, old_widgets = partition_groups(current[:widgets])
+      new_groups, new_widgets = partition_groups(widgets)
+      reuse_ids(old_groups, new_groups)
+      reuse_ids(old_widgets, new_widgets)
 
       return unless (tabs = attributes[:tabs])
 
-      # backfill tag ids ... first by name, then just whatever we got left
-      # not setting nils so we get the proper `{"errors":["Required parameter 'id' is missing"]}` error
-      tab_name_to_id = {}
-      current[:tabs]&.each do |tab|
-        tab_name_to_id[tab[:name]] = tab[:id] # collect old tab names
+      old_tabs = (current[:tabs] || []).map { |t| [t[:name], t] }
+      new_tabs = tabs.map { |t| [t[:name], t] }
+      reuse_ids(old_tabs, new_tabs)
+    end
+
+    # split all widgets including nested ones into [key, widget] pairs of groups and non-groups
+    def partition_groups(widgets)
+      pairs = []
+      each_widget_with_title(widgets) { |key, widget| pairs << [key, widget] }
+      pairs.partition { |_, widget| widget.dig(:definition, :type) == "group" }
+    end
+
+    # assign old ids to new items: exact key matches first, then leftover ids in order to reuse as many ids as possible
+    # not setting nils so we get the proper `{"errors":["Required parameter 'id' is missing"]}` error
+    def reuse_ids(old_pairs, new_pairs)
+      # [[key, item{id}]] -> {key -> [id]}
+      pool = old_pairs.group_by(&:first).transform_values { |pairs| pairs.map { |_, item| item[:id] } }
+
+      unmatched = new_pairs.filter_map do |key, item|
+        next item unless (id = pool[key]&.shift)
+        item[:id] = id
+        nil
       end
-      tabs.each do |tab|
-        next unless (id = tab_name_to_id.delete(tab[:name])) # reused moved tabs so links keep working
-        tab[:id] = id
-      end
-      tabs.each do |tab|
-        next if tab[:id]
-        next unless (id = tab_name_to_id.delete(tab_name_to_id.keys.first)) # reuse renamed tabs so links keep working
-        tab[:id] ||= id
+
+      leftover = pool.values.flatten
+      unmatched.each do |item|
+        break unless (id = leftover.shift)
+        item[:id] = id
       end
     end
 

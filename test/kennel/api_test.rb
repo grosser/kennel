@@ -265,38 +265,77 @@ describe Kennel::Api do
       it "restores nested widget ids using the group title" do
         stub_datadog_request(:get, "dashboard/123").to_return(
           body: {
-            widgets: [{ id: 1, definition: { title: "Foo", widgets: [{ id: 222, definition: { title: "Bar" } }] } }]
+            widgets: [{ id: 1, definition: { type: "group", title: "Foo", widgets: [{ id: 222, definition: { title: "Bar" } }] } }]
           }.to_json
         )
-        expected = { widgets: [{ definition: { title: "Foo", widgets: [{ definition: { title: "Bar" } }] } }] }
+        expected = { widgets: [{ definition: { type: "group", title: "Foo", widgets: [{ definition: { title: "Bar" } }] } }] }
         stub_datadog_request(:put, "dashboard/123")
           .with(
             body: {
-              widgets: [{ definition: { title: "Foo", widgets: [{ definition: { title: "Bar" }, id: 222 }] }, id: 1 }]
+              widgets: [{ definition: { type: "group", title: "Foo", widgets: [{ definition: { title: "Bar" }, id: 222 }] }, id: 1 }]
             }.to_json
           )
           .to_return(body: "{}")
         api.update("dashboard", 123, expected)
       end
 
-      it "keeps explicitly set widget ids" do
+      it "restores ids for widgets with the same title without duplicating them" do
         stub_datadog_request(:get, "dashboard/123").to_return(
-          body: { widgets: [{ id: 111, definition: { title: "Bar" } }] }.to_json
+          body: { widgets: [{ id: 111, definition: { title: "Bar" } }, { id: 222, definition: { title: "Bar" } }] }.to_json
         )
-        expected = { widgets: [{ id: 999, definition: { title: "Bar" } }] }
+        expected = { widgets: [{ definition: { title: "Bar" } }, { definition: { title: "Bar" } }] }
         stub_datadog_request(:put, "dashboard/123")
-          .with(body: { widgets: [{ id: 999, definition: { title: "Bar" } }] }.to_json)
+          .with(body: { widgets: [{ definition: { title: "Bar" }, id: 111 }, { definition: { title: "Bar" }, id: 222 }] }.to_json)
           .to_return(body: "{}")
         api.update("dashboard", 123, expected)
       end
 
-      it "leaves widgets without a matching title untouched" do
+      it "reuses leftover widget ids for renamed widgets" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: { widgets: [{ id: 111, definition: { title: "Old" } }, { id: 222, definition: { title: "Bar" } }] }.to_json
+        )
+        expected = { widgets: [{ definition: { title: "Bar" } }, { definition: { title: "New" } }] }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(body: { widgets: [{ definition: { title: "Bar" }, id: 222 }, { definition: { title: "New" }, id: 111 }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "does not set ids when there are more new widgets than old ids" do
         stub_datadog_request(:get, "dashboard/123").to_return(
           body: { widgets: [{ id: 111, definition: { title: "Bar" } }] }.to_json
         )
-        expected = { widgets: [{ definition: { title: "New" } }] }
+        expected = { widgets: [{ definition: { title: "Bar" } }, { definition: { title: "New" } }] }
         stub_datadog_request(:put, "dashboard/123")
-          .with(body: { widgets: [{ definition: { title: "New" } }] }.to_json)
+          .with(body: { widgets: [{ definition: { title: "Bar" }, id: 111 }, { definition: { title: "New" } }] }.to_json)
+          .to_return(body: "{}")
+        api.update("dashboard", 123, expected)
+      end
+
+      it "does not hand out group ids to widgets or widget ids to groups" do
+        stub_datadog_request(:get, "dashboard/123").to_return(
+          body: {
+            widgets: [
+              { id: 1, definition: { type: "group", title: "Old", widgets: [] } },
+              { id: 111, definition: { title: "Old widget" } }
+            ]
+          }.to_json
+        )
+        expected = {
+          widgets: [
+            { definition: { title: "New widget" } },
+            { definition: { type: "group", title: "New", widgets: [] } }
+          ]
+        }
+        stub_datadog_request(:put, "dashboard/123")
+          .with(
+            body: {
+              widgets: [
+                { definition: { title: "New widget" }, id: 111 },
+                { definition: { type: "group", title: "New", widgets: [] }, id: 1 }
+              ]
+            }.to_json
+          )
           .to_return(body: "{}")
         api.update("dashboard", 123, expected)
       end
